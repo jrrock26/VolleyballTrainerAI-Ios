@@ -34,10 +34,11 @@ class PoseTracker: NSObject, ObservableObject {
     private let jointSmoothingAlpha: CGFloat = 0.5
     private let jointHoldFrames = 8
 
-    private var lastWristPosition: CGPoint = .zero
     private var lastFrameTime = Date()
-    private var isSwingAscending = false
     private var isHitCaptured = false
+    // Swing state tracked per arm (key: isRightArm) so either arm can register a hit
+    private var lastWristYBySide: [Bool: CGFloat] = [:]
+    private var ascendingBySide: [Bool: Bool] = [:]
 
     // Ball Physics Trackers
     private var lastBallPosition: CGPoint = .zero
@@ -65,8 +66,8 @@ class PoseTracker: NSObject, ObservableObject {
             self.hipBaselineY = nil
             self.baselineFrameCount = 0
             self.isBaselineLocked = false
-            self.lastWristPosition = .zero
-            self.isSwingAscending = false
+            self.lastWristYBySide.removeAll()
+            self.ascendingBySide.removeAll()
             self.isHitCaptured = false
             self.jointPoints.removeAll()
             self.smoothedJoints.removeAll()
@@ -183,12 +184,24 @@ extension PoseTracker {
         guard let leftHip = try? observation.recognizedPoint(.leftHip),
               let rightHip = try? observation.recognizedPoint(.rightHip) else { return }
 
-        let shoulder = (try? observation.recognizedPoint(.rightShoulder))
-            ?? (try? observation.recognizedPoint(.leftShoulder))
-        let elbow = (try? observation.recognizedPoint(.rightElbow))
-            ?? (try? observation.recognizedPoint(.leftElbow))
-        let wrist = (try? observation.recognizedPoint(.rightWrist))
-            ?? (try? observation.recognizedPoint(.leftWrist))
+        let rightWrist = try? observation.recognizedPoint(.rightWrist)
+        let leftWrist = try? observation.recognizedPoint(.leftWrist)
+
+        // Active arm = the one closest to the camera (clearer / higher-confidence wrist).
+        let useRightArm: Bool
+        if let r = rightWrist, let l = leftWrist {
+            useRightArm = r.confidence >= l.confidence
+        } else {
+            useRightArm = rightWrist != nil
+        }
+
+        let shoulder = useRightArm
+            ? (try? observation.recognizedPoint(.rightShoulder))
+            : (try? observation.recognizedPoint(.leftShoulder))
+        let elbow = useRightArm
+            ? (try? observation.recognizedPoint(.rightElbow))
+            : (try? observation.recognizedPoint(.leftElbow))
+        let wrist = useRightArm ? rightWrist : leftWrist
 
         let currentHipY = averageHipY(leftHip: leftHip, rightHip: rightHip, threshold: hipThreshold)
 
@@ -223,10 +236,11 @@ extension PoseTracker {
                 self.jumpHeight = 0.0
             }
 
-            guard let shoulder, let elbow, let wrist else { return }
-            guard shoulder.confidence > confidenceThreshold && wrist.confidence > confidenceThreshold else { return }
-
-            if elbow.confidence > confidenceThreshold {
+            // Arm extension angle from the active (closest) arm.
+            if let shoulder, let elbow, let wrist,
+               shoulder.confidence > confidenceThreshold,
+               wrist.confidence > confidenceThreshold,
+               elbow.confidence > confidenceThreshold {
                 self.armExtensionAngle = self.calculateAngle(
                     a: shoulder.location,
                     b: elbow.location,
@@ -236,36 +250,50 @@ extension PoseTracker {
 
             if self.isHitCaptured { return }
 
-            let currentWristY = wrist.location.y
+            // Detect the hit swing on EITHER arm so right- and left-handed swings
+            // both register; each side is tracked independently.
+            for isRight in [true, false] {
+                guard let armWrist = isRight ? rightWrist : leftWrist,
+                      let armShoulder = isRight
+                        ? (try? observation.recognizedPoint(.rightShoulder))
+                        : (try? observation.recognizedPoint(.leftShoulder)),
+                      armWrist.confidence > confidenceThreshold,
+                      armShoulder.confidence > confidenceThreshold else { continue }
 
-            if timeDelta > 0 && self.lastWristPosition != .zero {
-                let yDelta = currentWristY - self.lastWristPosition.y
-                let instantaneousVelocity = abs(yDelta) / timeDelta
+                let currentWristY = armWrist.location.y
 
-                if yDelta > 0 && currentWristY > shoulder.location.y {
-                    self.isSwingAscending = true
-                }
+                if timeDelta > 0, let lastY = self.lastWristYBySide[isRight] {
+                    let yDelta = currentWristY - lastY
+                    let instantaneousVelocity = abs(yDelta) / timeDelta
 
-                if self.isSwingAscending && yDelta < 0 && instantaneousVelocity > velocityThreshold {
-                    self.isHitCaptured = true
-                    self.initialBallContactTime = Date()
+                    if yDelta > 0 && currentWristY > armShoulder.location.y {
+                        self.ascendingBySide[isRight] = true
+                    }
 
-                    let capturedJump = self.jumpHeight
-                    let capturedAngle = self.armExtensionAngle
+                    if (self.ascendingBySide[isRight] ?? false)
+                        && yDelta < 0
+                        && instantaneousVelocity > velocityThreshold {
+                        self.isHitCaptured = true
+                        self.initialBallContactTime = Date()
 
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        self.onSingleHitExtracted?(
-                            capturedJump,
-                            capturedAngle,
-                            self.computedBallSpeedMPH,
-                            self.computedLaunchAngleDegrees,
-                            self.computedFlightDistanceFeet
-                        )
+                        let capturedJump = self.jumpHeight
+                        let capturedAngle = self.armExtensionAngle
+
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            self.onSingleHitExtracted?(
+                                capturedJump,
+                                capturedAngle,
+                                self.computedBallSpeedMPH,
+                                self.computedLaunchAngleDegrees,
+                                self.computedFlightDistanceFeet
+                            )
+                        }
                     }
                 }
-            }
 
-            self.lastWristPosition = wrist.location
+                self.lastWristYBySide[isRight] = currentWristY
+                if self.isHitCaptured { break }
+            }
         }
     }
 

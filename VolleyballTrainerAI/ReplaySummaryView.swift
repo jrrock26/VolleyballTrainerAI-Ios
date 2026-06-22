@@ -238,56 +238,22 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
-        let asset = AVAsset(url: videoURL)
-        let playerItem = AVPlayerItem(asset: asset)
-
-        let videoOutput = AVPlayerItemVideoOutput(pixelBufferAttributes: [
-            kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)
-        ])
-        playerItem.add(videoOutput)
-        player.replaceCurrentItem(with: playerItem)
 
         let playerLayer = AVPlayerLayer(player: player)
         playerLayer.videoGravity = .resizeAspectFill
         playerLayer.frame = CGRect(origin: .zero, size: containerSize)
         view.layer.addSublayer(playerLayer)
+
         context.coordinator.playerLayer = playerLayer
         context.coordinator.containerSize = containerSize
-
-        tracker.currentVideoOrientation = .portrait
-        let videoSize = CGSize(width: 720, height: 1280)
-        let rect = context.coordinator.computeVideoRect(
-            containerSize: containerSize,
-            videoSize: videoSize
-        )
-
-        DispatchQueue.main.async {
-            tracker.videoRect = rect
-        }
-
-        NotificationCenter.default.addObserver(
-            forName: .AVPlayerItemDidPlayToEndTime,
-            object: playerItem,
-            queue: .main
-        ) { _ in
-            player.seek(to: .zero)
-            player.play()
-            player.rate = slowMotionEnabled ? 0.5 : 1.0
-        }
-
-        context.coordinator.setupTimeObserver(
-            for: player,
-            output: videoOutput,
-            type: hitType
-        )
-
-        player.rate = slowMotionEnabled ? 0.5 : 1.0
-        player.play()
+        context.coordinator.slowMotionEnabled = slowMotionEnabled
+        context.coordinator.load(url: videoURL, hitType: hitType)
         return view
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {
         context.coordinator.containerSize = containerSize
+        context.coordinator.slowMotionEnabled = slowMotionEnabled
         context.coordinator.playerLayer?.frame = CGRect(origin: .zero, size: containerSize)
 
         let rect = context.coordinator.computeVideoRect(
@@ -299,21 +265,73 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
             tracker.currentVideoOrientation = .portrait
         }
 
-        player.rate = slowMotionEnabled ? 0.5 : 1.0
+        // Reload when a different hit is selected; otherwise just sync playback rate.
+        if context.coordinator.loadedURL != videoURL {
+            context.coordinator.load(url: videoURL, hitType: hitType)
+        } else {
+            player.rate = slowMotionEnabled ? 0.5 : 1.0
+        }
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(tracker: tracker)
+        Coordinator(player: player, tracker: tracker)
     }
 
     class Coordinator: NSObject {
         var playerLayer: AVPlayerLayer?
         var containerSize: CGSize = .zero
+        var slowMotionEnabled: Bool = true
         let tracker: PoseTracker
+        private let player: AVPlayer
+        private(set) var loadedURL: URL?
         private var timeObserverToken: Any?
+        private var endObserver: NSObjectProtocol?
 
-        init(tracker: PoseTracker) {
+        init(player: AVPlayer, tracker: PoseTracker) {
+            self.player = player
             self.tracker = tracker
+        }
+
+        func load(url: URL, hitType: String) {
+            loadedURL = url
+
+            let asset = AVAsset(url: url)
+            let playerItem = AVPlayerItem(asset: asset)
+
+            let videoOutput = AVPlayerItemVideoOutput(pixelBufferAttributes: [
+                kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)
+            ])
+            playerItem.add(videoOutput)
+            player.replaceCurrentItem(with: playerItem)
+
+            tracker.currentVideoOrientation = .portrait
+            let rect = computeVideoRect(
+                containerSize: containerSize,
+                videoSize: CGSize(width: 720, height: 1280)
+            )
+            DispatchQueue.main.async {
+                self.tracker.videoRect = rect
+            }
+
+            if let endObserver = endObserver {
+                NotificationCenter.default.removeObserver(endObserver)
+            }
+            endObserver = NotificationCenter.default.addObserver(
+                forName: .AVPlayerItemDidPlayToEndTime,
+                object: playerItem,
+                queue: .main
+            ) { [weak self] _ in
+                guard let self = self else { return }
+                self.player.seek(to: .zero)
+                self.player.play()
+                self.player.rate = self.slowMotionEnabled ? 0.5 : 1.0
+            }
+
+            setupTimeObserver(output: videoOutput, type: hitType)
+
+            player.seek(to: .zero)
+            player.play()
+            player.rate = slowMotionEnabled ? 0.5 : 1.0
         }
 
         func computeVideoRect(containerSize: CGSize, videoSize: CGSize) -> CGRect {
@@ -337,7 +355,6 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
         }
 
         func setupTimeObserver(
-            for player: AVPlayer,
             output: AVPlayerItemVideoOutput,
             type: String
         ) {
@@ -350,8 +367,8 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
             timeObserverToken = player.addPeriodicTimeObserver(
                 forInterval: interval,
                 queue: DispatchQueue.global(qos: .userInteractive)
-            ) { time in
-                guard player.rate > 0 else { return }
+            ) { [weak self] time in
+                guard let self = self, self.player.rate > 0 else { return }
 
                 if output.hasNewPixelBuffer(forItemTime: time),
                    let pixelBuffer = output.copyPixelBuffer(
@@ -365,7 +382,10 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
 
         deinit {
             if let token = timeObserverToken {
-                playerLayer?.player?.removeTimeObserver(token)
+                player.removeTimeObserver(token)
+            }
+            if let endObserver = endObserver {
+                NotificationCenter.default.removeObserver(endObserver)
             }
         }
     }
