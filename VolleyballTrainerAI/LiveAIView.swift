@@ -451,13 +451,12 @@ struct CameraPreviewView: UIViewRepresentable {
 
             let videoSettings: [String: Any] = [
                 AVVideoCodecKey: AVVideoCodecType.h264,
-                AVVideoWidthKey: 1280,
-                AVVideoHeightKey: 720
+                AVVideoWidthKey: 720,
+                AVVideoHeightKey: 1280
             ]
 
             let writerInput = AVAssetWriterInput(mediaType: .video, outputSettings: videoSettings)
             writerInput.expectsMediaDataInRealTime = true
-            writerInput.transform = CGAffineTransform(rotationAngle: .pi / 2)
 
             if writer.canAdd(writerInput) { writer.add(writerInput) }
             if writer.startWriting() {
