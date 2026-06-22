@@ -159,7 +159,7 @@ class PoseTracker: NSObject, ObservableObject {
     ) -> CGImagePropertyOrientation {
         switch videoOrientation {
         case .portrait:
-            return cameraPosition == .front ? .leftMirrored : .right
+            return cameraPosition == .front ? .rightMirrored : .right
         case .portraitUpsideDown:
             return cameraPosition == .front ? .rightMirrored : .left
         case .landscapeLeft:
@@ -271,7 +271,7 @@ extension PoseTracker {
 
     private func updateSmoothedJoints(from observation: VNHumanBodyPoseObservation) {
         for joint in overlayJoints {
-            if let pt = try? observation.recognizedPoint(joint), pt.confidence > 0.08 {
+            if let pt = try? observation.recognizedPoint(joint), pt.confidence > 0.3 {
                 let flipped = CGPoint(x: pt.location.x, y: 1.0 - pt.location.y)
 
                 if let previous = smoothedJoints[joint] {
