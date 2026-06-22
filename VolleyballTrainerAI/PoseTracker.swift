@@ -1,0 +1,398 @@
+import Foundation
+import Vision
+import AVFoundation
+import CoreGraphics
+import UIKit
+
+class PoseTracker: NSObject, ObservableObject {
+    // Metric Fields
+    @Published var jumpHeight: Double = 0.0
+    @Published var armExtensionAngle: Double = 0.0
+    @Published var cameraPosition: AVCaptureDevice.Position = .back
+
+    // Visible video rect inside the container (for overlay alignment)
+    @Published var videoRect: CGRect = .zero
+
+    // Current video orientation (driven by capture/playback)
+    @Published var currentVideoOrientation: AVCaptureVideoOrientation = .portrait
+
+    // Real-time joint coordinates mapped out for drawing overlay lines (normalized 0–1, y flipped)
+    @Published var jointPoints: [VNHumanBodyPoseObservation.JointName: CGPoint] = [:]
+
+    // Ball Bounding Box rect container coordinates (normalized 0–1, y flipped)
+    @Published var ballBoundingBoxRect: CGRect? = nil
+
+    private var sequenceHandler = VNSequenceRequestHandler()
+    private var hipBaselineY: Double? = nil
+    private var highestJumpPixels: Double = 0.0
+    private var baselineFrameCount = 0
+    private var isBaselineLocked = false
+    private let baselineFramesNeeded = 25
+
+    private var smoothedJoints: [VNHumanBodyPoseObservation.JointName: CGPoint] = [:]
+    private var jointMissingFrames: [VNHumanBodyPoseObservation.JointName: Int] = [:]
+    private let jointSmoothingAlpha: CGFloat = 0.5
+    private let jointHoldFrames = 8
+
+    private var lastWristPosition: CGPoint = .zero
+    private var lastFrameTime = Date()
+    private var isSwingAscending = false
+    private var isHitCaptured = false
+
+    // Ball Physics Trackers
+    private var lastBallPosition: CGPoint = .zero
+    private var initialBallContactTime: Date? = nil
+    private var ballTrajectoryPoints: [CGPoint] = []
+
+    // Calculations for Final Payload Metrics Output
+    var computedBallSpeedMPH: Double = 0.0
+    var computedLaunchAngleDegrees: Double = 0.0
+    var computedFlightDistanceFeet: Double = 0.0
+
+    var onSingleHitExtracted: ((Double, Double, Double, Double, Double) -> Void)?
+
+    private let overlayJoints: [VNHumanBodyPoseObservation.JointName] = [
+        .rightWrist, .rightElbow, .rightShoulder, .leftShoulder,
+        .rightHip, .leftHip, .rightKnee, .leftKnee,
+        .rightAnkle, .leftAnkle, .neck, .leftElbow, .leftWrist
+    ]
+
+    func resetTrackingTokens() {
+        DispatchQueue.main.async {
+            self.jumpHeight = 0.0
+            self.armExtensionAngle = 0.0
+            self.highestJumpPixels = 0.0
+            self.hipBaselineY = nil
+            self.baselineFrameCount = 0
+            self.isBaselineLocked = false
+            self.lastWristPosition = .zero
+            self.isSwingAscending = false
+            self.isHitCaptured = false
+            self.jointPoints.removeAll()
+            self.smoothedJoints.removeAll()
+            self.jointMissingFrames.removeAll()
+            self.ballBoundingBoxRect = nil
+            self.ballTrajectoryPoints.removeAll()
+            self.computedBallSpeedMPH = 0.0
+            self.computedLaunchAngleDegrees = 0.0
+            self.computedFlightDistanceFeet = 0.0
+            self.initialBallContactTime = nil
+        }
+    }
+
+    func processFrame(sampleBuffer: CMSampleBuffer, hitType: String) {
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        processRawPixelBuffer(pixelBuffer, hitType: hitType)
+    }
+
+    func processRawPixelBuffer(_ pixelBuffer: CVPixelBuffer, hitType: String) {
+        let poseRequest = VNDetectHumanBodyPoseRequest { [weak self] request, error in
+            guard let self = self,
+                  let results = request.results as? [VNHumanBodyPoseObservation],
+                  !results.isEmpty else { return }
+
+            let primaryHitter = results.max { obs1, obs2 in
+                self.bodyBoundingArea(for: obs1) < self.bodyBoundingArea(for: obs2)
+            }
+
+            if let hitter = primaryHitter {
+                self.analyzePlayerPose(hitter, type: hitType)
+            }
+        }
+
+        let orientation = cgOrientationFrom(currentVideoOrientation, cameraPosition: cameraPosition)
+
+        try? sequenceHandler.perform(
+            [poseRequest],
+            on: pixelBuffer,
+            orientation: orientation
+        )
+
+        extractBallBoundingBox(in: pixelBuffer)
+    }
+
+    private func bodyBoundingArea(for observation: VNHumanBodyPoseObservation) -> CGFloat {
+        var minX: CGFloat = 1.0
+        var maxX: CGFloat = 0.0
+        var minY: CGFloat = 1.0
+        var maxY: CGFloat = 0.0
+        var count = 0
+
+        for joint in overlayJoints {
+            if let pt = try? observation.recognizedPoint(joint), pt.confidence > 0.08 {
+                minX = min(minX, pt.location.x)
+                maxX = max(maxX, pt.location.x)
+                minY = min(minY, pt.location.y)
+                maxY = max(maxY, pt.location.y)
+                count += 1
+            }
+        }
+
+        guard count >= 4 else { return 0 }
+        return (maxX - minX) * (maxY - minY)
+    }
+
+    private func averageHipY(
+        leftHip: VNRecognizedPoint,
+        rightHip: VNRecognizedPoint,
+        threshold: Float
+    ) -> Double? {
+        var sum: Double = 0
+        var count = 0
+
+        if leftHip.confidence > threshold {
+            sum += Double(leftHip.location.y)
+            count += 1
+        }
+        if rightHip.confidence > threshold {
+            sum += Double(rightHip.location.y)
+            count += 1
+        }
+
+        guard count > 0 else { return nil }
+        return sum / Double(count)
+    }
+
+    func cgOrientationFrom(
+        _ videoOrientation: AVCaptureVideoOrientation,
+        cameraPosition: AVCaptureDevice.Position
+    ) -> CGImagePropertyOrientation {
+        switch videoOrientation {
+        case .portrait:
+            return cameraPosition == .front ? .leftMirrored : .right
+        case .portraitUpsideDown:
+            return cameraPosition == .front ? .rightMirrored : .left
+        case .landscapeLeft:
+            return cameraPosition == .front ? .downMirrored : .up
+        case .landscapeRight:
+            return cameraPosition == .front ? .upMirrored : .down
+        @unknown default:
+            return cameraPosition == .front ? .leftMirrored : .right
+        }
+    }
+
+}
+
+extension PoseTracker {
+    private func analyzePlayerPose(_ observation: VNHumanBodyPoseObservation, type: String) {
+        let isFrontCamera = cameraPosition == .front
+        let confidenceThreshold: Float = isFrontCamera ? 0.12 : 0.2
+        let velocityThreshold: Double = isFrontCamera ? 0.8 : 1.2
+        let hipThreshold: Float = isFrontCamera ? 0.10 : 0.12
+
+        guard let leftHip = try? observation.recognizedPoint(.leftHip),
+              let rightHip = try? observation.recognizedPoint(.rightHip) else { return }
+
+        let shoulder = (try? observation.recognizedPoint(.rightShoulder))
+            ?? (try? observation.recognizedPoint(.leftShoulder))
+        let elbow = (try? observation.recognizedPoint(.rightElbow))
+            ?? (try? observation.recognizedPoint(.leftElbow))
+        let wrist = (try? observation.recognizedPoint(.rightWrist))
+            ?? (try? observation.recognizedPoint(.leftWrist))
+
+        let currentHipY = averageHipY(leftHip: leftHip, rightHip: rightHip, threshold: hipThreshold)
+
+        let now = Date()
+        let timeDelta = now.timeIntervalSince(lastFrameTime)
+        lastFrameTime = now
+
+        DispatchQueue.main.async {
+            self.updateSmoothedJoints(from: observation)
+
+            if type == "Spike", let hipY = currentHipY {
+                if !self.isBaselineLocked {
+                    self.baselineFrameCount += 1
+                    if let existing = self.hipBaselineY {
+                        self.hipBaselineY = existing * 0.85 + hipY * 0.15
+                    } else {
+                        self.hipBaselineY = hipY
+                    }
+                    if self.baselineFrameCount >= self.baselineFramesNeeded {
+                        self.isBaselineLocked = true
+                    }
+                }
+
+                if self.isBaselineLocked, let baseline = self.hipBaselineY {
+                    let jumpDelta = hipY - baseline
+                    if jumpDelta > self.highestJumpPixels && jumpDelta > 0.004 {
+                        self.highestJumpPixels = jumpDelta
+                        self.jumpHeight = jumpDelta * 110.0
+                    }
+                }
+            } else if type != "Spike" {
+                self.jumpHeight = 0.0
+            }
+
+            guard let shoulder, let elbow, let wrist else { return }
+            guard shoulder.confidence > confidenceThreshold && wrist.confidence > confidenceThreshold else { return }
+
+            if elbow.confidence > confidenceThreshold {
+                self.armExtensionAngle = self.calculateAngle(
+                    a: shoulder.location,
+                    b: elbow.location,
+                    c: wrist.location
+                )
+            }
+
+            if self.isHitCaptured { return }
+
+            let currentWristY = wrist.location.y
+
+            if timeDelta > 0 && self.lastWristPosition != .zero {
+                let yDelta = currentWristY - self.lastWristPosition.y
+                let instantaneousVelocity = abs(yDelta) / timeDelta
+
+                if yDelta > 0 && currentWristY > shoulder.location.y {
+                    self.isSwingAscending = true
+                }
+
+                if self.isSwingAscending && yDelta < 0 && instantaneousVelocity > velocityThreshold {
+                    self.isHitCaptured = true
+                    self.initialBallContactTime = Date()
+
+                    let capturedJump = self.jumpHeight
+                    let capturedAngle = self.armExtensionAngle
+
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        self.onSingleHitExtracted?(
+                            capturedJump,
+                            capturedAngle,
+                            self.computedBallSpeedMPH,
+                            self.computedLaunchAngleDegrees,
+                            self.computedFlightDistanceFeet
+                        )
+                    }
+                }
+            }
+
+            self.lastWristPosition = wrist.location
+        }
+    }
+
+    private func updateSmoothedJoints(from observation: VNHumanBodyPoseObservation) {
+        for joint in overlayJoints {
+            if let pt = try? observation.recognizedPoint(joint), pt.confidence > 0.08 {
+                let flipped = CGPoint(x: pt.location.x, y: 1.0 - pt.location.y)
+
+                if let previous = smoothedJoints[joint] {
+                    smoothedJoints[joint] = CGPoint(
+                        x: previous.x + jointSmoothingAlpha * (flipped.x - previous.x),
+                        y: previous.y + jointSmoothingAlpha * (flipped.y - previous.y)
+                    )
+                } else {
+                    smoothedJoints[joint] = flipped
+                }
+
+                jointMissingFrames[joint] = 0
+                jointPoints[joint] = smoothedJoints[joint]
+            } else {
+                let missing = (jointMissingFrames[joint] ?? 0) + 1
+                jointMissingFrames[joint] = missing
+
+                if missing <= jointHoldFrames, let cached = smoothedJoints[joint] {
+                    jointPoints[joint] = cached
+                } else {
+                    jointPoints.removeValue(forKey: joint)
+                    smoothedJoints.removeValue(forKey: joint)
+                }
+            }
+        }
+    }
+
+    private func extractBallBoundingBox(in pixelBuffer: CVPixelBuffer) {
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
+
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+
+        guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else { return }
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+        let buffer = baseAddress.assumingMemoryBound(to: UInt8.self)
+
+        var matchXSum = 0
+        var matchYSum = 0
+        var matchCount = 0
+        var minX = width
+        var maxX = 0
+        var minY = height
+        var maxY = 0
+
+        for y in stride(from: 0, to: height, by: 4) {
+            for x in stride(from: 0, to: width, by: 4) {
+                let pixelOffset = y * bytesPerRow + x * 4
+                let b = buffer[pixelOffset]
+                let g = buffer[pixelOffset + 1]
+                let r = buffer[pixelOffset + 2]
+
+                if r > 150 && g > 150 && b < 110 {
+                    matchXSum += x
+                    matchYSum += y
+                    matchCount += 1
+                    if x < minX { minX = x }
+                    if x > maxX { maxX = x }
+                    if y < minY { minY = y }
+                    if y > maxY { maxY = y }
+                }
+            }
+        }
+
+        if matchCount > 12 {
+            let targetCenterX = CGFloat(matchXSum / matchCount) / CGFloat(width)
+            let targetCenterY = CGFloat(matchYSum / matchCount) / CGFloat(height)
+            let currentBallPosition = CGPoint(x: targetCenterX, y: targetCenterY)
+
+            DispatchQueue.main.async {
+                let boxW = CGFloat(maxX - minX) / CGFloat(width)
+                let boxH = CGFloat(maxY - minY) / CGFloat(height)
+
+                self.ballBoundingBoxRect = CGRect(
+                    x: targetCenterX - (boxW / 2),
+                    y: 1.0 - targetCenterY - (boxH / 2),
+                    width: max(0.04, boxW),
+                    height: max(0.04, boxH)
+                )
+
+                if let contactTime = self.initialBallContactTime,
+                   !self.lastBallPosition.equalTo(.zero) {
+                    let timeElapsed = Date().timeIntervalSince(contactTime)
+                    if timeElapsed > 0 && timeElapsed < 1.0 {
+                        let frameTravelDistance = sqrt(
+                            pow(currentBallPosition.x - self.lastBallPosition.x, 2) +
+                            pow(currentBallPosition.y - self.lastBallPosition.y, 2)
+                        )
+                        let velocityMPH = (frameTravelDistance / 0.033) * 22.5
+                        if velocityMPH > self.computedBallSpeedMPH && velocityMPH < 75.0 {
+                            self.computedBallSpeedMPH = velocityMPH
+                        }
+
+                        let xDelta = currentBallPosition.x - self.lastBallPosition.x
+                        let yDelta = currentBallPosition.y - self.lastBallPosition.y
+                        if abs(xDelta) > 0.001 {
+                            self.computedLaunchAngleDegrees = atan2(yDelta, xDelta) * 180.0 / .pi
+                        }
+
+                        let fps = self.computedBallSpeedMPH * 1.46667
+                        let rad = self.computedLaunchAngleDegrees * .pi / 180.0
+                        self.computedFlightDistanceFeet = abs((pow(fps, 2) * sin(2 * rad)) / 32.2)
+                    }
+                }
+
+                self.lastBallPosition = currentBallPosition
+            }
+        } else {
+            DispatchQueue.main.async {
+                self.ballBoundingBoxRect = nil
+            }
+        }
+    }
+
+    private func calculateAngle(a: CGPoint, b: CGPoint, c: CGPoint) -> Double {
+        let v1 = CGPoint(x: a.x - b.x, y: a.y - b.y)
+        let v2 = CGPoint(x: c.x - b.x, y: c.y - b.y)
+        let angle = atan2(v2.y, v2.x) - atan2(v1.y, v1.x)
+        var degree = abs(angle * 180.0 / .pi)
+        if degree > 180.0 { degree = 360.0 - degree }
+        return degree
+    }
+}
