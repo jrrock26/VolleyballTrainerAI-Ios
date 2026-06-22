@@ -451,8 +451,8 @@ struct CameraPreviewView: UIViewRepresentable {
 
             let videoSettings: [String: Any] = [
                 AVVideoCodecKey: AVVideoCodecType.h264,
-                AVVideoWidthKey: 720,
-                AVVideoHeightKey: 1280
+                AVVideoWidthKey: 1280,
+                AVVideoHeightKey: 720
             ]
 
             let writerInput = AVAssetWriterInput(mediaType: .video, outputSettings: videoSettings)
