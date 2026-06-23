@@ -74,9 +74,9 @@ struct ReplaySummaryView: View {
 
                                 SkeletonOverlayView(
                                     jointPoints: tracker.jointPoints,
-                                    videoRect: tracker.videoRect,
-                                    lineWidth: 1.5,
-                                    jointSize: 3
+                                    videoRect: CGRect(origin: .zero, size: tracker.videoRect.size),
+                                    lineWidth: 2,
+                                    jointSize: 5
                                 )
                                 .frame(height: videoHeight)
                                 .cornerRadius(12)
@@ -84,15 +84,17 @@ struct ReplaySummaryView: View {
                                 .allowsHitTesting(false)
 
                                 if let ballRect = tracker.ballBoundingBoxRect {
+                                    let scaleX = tracker.videoRect.width
+                                    let scaleY = tracker.videoRect.height
                                     RoundedRectangle(cornerRadius: 6)
                                         .stroke(Color.orange, lineWidth: 3)
                                         .frame(
-                                            width: ballRect.width * tracker.videoRect.width,
-                                            height: ballRect.height * tracker.videoRect.height
+                                            width: max(12, ballRect.width * scaleX),
+                                            height: max(12, ballRect.height * scaleY)
                                         )
                                         .position(
-                                            x: tracker.videoRect.origin.x + ballRect.midX * tracker.videoRect.width,
-                                            y: tracker.videoRect.origin.y + ballRect.midY * tracker.videoRect.height
+                                            x: tracker.videoRect.origin.x + ballRect.midX * scaleX,
+                                            y: tracker.videoRect.origin.y + ballRect.midY * scaleY
                                         )
                                         .shadow(color: .orange, radius: 4)
                                         .allowsHitTesting(false)
@@ -185,76 +187,58 @@ struct ReplaySummaryView: View {
                         }
                         .padding(.horizontal, 12)
 
-                        HStack(alignment: .top, spacing: 6) {
-                            Image(systemName: "lightbulb.fill")
-                                .font(.caption)
-                                .foregroundColor(.yellow)
-                                .padding(.top, 2)
-                            Text(currentHit.coachFeedback)
-                                .font(.system(size: 11))
-                                .foregroundColor(.gray)
-                                .lineLimit(3)
-                                .fixedSize(horizontal: false, vertical: true)
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(alignment: .top, spacing: 6) {
+                                Image(systemName: "lightbulb.fill")
+                                    .font(.caption)
+                                    .foregroundColor(.yellow)
+                                    .padding(.top, 2)
+                                Text(currentHit.coachFeedback)
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.gray)
+                                    .lineLimit(3)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding(10)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.yellow.opacity(0.1))
+                            .cornerRadius(10)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color.yellow.opacity(0.3), lineWidth: 1)
+                            )
+
+                            HStack(spacing: 8) {
+                                Button("Saved Analytics Vault") {
+                                    dismiss()
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                        NotificationCenter.default.post(
+                                            name: NSNotification.Name("NavigateToScreen"),
+                                            object: "SavedAnalytics"
+                                        )
+                                    }
+                                }
+                                .font(.caption.bold())
+                                .foregroundColor(.black)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Color.yellow)
+                                .cornerRadius(8)
+
+                                Button("Close") {
+                                    player.pause()
+                                    dismiss()
+                                }
+                                .font(.caption.bold())
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Color.red.opacity(0.8))
+                                .cornerRadius(8)
+                            }
                         }
-                        .padding(10)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.yellow.opacity(0.1))
-                        .cornerRadius(10)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(Color.yellow.opacity(0.3), lineWidth: 1)
-                        )
                         .padding(.horizontal, 12)
                     }
-
-                    Spacer(minLength: 4)
-
-                    Button(action: {
-                        dismiss()
-                        // Navigate to saved analytics vault after dismissing replay
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            NotificationCenter.default.post(
-                                name: NSNotification.Name("NavigateToScreen"),
-                                object: "SavedAnalytics"
-                            )
-                        }
-                    }) {
-                        HStack {
-                            Image(systemName: "chart.bar.fill")
-                            Text("Saved Analytics Vault")
-                        }
-                        .fontWeight(.semibold)
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                        .background(Color.yellow)
-                        .cornerRadius(10)
-                    }
-                    .padding(.horizontal, 12)
-
-                    Button(action: {
-                        player.pause()
-                        dismiss()
-                    }) {
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                            Text("Save and Sync Session")
-                        }
-                        .fontWeight(.semibold)
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                        .background(Color.green)
-                        .cornerRadius(10)
-                    }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.black)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                    .background(Color.yellow)
-                    .cornerRadius(10)
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 8)
                 }
             }
         }
@@ -292,8 +276,6 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
         context.coordinator.slowMotionEnabled = slowMotionEnabled
         context.coordinator.playerLayer?.frame = CGRect(origin: .zero, size: containerSize)
 
-        // On layout changes, recompute display videoRect based on display-oriented size.
-        // This is the rect the skeleton draws into (matches the player layer's displayed area).
         if let displaySize = context.coordinator.currentDisplaySize {
             let rect = context.coordinator.computeVideoRect(
                 containerSize: containerSize,
@@ -301,7 +283,6 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
             )
             DispatchQueue.main.async {
                 tracker.videoRect = rect
-                // Keep orientation matching raw buffers, not display
                 tracker.currentVideoOrientation = context.coordinator.rawBufferOrientation
             }
         }
@@ -326,11 +307,8 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
         private(set) var loadedURL: URL?
         private var timeObserverToken: Any?
         private var endObserver: NSObjectProtocol?
-        /// The display-oriented size (after applying preferredTransform) – used for layout.
         var currentDisplaySize: CGSize?
-        /// The raw pixel buffer size (natural size, before transform) – used for Vision framing.
         private var currentNaturalSize: CGSize = .zero
-        /// The orientation of raw pixel buffers passed to Vision.
         private(set) var rawBufferOrientation: AVCaptureVideoOrientation = .portrait
 
         init(player: AVPlayer, tracker: PoseTracker) {
@@ -338,19 +316,11 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
             self.tracker = tracker
         }
 
-        /// Determine the raw buffer orientation from the track's preferredTransform.
-        /// copyPixelBuffer yields frames in the track's natural (un-transformed)
-        /// coordinate system.  We must tell Vision that orientation so landmarks
-        /// come out in the same space as the displayed (playerLayer) video.
         private func detectBufferOrientation(from track: AVAssetTrack) -> AVCaptureVideoOrientation {
             let t = track.preferredTransform
-            // 90° CW  → raw buffers are landscapeLeft relative to display
             if t.a == 0 && t.b == 1 && t.c == -1 && t.d == 0 { return .landscapeLeft }
-            // 90° CCW → raw buffers are landscapeRight relative to display
             if t.a == 0 && t.b == -1 && t.c == 1 && t.d == 0 { return .landscapeRight }
-            // 180°    → raw buffers are portraitUpsideDown
             if t.a == -1 && t.b == 0 && t.c == 0 && t.d == -1 { return .portraitUpsideDown }
-            // identity → raw buffers already match display orientation
             return .portrait
         }
 
@@ -371,11 +341,8 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
                 let transform = track.preferredTransform
                 let transformed = natural.applying(transform)
 
-                // Display size – what the player shows on screen after preferredTransform
                 currentDisplaySize = CGSize(width: abs(transformed.width), height: abs(transformed.height))
-                // Natural size – what the raw pixel buffers actually are
                 currentNaturalSize = natural
-
                 rawBufferOrientation = detectBufferOrientation(from: track)
             } else {
                 currentDisplaySize = CGSize(width: 720, height: 1280)
@@ -383,12 +350,8 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
                 rawBufferOrientation = .portrait
             }
 
-            // Vision needs to know the orientation of the *raw pixel buffers* we send it.
             tracker.currentVideoOrientation = rawBufferOrientation
 
-            // Vision orients the joint coordinates to upright via cgOrientationFrom, so
-            // the resulting coordinates are in the display-oriented (transformed) space.
-            // The videoRect must therefore use the display-oriented size to match.
             if let displaySize = currentDisplaySize {
                 let rect = computeVideoRect(
                     containerSize: containerSize,
