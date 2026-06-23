@@ -67,6 +67,8 @@ struct ReplaySummaryView: View {
                                 .cornerRadius(12)
                                 .clipped()
 
+                                // Skeleton overlay - draws at tracker.videoRect coordinates
+                                // which match the displayed video area. Frame matches the video.
                                 SkeletonOverlayView(
                                     jointPoints: tracker.jointPoints,
                                     videoRect: tracker.videoRect,
@@ -101,6 +103,7 @@ struct ReplaySummaryView: View {
                             }
                         }
                         .frame(height: videoHeight)
+                        .clipped()
                         .padding(.horizontal, 12)
 
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -350,13 +353,13 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
             // Vision needs to know the orientation of the *raw pixel buffers* we send it.
             tracker.currentVideoOrientation = rawBufferOrientation
 
-            // The videoRect must match the *raw pixel buffer* aspect ratio because
-            // Vision returns joint coordinates in that space (normalized 0-1).
-            // We compute the rect using natural size so the skeleton maps correctly.
+            // Vision orients the joint coordinates to upright via cgOrientationFrom, so
+            // the resulting coordinates are in the display-oriented (transformed) space.
+            // The videoRect must therefore use the display-oriented size to match.
             if let displaySize = currentDisplaySize {
                 let rect = computeVideoRect(
                     containerSize: containerSize,
-                    videoSize: currentNaturalSize
+                    videoSize: displaySize
                 )
                 DispatchQueue.main.async {
                     self.tracker.videoRect = rect
