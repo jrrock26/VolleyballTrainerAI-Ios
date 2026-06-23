@@ -368,7 +368,7 @@ extension PoseTracker {
                 let maxC = max(r, max(g, b))
                 let minC = min(r, min(g, b))
                 let range = maxC - minC
-                if maxC > 120 && range > 55 {
+                if maxC > 100 && range > 40 {
                     matchXSum += x
                     matchYSum += y
                     matchCount += 1
@@ -397,7 +397,7 @@ extension PoseTracker {
 
             let inPlayerZone = currentBallPositionNorm.y > 0.28 && currentBallPositionNorm.y < 0.92
 
-            if aspect > 0.55 && aspect < 1.8 && density > 0.22 && boxW > 0.010 && boxW < 0.14 && boxH > 0.010 && boxH < 0.14 && inPlayerZone {
+            if aspect > 0.50 && aspect < 2.0 && density > 0.18 && boxW > 0.008 && boxW < 0.18 && boxH > 0.008 && boxH < 0.18 && inPlayerZone {
                 DispatchQueue.main.async {
                     let drawW = CGFloat(maxX - minX) / CGFloat(width)
                     let drawH = CGFloat(maxY - minY) / CGFloat(height)
@@ -411,15 +411,14 @@ extension PoseTracker {
                         height: paddedH
                     )
 
-                    if let contactTime = self.initialBallContactTime,
-                       !self.lastBallPositionPixels.equalTo(.zero) {
+                    if let contactTime = self.initialBallContactTime {
                         let timeElapsed = Date().timeIntervalSince(contactTime)
-                        if timeElapsed > 0 && timeElapsed < 1.0 {
+                        if timeElapsed > 0 && timeElapsed < 1.2 {
                             let dx = currentBallPositionPixels.x - self.lastBallPositionPixels.x
                             let dy = currentBallPositionPixels.y - self.lastBallPositionPixels.y
                             let pixelDistance = sqrt(dx * dx + dy * dy)
 
-                            let pixelsPerFoot = max(self.assumedBallDiameterPixels / 0.23, 18.0)
+                            let pixelsPerFoot = max(self.assumedBallDiameterPixels / 0.23, 16.0)
                             let feetTraveled = pixelDistance / pixelsPerFoot
 
                             let now = Date()
@@ -429,7 +428,7 @@ extension PoseTracker {
                             let feetPerSecond = feetTraveled / clampedDt
                             let velocityMPH = min(max(feetPerSecond * 3600.0 / 5280.0, 0), 160)
 
-                            if velocityMPH >= 1 && velocityMPH <= 160 {
+                            if velocityMPH >= 0.8 && velocityMPH <= 160 {
                                 self.recentBallSpeedSamples.append(velocityMPH)
                                 if self.recentBallSpeedSamples.count > self.ballSpeedSampleLimit {
                                     self.recentBallSpeedSamples.removeFirst()
@@ -438,18 +437,18 @@ extension PoseTracker {
                                 self.computedBallSpeedMPH = smoothed
                             } else if velocityMPH > 160 {
                                 self.computedBallSpeedMPH = 160
-                            } else if velocityMPH >= 0.2 {
+                            } else if velocityMPH >= 0.1 {
                                 self.computedBallSpeedMPH = velocityMPH
                             }
 
-                            if abs(dx) > 0.0005 {
+                            if abs(dx) > 0.0003 {
                                 self.computedLaunchAngleDegrees = atan2(dy, dx) * 180.0 / .pi
                             }
 
                             if self.computedBallSpeedMPH > 0 {
                                 let rad = self.computedLaunchAngleDegrees * .pi / 180.0
                                 var distance = abs((pow(self.computedBallSpeedMPH * 1.46667, 2) * sin(2 * rad)) / 32.2)
-                                if distance < 4.0 { distance = 4.0 + abs(dy) / pixelsPerFoot * 6.0 }
+                                if distance < 3.0 { distance = 3.0 + abs(dy) / pixelsPerFoot * 5.0 }
                                 if distance > 90.0 { distance = 90.0 }
                                 self.computedFlightDistanceFeet = distance
                             }
