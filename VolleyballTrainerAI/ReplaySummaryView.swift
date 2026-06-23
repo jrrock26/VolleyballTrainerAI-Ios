@@ -256,14 +256,16 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
         context.coordinator.slowMotionEnabled = slowMotionEnabled
         context.coordinator.playerLayer?.frame = CGRect(origin: .zero, size: containerSize)
 
-        if let videoSize = context.coordinator.currentVideoSize {
+        // On layout changes, recompute display videoRect based on display-oriented size.
+        // This is the rect the skeleton draws into (matches the player layer's displayed area).
+        if let displaySize = context.coordinator.currentDisplaySize {
             let rect = context.coordinator.computeVideoRect(
                 containerSize: containerSize,
-                videoSize: videoSize
+                videoSize: displaySize
             )
             DispatchQueue.main.async {
                 tracker.videoRect = rect
-                // Use the coordinator's detected raw buffer orientation, not hardcoded portrait
+                // Keep orientation matching raw buffers, not display
                 tracker.currentVideoOrientation = context.coordinator.rawBufferOrientation
             }
         }
@@ -288,8 +290,11 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
         private(set) var loadedURL: URL?
         private var timeObserverToken: Any?
         private var endObserver: NSObjectProtocol?
-        var currentVideoSize: CGSize?
-        // Track whether raw pixel buffers need orientation correction (internal for updateUIView to read)
+        /// The display-oriented size (after applying preferredTransform) – used for layout.
+        var currentDisplaySize: CGSize?
+        /// The raw pixel buffer size (natural size, before transform) – used for Vision framing.
+        private var currentNaturalSize: CGSize = .zero
+        /// The orientation of raw pixel buffers passed to Vision.
         private(set) var rawBufferOrientation: AVCaptureVideoOrientation = .portrait
 
         init(player: AVPlayer, tracker: PoseTracker) {
@@ -297,26 +302,20 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
             self.tracker = tracker
         }
 
-        /// Derive the raw pixel-buffer orientation from the video track's preferredTransform.
-        /// The display is always upright (portrait), but the raw frames from copyPixelBuffer
-        /// may be in the sensor's native orientation (landscape) and need a correct Vision hint.
+        /// Determine the raw buffer orientation from the track's preferredTransform.
+        /// copyPixelBuffer yields frames in the track's natural (un-transformed)
+        /// coordinate system.  We must tell Vision that orientation so landmarks
+        /// come out in the same space as the displayed (playerLayer) video.
         private func detectBufferOrientation(from track: AVAssetTrack) -> AVCaptureVideoOrientation {
             let t = track.preferredTransform
-            // preferredTransform describes how to go from natural (sensor) to display orientation.
-            // Identity or no transform → sensor frames are already upright (portrait).
-            if t.a == 0 && t.b == 1 && t.c == -1 && t.d == 0 {
-                // 90° CW rotation needed → sensor is landscapeLeft relative to display
-                return .landscapeLeft
-            } else if t.a == 0 && t.b == -1 && t.c == 1 && t.d == 0 {
-                // 90° CCW rotation needed → sensor is landscapeRight relative to display
-                return .landscapeRight
-            } else if t.a == -1 && t.b == 0 && t.c == 0 && t.d == -1 {
-                // 180° rotation → sensor is upside-down
-                return .portraitUpsideDown
-            } else {
-                // Identity or near-identity → sensor already matches display orientation
-                return .portrait
-            }
+            // 90° CW  → raw buffers are landscapeLeft relative to display
+            if t.a == 0 && t.b == 1 && t.c == -1 && t.d == 0 { return .landscapeLeft }
+            // 90° CCW → raw buffers are landscapeRight relative to display
+            if t.a == 0 && t.b == -1 && t.c == 1 && t.d == 0 { return .landscapeRight }
+            // 180°    → raw buffers are portraitUpsideDown
+            if t.a == -1 && t.b == 0 && t.c == 0 && t.d == -1 { return .portraitUpsideDown }
+            // identity → raw buffers already match display orientation
+            return .portrait
         }
 
         func load(url: URL, hitType: String) {
@@ -335,20 +334,29 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
                 let natural = track.naturalSize
                 let transform = track.preferredTransform
                 let transformed = natural.applying(transform)
-                currentVideoSize = CGSize(width: abs(transformed.width), height: abs(transformed.height))
-                // Detect the true orientation of raw pixel buffers from the video file
+
+                // Display size – what the player shows on screen after preferredTransform
+                currentDisplaySize = CGSize(width: abs(transformed.width), height: abs(transformed.height))
+                // Natural size – what the raw pixel buffers actually are
+                currentNaturalSize = natural
+
                 rawBufferOrientation = detectBufferOrientation(from: track)
             } else {
-                currentVideoSize = CGSize(width: 720, height: 1280)
+                currentDisplaySize = CGSize(width: 720, height: 1280)
+                currentNaturalSize = CGSize(width: 720, height: 1280)
                 rawBufferOrientation = .portrait
             }
 
-            // Tell Vision the true orientation of the raw pixel buffers we send it
+            // Vision needs to know the orientation of the *raw pixel buffers* we send it.
             tracker.currentVideoOrientation = rawBufferOrientation
-            if let videoSize = currentVideoSize {
+
+            // The videoRect must match the *raw pixel buffer* aspect ratio because
+            // Vision returns joint coordinates in that space (normalized 0-1).
+            // We compute the rect using natural size so the skeleton maps correctly.
+            if let displaySize = currentDisplaySize {
                 let rect = computeVideoRect(
                     containerSize: containerSize,
-                    videoSize: videoSize
+                    videoSize: currentNaturalSize
                 )
                 DispatchQueue.main.async {
                     self.tracker.videoRect = rect
@@ -453,4 +461,3 @@ struct SummaryMetricBox: View {
         .cornerRadius(8)
     }
 }
-

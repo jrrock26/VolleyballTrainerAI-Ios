@@ -540,8 +540,8 @@ struct SkeletonOverlayView: View {
                 drawBoneLink(from: .neck, to: .leftShoulder, in: &path)
                 drawBoneLink(from: .neck, to: .rightShoulder, in: &path)
             }
-            .stroke(Color.green, lineWidth: lineWidth)
-            .shadow(color: .green, radius: 3)
+            .stroke(Color(red: 1.0, green: 0.08, blue: 0.58), lineWidth: lineWidth)
+            .shadow(color: Color(red: 1.0, green: 0.08, blue: 0.58), radius: 3)
 
             ForEach(Array(jointPoints.keys), id: \.self) { joint in
                 if let pt = jointPoints[joint] {
