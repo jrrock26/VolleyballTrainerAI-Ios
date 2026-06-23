@@ -436,9 +436,9 @@ extension PoseTracker {
                         let clampedDt = max(0.005, min(dt, 0.1))
 
                         let velocityNorm = frameTravelDistance / clampedDt
-                        let velocityMPH = velocityNorm * 35.0
+                        let velocityMPH = velocityNorm * 55.0
 
-                        let plausible = velocityMPH >= 5 && velocityMPH <= 110
+                        let plausible = velocityMPH >= 20 && velocityMPH <= 120
                         if plausible {
                             self.recentBallSpeedSamples.append(velocityMPH)
                             if self.recentBallSpeedSamples.count > self.ballSpeedSampleLimit {

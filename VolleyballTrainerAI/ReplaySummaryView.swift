@@ -78,6 +78,8 @@ struct ReplaySummaryView: View {
                                 .cornerRadius(12)
                                 .clipped()
                                 .allowsHitTesting(false)
+                                .scaleEffect(0.85)
+                                .offset(x: 8, y: 0)
 
                                 if let ballRect = tracker.ballBoundingBoxRect {
                                     let scaleX = tracker.videoRect.width
