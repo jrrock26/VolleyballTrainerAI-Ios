@@ -309,7 +309,7 @@ struct CameraPreviewView: UIViewRepresentable {
 
             let layer = AVCaptureVideoPreviewLayer(session: session)
             layer.frame = view.bounds
-            layer.videoGravity = .resizeAspectFill
+            layer.videoGravity = .resizeAspect   // WIDE VIEW FIX
             view.layer.addSublayer(layer)
             self.previewLayer = layer
 
@@ -451,13 +451,12 @@ struct CameraPreviewView: UIViewRepresentable {
 
             let videoSettings: [String: Any] = [
                 AVVideoCodecKey: AVVideoCodecType.h264,
-                AVVideoWidthKey: 1280,
-                AVVideoHeightKey: 720
+                AVVideoWidthKey: 720,
+                AVVideoHeightKey: 1280
             ]
 
             let writerInput = AVAssetWriterInput(mediaType: .video, outputSettings: videoSettings)
             writerInput.expectsMediaDataInRealTime = true
-            writerInput.transform = CGAffineTransform(rotationAngle: .pi / 2)
 
             if writer.canAdd(writerInput) { writer.add(writerInput) }
             if writer.startWriting() {
@@ -537,8 +536,6 @@ struct SkeletonOverlayView: View {
 
                 drawBoneLink(from: .rightHip, to: .rightKnee, in: &path)
                 drawBoneLink(from: .rightKnee, to: .rightAnkle, in: &path)
-                drawBoneLink(from: .leftHip, to: .leftKnee, in: &path)
-                drawBoneLink(from: .leftKnee, to: .leftAnkle, in: &path)
 
                 drawBoneLink(from: .neck, to: .leftShoulder, in: &path)
                 drawBoneLink(from: .neck, to: .rightShoulder, in: &path)

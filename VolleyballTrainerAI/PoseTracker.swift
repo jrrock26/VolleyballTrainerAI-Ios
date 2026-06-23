@@ -28,6 +28,10 @@ class PoseTracker: NSObject, ObservableObject {
     private var baselineFrameCount = 0
     private var isBaselineLocked = false
     private let baselineFramesNeeded = 25
+    // Player's shoulder-to-hip span (normalized) captured at baseline, used to
+    // scale jump height by body size in frame instead of a fixed multiplier.
+    private var bodyScaleNorm: Double? = nil
+    private let assumedTorsoInches: Double = 22.0
 
     private var smoothedJoints: [VNHumanBodyPoseObservation.JointName: CGPoint] = [:]
     private var jointMissingFrames: [VNHumanBodyPoseObservation.JointName: Int] = [:]
@@ -64,6 +68,7 @@ class PoseTracker: NSObject, ObservableObject {
             self.armExtensionAngle = 0.0
             self.highestJumpPixels = 0.0
             self.hipBaselineY = nil
+            self.bodyScaleNorm = nil
             self.baselineFrameCount = 0
             self.isBaselineLocked = false
             self.lastWristYBySide.removeAll()
@@ -101,6 +106,7 @@ class PoseTracker: NSObject, ObservableObject {
             }
         }
 
+        // Tell Vision the frame is upright so skeleton and hit detection match
         let orientation = cgOrientationFrom(currentVideoOrientation, cameraPosition: cameraPosition)
 
         try? sequenceHandler.perform(
@@ -160,7 +166,8 @@ class PoseTracker: NSObject, ObservableObject {
     ) -> CGImagePropertyOrientation {
         switch videoOrientation {
         case .portrait:
-            return cameraPosition == .front ? .rightMirrored : .right
+            // Capture connection already delivers upright portrait frames.
+            return cameraPosition == .front ? .upMirrored : .up
         case .portraitUpsideDown:
             return cameraPosition == .front ? .rightMirrored : .left
         case .landscapeLeft:
@@ -220,6 +227,18 @@ extension PoseTracker {
                     } else {
                         self.hipBaselineY = hipY
                     }
+
+                    if let sh = shoulder, sh.confidence > confidenceThreshold {
+                        let torso = Double(sh.location.y) - hipY
+                        if torso > 0.01 {
+                            if let existing = self.bodyScaleNorm {
+                                self.bodyScaleNorm = existing * 0.85 + torso * 0.15
+                            } else {
+                                self.bodyScaleNorm = torso
+                            }
+                        }
+                    }
+
                     if self.baselineFrameCount >= self.baselineFramesNeeded {
                         self.isBaselineLocked = true
                     }
@@ -229,7 +248,13 @@ extension PoseTracker {
                     let jumpDelta = hipY - baseline
                     if jumpDelta > self.highestJumpPixels && jumpDelta > 0.004 {
                         self.highestJumpPixels = jumpDelta
-                        self.jumpHeight = jumpDelta * 110.0
+                        let inchesPerNorm: Double
+                        if let scale = self.bodyScaleNorm, scale > 0.01 {
+                            inchesPerNorm = self.assumedTorsoInches / scale
+                        } else {
+                            inchesPerNorm = 110.0
+                        }
+                        self.jumpHeight = jumpDelta * inchesPerNorm
                     }
                 }
             } else if type != "Spike" {
@@ -266,7 +291,9 @@ extension PoseTracker {
                     let yDelta = currentWristY - lastY
                     let instantaneousVelocity = abs(yDelta) / timeDelta
 
-                    if yDelta > 0 && currentWristY > armShoulder.location.y {
+                    // Arm the swing as soon as the wrist is above the shoulder so
+                    // the very first downward snap registers a hit.
+                    if currentWristY > armShoulder.location.y {
                         self.ascendingBySide[isRight] = true
                     }
 
@@ -353,7 +380,14 @@ extension PoseTracker {
                 let g = buffer[pixelOffset + 1]
                 let r = buffer[pixelOffset + 2]
 
-                if r > 150 && g > 150 && b < 110 {
+                let maxC = max(r, max(g, b))
+                let minC = min(r, min(g, b))
+                let saturation = maxC > 0 ? Double(maxC - minC) / Double(maxC) : 0.0
+
+                // Color-agnostic: match any vivid, saturated pixel so a ball of any
+                // hue (pink, green, blue, yellow...) registers, while ignoring skin
+                // tones, white, gray and dull backgrounds.
+                if maxC > 90 && saturation > 0.45 {
                     matchXSum += x
                     matchYSum += y
                     matchCount += 1
@@ -424,3 +458,4 @@ extension PoseTracker {
         return degree
     }
 }
+

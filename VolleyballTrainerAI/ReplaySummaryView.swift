@@ -240,7 +240,7 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
         let view = UIView()
 
         let playerLayer = AVPlayerLayer(player: player)
-        playerLayer.videoGravity = .resizeAspectFill
+        playerLayer.videoGravity = .resizeAspect
         playerLayer.frame = CGRect(origin: .zero, size: containerSize)
         view.layer.addSublayer(playerLayer)
 
@@ -256,16 +256,17 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
         context.coordinator.slowMotionEnabled = slowMotionEnabled
         context.coordinator.playerLayer?.frame = CGRect(origin: .zero, size: containerSize)
 
-        let rect = context.coordinator.computeVideoRect(
-            containerSize: containerSize,
-            videoSize: CGSize(width: 720, height: 1280)
-        )
-        DispatchQueue.main.async {
-            tracker.videoRect = rect
-            tracker.currentVideoOrientation = .portrait
+        if let videoSize = context.coordinator.currentVideoSize {
+            let rect = context.coordinator.computeVideoRect(
+                containerSize: containerSize,
+                videoSize: videoSize
+            )
+            DispatchQueue.main.async {
+                tracker.videoRect = rect
+                tracker.currentVideoOrientation = .portrait
+            }
         }
 
-        // Reload when a different hit is selected; otherwise just sync playback rate.
         if context.coordinator.loadedURL != videoURL {
             context.coordinator.load(url: videoURL, hitType: hitType)
         } else {
@@ -286,6 +287,7 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
         private(set) var loadedURL: URL?
         private var timeObserverToken: Any?
         private var endObserver: NSObjectProtocol?
+        var currentVideoSize: CGSize?
 
         init(player: AVPlayer, tracker: PoseTracker) {
             self.player = player
@@ -304,13 +306,24 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
             playerItem.add(videoOutput)
             player.replaceCurrentItem(with: playerItem)
 
+            if let track = asset.tracks(withMediaType: .video).first {
+                let natural = track.naturalSize
+                let transform = track.preferredTransform
+                let transformed = natural.applying(transform)
+                currentVideoSize = CGSize(width: abs(transformed.width), height: abs(transformed.height))
+            } else {
+                currentVideoSize = CGSize(width: 720, height: 1280)
+            }
+
             tracker.currentVideoOrientation = .portrait
-            let rect = computeVideoRect(
-                containerSize: containerSize,
-                videoSize: CGSize(width: 720, height: 1280)
-            )
-            DispatchQueue.main.async {
-                self.tracker.videoRect = rect
+            if let videoSize = currentVideoSize {
+                let rect = computeVideoRect(
+                    containerSize: containerSize,
+                    videoSize: videoSize
+                )
+                DispatchQueue.main.async {
+                    self.tracker.videoRect = rect
+                }
             }
 
             if let endObserver = endObserver {
@@ -411,3 +424,4 @@ struct SummaryMetricBox: View {
         .cornerRadius(8)
     }
 }
+
