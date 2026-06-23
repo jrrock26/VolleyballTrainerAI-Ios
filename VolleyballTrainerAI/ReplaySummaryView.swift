@@ -74,10 +74,8 @@ struct ReplaySummaryView: View {
                                     jointPoints: tracker.jointPoints,
                                     videoRect: tracker.videoRect
                                 )
-                                .frame(width: tracker.videoRect.width, height: tracker.videoRect.height)
-                                .position(x: tracker.videoRect.midX, y: tracker.videoRect.midY)
-                                .scaleEffect(0.85)
-                                .offset(x: 10, y: -10)
+                                .frame(width: containerWidth, height: videoHeight)
+                                .cornerRadius(12)
                                 .clipped()
                                 .allowsHitTesting(false)
 

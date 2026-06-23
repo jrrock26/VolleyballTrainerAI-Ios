@@ -8,9 +8,7 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            Image("background")
-                .resizable()
-                .scaledToFill()
+            Color(red: 0.07, green: 0.07, blue: 0.07)
                 .ignoresSafeArea()
 
             VStack(spacing: 24) {
