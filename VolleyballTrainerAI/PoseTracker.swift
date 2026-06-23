@@ -436,7 +436,7 @@ extension PoseTracker {
                         let clampedDt = max(0.005, min(dt, 0.1))
 
                         let velocityNorm = frameTravelDistance / clampedDt
-                        let velocityMPH = velocityNorm * 22.5
+                        let velocityMPH = velocityNorm * 35.0
 
                         let plausible = velocityMPH >= 5 && velocityMPH <= 110
                         if plausible {

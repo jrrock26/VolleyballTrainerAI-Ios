@@ -74,7 +74,11 @@ struct ReplaySummaryView: View {
                                     jointPoints: tracker.jointPoints,
                                     videoRect: tracker.videoRect
                                 )
-                                .frame(height: videoHeight)
+                                .frame(width: tracker.videoRect.width, height: tracker.videoRect.height)
+                                .position(x: tracker.videoRect.midX, y: tracker.videoRect.midY)
+                                .scaleEffect(0.85)
+                                .offset(x: 10, y: -10)
+                                .clipped()
                                 .allowsHitTesting(false)
 
                                 if let ballRect = tracker.ballBoundingBoxRect {
