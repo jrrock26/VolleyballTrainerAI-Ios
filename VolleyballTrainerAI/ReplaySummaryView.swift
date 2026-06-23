@@ -263,7 +263,8 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
             )
             DispatchQueue.main.async {
                 tracker.videoRect = rect
-                tracker.currentVideoOrientation = .portrait
+                // Use the coordinator's detected raw buffer orientation, not hardcoded portrait
+                tracker.currentVideoOrientation = context.coordinator.rawBufferOrientation
             }
         }
 
@@ -288,10 +289,34 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
         private var timeObserverToken: Any?
         private var endObserver: NSObjectProtocol?
         var currentVideoSize: CGSize?
+        // Track whether raw pixel buffers need orientation correction (internal for updateUIView to read)
+        private(set) var rawBufferOrientation: AVCaptureVideoOrientation = .portrait
 
         init(player: AVPlayer, tracker: PoseTracker) {
             self.player = player
             self.tracker = tracker
+        }
+
+        /// Derive the raw pixel-buffer orientation from the video track's preferredTransform.
+        /// The display is always upright (portrait), but the raw frames from copyPixelBuffer
+        /// may be in the sensor's native orientation (landscape) and need a correct Vision hint.
+        private func detectBufferOrientation(from track: AVAssetTrack) -> AVCaptureVideoOrientation {
+            let t = track.preferredTransform
+            // preferredTransform describes how to go from natural (sensor) to display orientation.
+            // Identity or no transform → sensor frames are already upright (portrait).
+            if t.a == 0 && t.b == 1 && t.c == -1 && t.d == 0 {
+                // 90° CW rotation needed → sensor is landscapeLeft relative to display
+                return .landscapeLeft
+            } else if t.a == 0 && t.b == -1 && t.c == 1 && t.d == 0 {
+                // 90° CCW rotation needed → sensor is landscapeRight relative to display
+                return .landscapeRight
+            } else if t.a == -1 && t.b == 0 && t.c == 0 && t.d == -1 {
+                // 180° rotation → sensor is upside-down
+                return .portraitUpsideDown
+            } else {
+                // Identity or near-identity → sensor already matches display orientation
+                return .portrait
+            }
         }
 
         func load(url: URL, hitType: String) {
@@ -311,11 +336,15 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
                 let transform = track.preferredTransform
                 let transformed = natural.applying(transform)
                 currentVideoSize = CGSize(width: abs(transformed.width), height: abs(transformed.height))
+                // Detect the true orientation of raw pixel buffers from the video file
+                rawBufferOrientation = detectBufferOrientation(from: track)
             } else {
                 currentVideoSize = CGSize(width: 720, height: 1280)
+                rawBufferOrientation = .portrait
             }
 
-            tracker.currentVideoOrientation = .portrait
+            // Tell Vision the true orientation of the raw pixel buffers we send it
+            tracker.currentVideoOrientation = rawBufferOrientation
             if let videoSize = currentVideoSize {
                 let rect = computeVideoRect(
                     containerSize: containerSize,
