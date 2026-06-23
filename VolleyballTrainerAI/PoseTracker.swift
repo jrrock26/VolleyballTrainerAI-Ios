@@ -380,8 +380,9 @@ extension PoseTracker {
         var minY = height
         var maxY = 0
 
-        for y in stride(from: 0, to: height, by: 4) {
-            for x in stride(from: 0, to: width, by: 4) {
+        let step = 3
+        for y in stride(from: 0, to: height, by: step) {
+            for x in stride(from: 0, to: width, by: step) {
                 let pixelOffset = y * bytesPerRow + x * 4
                 let b = buffer[pixelOffset]
                 let g = buffer[pixelOffset + 1]
@@ -389,12 +390,10 @@ extension PoseTracker {
 
                 let maxC = max(r, max(g, b))
                 let minC = min(r, min(g, b))
-                let saturation = maxC > 0 ? Double(maxC - minC) / Double(maxC) : 0.0
-
-                // Color-agnostic: match any vivid, saturated pixel so a ball of any
-                // hue (pink, green, blue, yellow...) registers, while ignoring skin
-                // tones, white, gray and dull backgrounds.
-                if maxC > 90 && saturation > 0.45 {
+                let range = maxC - minC
+                // Require a vivid, reasonably bright pixel so we mostly grab the ball
+                // while ignoring dull greenery, sky gradients, skin, and grays.
+                if maxC > 120 && range > 55 {
                     matchXSum += x
                     matchYSum += y
                     matchCount += 1
@@ -407,63 +406,102 @@ extension PoseTracker {
         }
 
         if matchCount > 12 {
-            let targetCenterX = CGFloat(matchXSum / matchCount) / CGFloat(width)
-            let targetCenterY = CGFloat(matchYSum / matchCount) / CGFloat(height)
-            let currentBallPosition = CGPoint(x: targetCenterX, y: targetCenterY)
+            let boxW = CGFloat(maxX - minX) / CGFloat(width)
+            let boxH = CGFloat(maxY - minY) / CGFloat(height)
+            let aspect = boxW / max(boxH, 0.001)
+            let boxArea = CGFloat(maxX - minX) * CGFloat(maxY - minY)
+            let density = CGFloat(matchCount) / max(boxArea, 1.0)
 
-            DispatchQueue.main.async {
-                let boxW = CGFloat(maxX - minX) / CGFloat(width)
-                let boxH = CGFloat(maxY - minY) / CGFloat(height)
+            let targetCenterX = CGFloat(matchXSum) / CGFloat(matchCount) / CGFloat(width)
+            let targetCenterY = CGFloat(matchYSum) / CGFloat(matchCount) / CGFloat(height)
 
-                self.ballBoundingBoxRect = CGRect(
-                    x: targetCenterX - (boxW / 2),
-                    y: 1.0 - targetCenterY - (boxH / 2),
-                    width: max(0.04, boxW),
-                    height: max(0.04, boxH)
-                )
+            // Reject blobs that are too elongated, too large, too sparse,
+            // or sitting in the sky/background rather than the player area.
+            let isRoundEnough = aspect > 0.55 && aspect < 1.8
+            let compact = density > 0.22
+            let reasonableSize = boxW > 0.010 && boxW < 0.14 && boxH > 0.010 && boxH < 0.14
+            let inPlayerZone = targetCenterY > 0.28 && targetCenterY < 0.92
 
-                if let contactTime = self.initialBallContactTime,
-                   !self.lastBallPosition.equalTo(.zero) {
-                    let timeElapsed = Date().timeIntervalSince(contactTime)
-                    if timeElapsed > 0 && timeElapsed < 1.0 {
-                        let frameTravelDistance = sqrt(
-                            pow(currentBallPosition.x - self.lastBallPosition.x, 2) +
-                            pow(currentBallPosition.y - self.lastBallPosition.y, 2)
-                        )
+            if isRoundEnough && compact && reasonableSize && inPlayerZone {
+                let currentBallPosition = CGPoint(x: targetCenterX, y: targetCenterY)
 
-                        let now = Date()
-                        let dt = self.lastBallTime.map { now.timeIntervalSince($0) } ?? 0.033
-                        let clampedDt = max(0.005, min(dt, 0.1))
+                DispatchQueue.main.async {
+                    let drawW = CGFloat(maxX - minX) / CGFloat(width)
+                    let drawH = CGFloat(maxY - minY) / CGFloat(height)
+                    let paddedW = max(0.04, drawW * 1.15)
+                    let paddedH = max(0.04, drawH * 1.15)
 
-                        let velocityNorm = frameTravelDistance / clampedDt
-                        let velocityMPH = velocityNorm * 55.0
+                    self.ballBoundingBoxRect = CGRect(
+                        x: targetCenterX - (paddedW / 2),
+                        y: 1.0 - targetCenterY - (paddedH / 2),
+                        width: paddedW,
+                        height: paddedH
+                    )
 
-                        let plausible = velocityMPH >= 1 && velocityMPH <= 150
-                        if plausible {
-                            self.recentBallSpeedSamples.append(velocityMPH)
-                            if self.recentBallSpeedSamples.count > self.ballSpeedSampleLimit {
-                                self.recentBallSpeedSamples.removeFirst()
+                    if let contactTime = self.initialBallContactTime,
+                       !self.lastBallPosition.equalTo(.zero) {
+                        let timeElapsed = Date().timeIntervalSince(contactTime)
+                        if timeElapsed > 0 && timeElapsed < 1.0 {
+                            let frameTravelDistance = sqrt(
+                                pow(currentBallPosition.x - self.lastBallPosition.x, 2) +
+                                pow(currentBallPosition.y - self.lastBallPosition.y, 2)
+                            )
+
+                            let now = Date()
+                            let dt = self.lastBallTime.map { now.timeIntervalSince($0) } ?? 0.033
+                            let clampedDt = max(0.005, min(dt, 0.15))
+
+                            let velocityNorm = frameTravelDistance / clampedDt
+                            let inchesPerNorm: Double
+                            if let scale = self.bodyScaleNorm, scale > 0.01 {
+                                inchesPerNorm = max(35, min(155, self.assumedTorsoInches / scale))
+                            } else {
+                                inchesPerNorm = 95
                             }
-                            let smoothed = self.recentBallSpeedSamples.reduce(0, +) / Double(self.recentBallSpeedSamples.count)
-                            self.computedBallSpeedMPH = smoothed
-                        }
+                            let feetPerNorm = inchesPerNorm / 12.0
+                            let mphPerNormPerSec = feetPerNorm * 3600.0 / 5280.0
+                            var velocityMPH = velocityNorm * mphPerNormPerSec
 
-                        let xDelta = currentBallPosition.x - self.lastBallPosition.x
-                        let yDelta = currentBallPosition.y - self.lastBallPosition.y
-                        if abs(xDelta) > 0.001 {
-                            self.computedLaunchAngleDegrees = atan2(yDelta, xDelta) * 180.0 / .pi
-                        }
+                            if velocityMPH >= 1 && velocityMPH <= 160 {
+                                self.recentBallSpeedSamples.append(velocityMPH)
+                                if self.recentBallSpeedSamples.count > self.ballSpeedSampleLimit {
+                                    self.recentBallSpeedSamples.removeFirst()
+                                }
+                                let smoothed = self.recentBallSpeedSamples.reduce(0, +) / Double(self.recentBallSpeedSamples.count)
+                                self.computedBallSpeedMPH = smoothed
+                            } else if velocityMPH > 160 {
+                                self.computedBallSpeedMPH = 160
+                            } else if velocityMPH >= 0.2 {
+                                self.computedBallSpeedMPH = velocityMPH
+                            }
 
-                        if self.computedBallSpeedMPH > 0 {
-                            let fps = self.computedBallSpeedMPH * 1.46667
-                            let rad = self.computedLaunchAngleDegrees * .pi / 180.0
-                            self.computedFlightDistanceFeet = abs((pow(fps, 2) * sin(2 * rad)) / 32.2)
+                            let xDelta = currentBallPosition.x - self.lastBallPosition.x
+                            let yDelta = currentBallPosition.y - self.lastBallPosition.y
+                            if abs(xDelta) > 0.0005 {
+                                self.computedLaunchAngleDegrees = atan2(yDelta, xDelta) * 180.0 / .pi
+                            }
+
+                            if self.computedBallSpeedMPH > 0 {
+                                let rad = self.computedLaunchAngleDegrees * .pi / 180.0
+                                // Use a release-height-aware heuristic: assume contact height
+                                // is roughly torso + arm extension above ground in the frame.
+                                // Since we don't have floor/world coords here, keep the
+                                // projected distance but clamp it into a realistic volleyball range.
+                                var distance = abs((pow(self.computedBallSpeedMPH * 1.46667, 2) * sin(2 * rad)) / 32.2)
+                                if distance < 6.0 { distance = 6.0 + abs(yDelta) * 40.0 }
+                                if distance > 90.0 { distance = 90.0 }
+                                self.computedFlightDistanceFeet = distance
+                            }
                         }
                     }
-                }
 
-                self.lastBallPosition = currentBallPosition
-                self.lastBallTime = Date()
+                    self.lastBallPosition = currentBallPosition
+                    self.lastBallTime = Date()
+                }
+            } else {
+                DispatchQueue.main.async {
+                    self.ballBoundingBoxRect = nil
+                }
             }
         } else {
             DispatchQueue.main.async {
