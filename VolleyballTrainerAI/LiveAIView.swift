@@ -11,6 +11,7 @@ struct LiveAIView: View {
     @StateObject private var tracker = PoseTracker()
     @State private var sessionID = UUID()
     @State private var sessionHits: [VolleyballHit] = []
+    @State private var profile = AthleteProfile()
 
     @State private var isSessionActive = false
     @State private var isRecordingHit = false
@@ -232,8 +233,15 @@ struct LiveAIView: View {
                 ballSpeedMPH: self.tracker.computedBallSpeedMPH,
                 ballAngleDegrees: self.tracker.computedLaunchAngleDegrees,
                 ballDistanceFeet: self.tracker.computedFlightDistanceFeet,
-                videoLocalURLString: videoURL.path
+                videoLocalURLString: videoURL.path,
+                profile: self.profile,
+                sessionHits: self.sessionHits
             )
+
+            var updatedProfile = self.profile
+            updatedProfile.incorporate(hit: hitLog, sessionID: self.sessionID)
+            self.profile = updatedProfile
+
             self.modelContext.insert(hitLog)
             self.sessionHits.append(hitLog)
             try? self.modelContext.save()
@@ -521,6 +529,18 @@ struct SkeletonOverlayView: View {
     var lineWidth: CGFloat = 4
     var jointSize: CGFloat = 8
 
+    /// Computed line width proportional to video display width (capped at default).
+    /// Scales the skeleton thickness with the video size so it doesn't look too big
+    /// on small video displays.
+    private var scaledLineWidth: CGFloat {
+        min(lineWidth, max(1.2, videoRect.width / 110))
+    }
+
+    /// Computed joint size proportional to video display width (capped at default).
+    private var scaledJointSize: CGFloat {
+        min(jointSize, max(2.5, videoRect.width / 55))
+    }
+
     var body: some View {
         ZStack {
             Path { path in
@@ -540,14 +560,14 @@ struct SkeletonOverlayView: View {
                 drawBoneLink(from: .neck, to: .leftShoulder, in: &path)
                 drawBoneLink(from: .neck, to: .rightShoulder, in: &path)
             }
-            .stroke(Color(red: 1.0, green: 0.08, blue: 0.58), lineWidth: lineWidth)
-            .shadow(color: Color(red: 1.0, green: 0.08, blue: 0.58), radius: 3)
+            .stroke(Color(red: 1.0, green: 0.08, blue: 0.58), lineWidth: scaledLineWidth)
+            .shadow(color: Color(red: 1.0, green: 0.08, blue: 0.58), radius: scaledLineWidth * 0.6)
 
             ForEach(Array(jointPoints.keys), id: \.self) { joint in
                 if let pt = jointPoints[joint] {
                     Circle()
                         .fill(Color.white)
-                        .frame(width: jointSize, height: jointSize)
+                        .frame(width: scaledJointSize, height: scaledJointSize)
                         .position(mappedPoint(pt))
                 }
             }

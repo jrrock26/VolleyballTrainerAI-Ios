@@ -49,6 +49,11 @@ struct ReplaySummaryView: View {
                         let currentHit = sessionHits[selectedHitIndex]
 
                         ZStack {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.black)
+                                .frame(height: videoHeight)
+                                .clipped()
+
                             if !currentHit.videoLocalURLString.isEmpty {
                                 let videoURL = URL(fileURLWithPath: currentHit.videoLocalURLString)
 
@@ -67,15 +72,15 @@ struct ReplaySummaryView: View {
                                 .cornerRadius(12)
                                 .clipped()
 
-                                // Skeleton overlay - draws at tracker.videoRect coordinates
-                                // which match the displayed video area. Frame matches the video.
                                 SkeletonOverlayView(
                                     jointPoints: tracker.jointPoints,
                                     videoRect: tracker.videoRect,
-                                    lineWidth: 5,
-                                    jointSize: 10
+                                    lineWidth: 1.5,
+                                    jointSize: 3
                                 )
                                 .frame(height: videoHeight)
+                                .cornerRadius(12)
+                                .clipped()
                                 .allowsHitTesting(false)
 
                                 if let ballRect = tracker.ballBoundingBoxRect {
@@ -93,17 +98,11 @@ struct ReplaySummaryView: View {
                                         .allowsHitTesting(false)
                                 }
                             } else {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.black)
-                                    .frame(height: videoHeight)
-                                    .overlay(
-                                        Text("No clip file found for this hit")
-                                            .foregroundColor(.gray)
-                                    )
+                                Text("No clip file found for this hit")
+                                    .foregroundColor(.gray)
                             }
                         }
                         .frame(height: videoHeight)
-                        .clipped()
                         .padding(.horizontal, 12)
 
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -210,9 +209,43 @@ struct ReplaySummaryView: View {
 
                     Spacer(minLength: 4)
 
-                    Button("Save and Sync Session") {
+                    Button(action: {
+                        dismiss()
+                        // Navigate to saved analytics vault after dismissing replay
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            NotificationCenter.default.post(
+                                name: NSNotification.Name("NavigateToScreen"),
+                                object: "SavedAnalytics"
+                            )
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "chart.bar.fill")
+                            Text("Saved Analytics Vault")
+                        }
+                        .fontWeight(.semibold)
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(Color.yellow)
+                        .cornerRadius(10)
+                    }
+                    .padding(.horizontal, 12)
+
+                    Button(action: {
                         player.pause()
                         dismiss()
+                    }) {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text("Save and Sync Session")
+                        }
+                        .fontWeight(.semibold)
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(Color.green)
+                        .cornerRadius(10)
                     }
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(.black)

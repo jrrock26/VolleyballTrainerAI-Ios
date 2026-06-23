@@ -47,7 +47,10 @@ class PoseTracker: NSObject, ObservableObject {
     // Ball Physics Trackers
     private var lastBallPosition: CGPoint = .zero
     private var initialBallContactTime: Date? = nil
+    private var lastBallTime: Date? = nil
     private var ballTrajectoryPoints: [CGPoint] = []
+    private var recentBallSpeedSamples: [Double] = []
+    private let ballSpeedSampleLimit: Int = 6
 
     // Calculations for Final Payload Metrics Output
     var computedBallSpeedMPH: Double = 0.0
@@ -79,10 +82,12 @@ class PoseTracker: NSObject, ObservableObject {
             self.jointMissingFrames.removeAll()
             self.ballBoundingBoxRect = nil
             self.ballTrajectoryPoints.removeAll()
+            self.recentBallSpeedSamples.removeAll()
             self.computedBallSpeedMPH = 0.0
             self.computedLaunchAngleDegrees = 0.0
             self.computedFlightDistanceFeet = 0.0
             self.initialBallContactTime = nil
+            self.lastBallTime = nil
         }
     }
 
@@ -250,11 +255,13 @@ extension PoseTracker {
                         self.highestJumpPixels = jumpDelta
                         let inchesPerNorm: Double
                         if let scale = self.bodyScaleNorm, scale > 0.01 {
-                            inchesPerNorm = self.assumedTorsoInches / scale
+                            inchesPerNorm = max(40, min(140, self.assumedTorsoInches / scale))
                         } else {
-                            inchesPerNorm = 110.0
+                            inchesPerNorm = 90
                         }
-                        self.jumpHeight = jumpDelta * inchesPerNorm
+                        var rawJump = jumpDelta * inchesPerNorm
+                        rawJump = max(0, min(rawJump, 50))
+                        self.jumpHeight = rawJump
                     }
                 }
             } else if type != "Spike" {
@@ -423,9 +430,22 @@ extension PoseTracker {
                             pow(currentBallPosition.x - self.lastBallPosition.x, 2) +
                             pow(currentBallPosition.y - self.lastBallPosition.y, 2)
                         )
-                        let velocityMPH = (frameTravelDistance / 0.033) * 22.5
-                        if velocityMPH > self.computedBallSpeedMPH && velocityMPH < 75.0 {
-                            self.computedBallSpeedMPH = velocityMPH
+
+                        let now = Date()
+                        let dt = self.lastBallTime.map { now.timeIntervalSince($0) } ?? 0.033
+                        let clampedDt = max(0.005, min(dt, 0.1))
+
+                        let velocityNorm = frameTravelDistance / clampedDt
+                        let velocityMPH = velocityNorm * 22.5
+
+                        let plausible = velocityMPH >= 5 && velocityMPH <= 110
+                        if plausible {
+                            self.recentBallSpeedSamples.append(velocityMPH)
+                            if self.recentBallSpeedSamples.count > self.ballSpeedSampleLimit {
+                                self.recentBallSpeedSamples.removeFirst()
+                            }
+                            let smoothed = self.recentBallSpeedSamples.reduce(0, +) / Double(self.recentBallSpeedSamples.count)
+                            self.computedBallSpeedMPH = smoothed
                         }
 
                         let xDelta = currentBallPosition.x - self.lastBallPosition.x
@@ -434,13 +454,16 @@ extension PoseTracker {
                             self.computedLaunchAngleDegrees = atan2(yDelta, xDelta) * 180.0 / .pi
                         }
 
-                        let fps = self.computedBallSpeedMPH * 1.46667
-                        let rad = self.computedLaunchAngleDegrees * .pi / 180.0
-                        self.computedFlightDistanceFeet = abs((pow(fps, 2) * sin(2 * rad)) / 32.2)
+                        if self.computedBallSpeedMPH > 0 {
+                            let fps = self.computedBallSpeedMPH * 1.46667
+                            let rad = self.computedLaunchAngleDegrees * .pi / 180.0
+                            self.computedFlightDistanceFeet = abs((pow(fps, 2) * sin(2 * rad)) / 32.2)
+                        }
                     }
                 }
 
                 self.lastBallPosition = currentBallPosition
+                self.lastBallTime = Date()
             }
         } else {
             DispatchQueue.main.async {

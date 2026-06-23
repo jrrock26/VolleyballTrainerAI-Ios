@@ -32,6 +32,13 @@ struct HomeScreen: View {
                                 navigate(to: "PerformanceHub")
                             }
                         }
+
+                        // ROW 3 — Saved Analytics Vault
+                        HStack(spacing: 6) {
+                            GlowButton(imageName: "savedpractices") {
+                                navigate(to: "SavedAnalytics")
+                            }
+                        }
                     }
                     .padding(.horizontal, 12)
 
