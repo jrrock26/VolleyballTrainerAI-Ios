@@ -72,13 +72,9 @@ struct ReplaySummaryView: View {
 
                                 SkeletonOverlayView(
                                     jointPoints: tracker.jointPoints,
-                                    videoRect: tracker.videoRect,
-                                    lineWidth: 2,
-                                    jointSize: 5
+                                    videoRect: tracker.videoRect
                                 )
-                                .frame(width: tracker.videoRect.width, height: tracker.videoRect.height)
-                                .position(x: tracker.videoRect.midX, y: tracker.videoRect.midY)
-                                .clipped()
+                                .frame(height: videoHeight)
                                 .allowsHitTesting(false)
 
                                 if let ballRect = tracker.ballBoundingBoxRect {

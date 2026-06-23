@@ -379,13 +379,13 @@ struct CameraPreviewView: UIViewRepresentable {
             var size = containerSize
 
             if videoAspect > viewAspect {
-                let scaledWidth = containerSize.height * videoAspect
-                origin.x = (containerSize.width - scaledWidth) / 2
-                size.width = scaledWidth
-            } else {
                 let scaledHeight = containerSize.width / videoAspect
                 origin.y = (containerSize.height - scaledHeight) / 2
                 size.height = scaledHeight
+            } else {
+                let scaledWidth = containerSize.height * videoAspect
+                origin.x = (containerSize.width - scaledWidth) / 2
+                size.width = scaledWidth
             }
 
             return CGRect(origin: origin, size: size)
@@ -556,6 +556,9 @@ struct SkeletonOverlayView: View {
 
                 drawBoneLink(from: .rightHip, to: .rightKnee, in: &path)
                 drawBoneLink(from: .rightKnee, to: .rightAnkle, in: &path)
+
+                drawBoneLink(from: .leftHip, to: .leftKnee, in: &path)
+                drawBoneLink(from: .leftKnee, to: .leftAnkle, in: &path)
 
                 drawBoneLink(from: .neck, to: .leftShoulder, in: &path)
                 drawBoneLink(from: .neck, to: .rightShoulder, in: &path)
