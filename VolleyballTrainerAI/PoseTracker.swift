@@ -28,8 +28,6 @@ class PoseTracker: NSObject, ObservableObject {
     private var baselineFrameCount = 0
     private var isBaselineLocked = false
     private let baselineFramesNeeded = 25
-    // Player's shoulder-to-hip span (normalized) captured at baseline, used to
-    // scale jump height by body size in frame instead of a fixed multiplier.
     private var bodyScaleNorm: Double? = nil
     private let assumedTorsoInches: Double = 22.0
 
@@ -40,23 +38,22 @@ class PoseTracker: NSObject, ObservableObject {
 
     private var lastFrameTime = Date()
     private var isHitCaptured = false
-    // Swing state tracked per arm (key: isRightArm) so either arm can register a hit
     private var lastWristYBySide: [Bool: CGFloat] = [:]
     private var ascendingBySide: [Bool: Bool] = [:]
 
     // Ball Physics Trackers
-    private var lastBallPosition: CGPoint = .zero
+    private var lastBallPositionPixels: CGPoint = .zero
+    private var lastBallPositionNorm: CGPoint = .zero
     private var initialBallContactTime: Date? = nil
     private var lastBallTime: Date? = nil
     private var ballTrajectoryPoints: [CGPoint] = []
     private var recentBallSpeedSamples: [Double] = []
     private let ballSpeedSampleLimit: Int = 6
+    private let assumedBallDiameterPixels: Double = 28.0
 
-    // Calculations for Final Payload Metrics Output
     var computedBallSpeedMPH: Double = 0.0
     var computedLaunchAngleDegrees: Double = 0.0
     var computedFlightDistanceFeet: Double = 0.0
-
     var onSingleHitExtracted: ((Double, Double, Double, Double, Double) -> Void)?
 
     private let overlayJoints: [VNHumanBodyPoseObservation.JointName] = [
@@ -88,6 +85,8 @@ class PoseTracker: NSObject, ObservableObject {
             self.computedFlightDistanceFeet = 0.0
             self.initialBallContactTime = nil
             self.lastBallTime = nil
+            self.lastBallPositionPixels = .zero
+            self.lastBallPositionNorm = .zero
         }
     }
 
@@ -111,7 +110,6 @@ class PoseTracker: NSObject, ObservableObject {
             }
         }
 
-        // Tell Vision the frame is upright so skeleton and hit detection match
         let orientation = cgOrientationFrom(currentVideoOrientation, cameraPosition: cameraPosition)
 
         try? sequenceHandler.perform(
@@ -144,11 +142,7 @@ class PoseTracker: NSObject, ObservableObject {
         return (maxX - minX) * (maxY - minY)
     }
 
-    private func averageHipY(
-        leftHip: VNRecognizedPoint,
-        rightHip: VNRecognizedPoint,
-        threshold: Float
-    ) -> Double? {
+    private func averageHipY(leftHip: VNRecognizedPoint, rightHip: VNRecognizedPoint, threshold: Float) -> Double? {
         var sum: Double = 0
         var count = 0
 
@@ -165,13 +159,9 @@ class PoseTracker: NSObject, ObservableObject {
         return sum / Double(count)
     }
 
-    func cgOrientationFrom(
-        _ videoOrientation: AVCaptureVideoOrientation,
-        cameraPosition: AVCaptureDevice.Position
-    ) -> CGImagePropertyOrientation {
+    func cgOrientationFrom(_ videoOrientation: AVCaptureVideoOrientation, cameraPosition: AVCaptureDevice.Position) -> CGImagePropertyOrientation {
         switch videoOrientation {
         case .portrait:
-            // Capture connection already delivers upright portrait frames.
             return cameraPosition == .front ? .upMirrored : .up
         case .portraitUpsideDown:
             return cameraPosition == .front ? .rightMirrored : .left
@@ -183,7 +173,6 @@ class PoseTracker: NSObject, ObservableObject {
             return cameraPosition == .front ? .leftMirrored : .right
         }
     }
-
 }
 
 extension PoseTracker {
@@ -199,7 +188,6 @@ extension PoseTracker {
         let rightWrist = try? observation.recognizedPoint(.rightWrist)
         let leftWrist = try? observation.recognizedPoint(.leftWrist)
 
-        // Active arm = the one closest to the camera (clearer / higher-confidence wrist).
         let useRightArm: Bool
         if let r = rightWrist, let l = leftWrist {
             useRightArm = r.confidence >= l.confidence
@@ -207,12 +195,8 @@ extension PoseTracker {
             useRightArm = rightWrist != nil
         }
 
-        let shoulder = useRightArm
-            ? (try? observation.recognizedPoint(.rightShoulder))
-            : (try? observation.recognizedPoint(.leftShoulder))
-        let elbow = useRightArm
-            ? (try? observation.recognizedPoint(.rightElbow))
-            : (try? observation.recognizedPoint(.leftElbow))
+        let shoulder = useRightArm ? (try? observation.recognizedPoint(.rightShoulder)) : (try? observation.recognizedPoint(.leftShoulder))
+        let elbow = useRightArm ? (try? observation.recognizedPoint(.rightElbow)) : (try? observation.recognizedPoint(.leftElbow))
         let wrist = useRightArm ? rightWrist : leftWrist
 
         let currentHipY = averageHipY(leftHip: leftHip, rightHip: rightHip, threshold: hipThreshold)
@@ -268,7 +252,6 @@ extension PoseTracker {
                 self.jumpHeight = 0.0
             }
 
-            // Arm extension angle from the active (closest) arm.
             if let shoulder, let elbow, let wrist,
                shoulder.confidence > confidenceThreshold,
                wrist.confidence > confidenceThreshold,
@@ -282,13 +265,9 @@ extension PoseTracker {
 
             if self.isHitCaptured { return }
 
-            // Detect the hit swing on EITHER arm so right- and left-handed swings
-            // both register; each side is tracked independently.
             for isRight in [true, false] {
                 guard let armWrist = isRight ? rightWrist : leftWrist,
-                      let armShoulder = isRight
-                        ? (try? observation.recognizedPoint(.rightShoulder))
-                        : (try? observation.recognizedPoint(.leftShoulder)),
+                      let armShoulder = isRight ? (try? observation.recognizedPoint(.rightShoulder)) : (try? observation.recognizedPoint(.leftShoulder)),
                       armWrist.confidence > confidenceThreshold,
                       armShoulder.confidence > confidenceThreshold else { continue }
 
@@ -298,8 +277,6 @@ extension PoseTracker {
                     let yDelta = currentWristY - lastY
                     let instantaneousVelocity = abs(yDelta) / timeDelta
 
-                    // Arm the swing as soon as the wrist is above the shoulder so
-                    // the very first downward snap registers a hit.
                     if currentWristY > armShoulder.location.y {
                         self.ascendingBySide[isRight] = true
                     }
@@ -391,8 +368,6 @@ extension PoseTracker {
                 let maxC = max(r, max(g, b))
                 let minC = min(r, min(g, b))
                 let range = maxC - minC
-                // Require a vivid, reasonably bright pixel so we mostly grab the ball
-                // while ignoring dull greenery, sky gradients, skin, and grays.
                 if maxC > 120 && range > 55 {
                     matchXSum += x
                     matchYSum += y
@@ -406,25 +381,23 @@ extension PoseTracker {
         }
 
         if matchCount > 12 {
+            let centerXPixels = CGFloat(matchXSum) / CGFloat(matchCount)
+            let centerYPixels = CGFloat(matchYSum) / CGFloat(matchCount)
+            let currentBallPositionPixels = CGPoint(x: centerXPixels, y: centerYPixels)
+            let currentBallPositionNorm = CGPoint(
+                x: centerXPixels / CGFloat(width),
+                y: centerYPixels / CGFloat(height)
+            )
+
             let boxW = CGFloat(maxX - minX) / CGFloat(width)
             let boxH = CGFloat(maxY - minY) / CGFloat(height)
             let aspect = boxW / max(boxH, 0.001)
             let boxArea = CGFloat(maxX - minX) * CGFloat(maxY - minY)
             let density = CGFloat(matchCount) / max(boxArea, 1.0)
 
-            let targetCenterX = CGFloat(matchXSum) / CGFloat(matchCount) / CGFloat(width)
-            let targetCenterY = CGFloat(matchYSum) / CGFloat(matchCount) / CGFloat(height)
+            let inPlayerZone = currentBallPositionNorm.y > 0.28 && currentBallPositionNorm.y < 0.92
 
-            // Reject blobs that are too elongated, too large, too sparse,
-            // or sitting in the sky/background rather than the player area.
-            let isRoundEnough = aspect > 0.55 && aspect < 1.8
-            let compact = density > 0.22
-            let reasonableSize = boxW > 0.010 && boxW < 0.14 && boxH > 0.010 && boxH < 0.14
-            let inPlayerZone = targetCenterY > 0.28 && targetCenterY < 0.92
-
-            if isRoundEnough && compact && reasonableSize && inPlayerZone {
-                let currentBallPosition = CGPoint(x: targetCenterX, y: targetCenterY)
-
+            if aspect > 0.55 && aspect < 1.8 && density > 0.22 && boxW > 0.010 && boxW < 0.14 && boxH > 0.010 && boxH < 0.14 && inPlayerZone {
                 DispatchQueue.main.async {
                     let drawW = CGFloat(maxX - minX) / CGFloat(width)
                     let drawH = CGFloat(maxY - minY) / CGFloat(height)
@@ -432,35 +405,29 @@ extension PoseTracker {
                     let paddedH = max(0.04, drawH * 1.15)
 
                     self.ballBoundingBoxRect = CGRect(
-                        x: targetCenterX - (paddedW / 2),
-                        y: 1.0 - targetCenterY - (paddedH / 2),
+                        x: currentBallPositionNorm.x - (paddedW / 2),
+                        y: 1.0 - currentBallPositionNorm.y - (paddedH / 2),
                         width: paddedW,
                         height: paddedH
                     )
 
                     if let contactTime = self.initialBallContactTime,
-                       !self.lastBallPosition.equalTo(.zero) {
+                       !self.lastBallPositionPixels.equalTo(.zero) {
                         let timeElapsed = Date().timeIntervalSince(contactTime)
                         if timeElapsed > 0 && timeElapsed < 1.0 {
-                            let frameTravelDistance = sqrt(
-                                pow(currentBallPosition.x - self.lastBallPosition.x, 2) +
-                                pow(currentBallPosition.y - self.lastBallPosition.y, 2)
-                            )
+                            let dx = currentBallPositionPixels.x - self.lastBallPositionPixels.x
+                            let dy = currentBallPositionPixels.y - self.lastBallPositionPixels.y
+                            let pixelDistance = sqrt(dx * dx + dy * dy)
+
+                            let pixelsPerFoot = max(self.assumedBallDiameterPixels / 0.23, 18.0)
+                            let feetTraveled = pixelDistance / pixelsPerFoot
 
                             let now = Date()
                             let dt = self.lastBallTime.map { now.timeIntervalSince($0) } ?? 0.033
                             let clampedDt = max(0.005, min(dt, 0.15))
 
-                            let velocityNorm = frameTravelDistance / clampedDt
-                            let inchesPerNorm: Double
-                            if let scale = self.bodyScaleNorm, scale > 0.01 {
-                                inchesPerNorm = max(35, min(155, self.assumedTorsoInches / scale))
-                            } else {
-                                inchesPerNorm = 95
-                            }
-                            let feetPerNorm = inchesPerNorm / 12.0
-                            let mphPerNormPerSec = feetPerNorm * 3600.0 / 5280.0
-                            var velocityMPH = velocityNorm * mphPerNormPerSec
+                            let feetPerSecond = feetTraveled / clampedDt
+                            let velocityMPH = min(max(feetPerSecond * 3600.0 / 5280.0, 0), 160)
 
                             if velocityMPH >= 1 && velocityMPH <= 160 {
                                 self.recentBallSpeedSamples.append(velocityMPH)
@@ -475,27 +442,22 @@ extension PoseTracker {
                                 self.computedBallSpeedMPH = velocityMPH
                             }
 
-                            let xDelta = currentBallPosition.x - self.lastBallPosition.x
-                            let yDelta = currentBallPosition.y - self.lastBallPosition.y
-                            if abs(xDelta) > 0.0005 {
-                                self.computedLaunchAngleDegrees = atan2(yDelta, xDelta) * 180.0 / .pi
+                            if abs(dx) > 0.0005 {
+                                self.computedLaunchAngleDegrees = atan2(dy, dx) * 180.0 / .pi
                             }
 
                             if self.computedBallSpeedMPH > 0 {
                                 let rad = self.computedLaunchAngleDegrees * .pi / 180.0
-                                // Use a release-height-aware heuristic: assume contact height
-                                // is roughly torso + arm extension above ground in the frame.
-                                // Since we don't have floor/world coords here, keep the
-                                // projected distance but clamp it into a realistic volleyball range.
                                 var distance = abs((pow(self.computedBallSpeedMPH * 1.46667, 2) * sin(2 * rad)) / 32.2)
-                                if distance < 6.0 { distance = 6.0 + abs(yDelta) * 40.0 }
+                                if distance < 4.0 { distance = 4.0 + abs(dy) / pixelsPerFoot * 6.0 }
                                 if distance > 90.0 { distance = 90.0 }
                                 self.computedFlightDistanceFeet = distance
                             }
                         }
                     }
 
-                    self.lastBallPosition = currentBallPosition
+                    self.lastBallPositionPixels = currentBallPositionPixels
+                    self.lastBallPositionNorm = currentBallPositionNorm
                     self.lastBallTime = Date()
                 }
             } else {
@@ -519,4 +481,3 @@ extension PoseTracker {
         return degree
     }
 }
-
