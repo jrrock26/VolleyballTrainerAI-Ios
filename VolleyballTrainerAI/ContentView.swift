@@ -2,18 +2,16 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    // Connects to your live SwiftData database to pull real historical data entries
     @Query(sort: \VolleyballHit.timestamp, order: .reverse) private var storedHits: [VolleyballHit]
     @State private var showCameraSheet = false
-    
+    @State private var showAnalytics = false
+
     var body: some View {
         ZStack {
-            // Sleek dark UI background
             Color(red: 0.07, green: 0.07, blue: 0.07)
                 .ignoresSafeArea()
-            
+
             VStack(spacing: 24) {
-                // Main Header Title Blocks
                 VStack(spacing: 4) {
                     Text("VolleyballTrainerAI")
                         .font(.system(size: 28, weight: .bold, design: .rounded))
@@ -23,25 +21,60 @@ struct ContentView: View {
                         .foregroundColor(.yellow)
                 }
                 .padding(.top, 20)
-                
-                // Analytics High Score Cards based on actual data
+
                 HStack(spacing: 16) {
-                    MetricCard(title: "Record Jump Height", value: String(format: "%.1f in", storedHits.map { $0.jumpHeightInches }.max() ?? 0.0), icon: "arrow.up.circle.fill", color: .green)
-                    MetricCard(title: "Top Spike Angle", value: String(format: "%.0f°", storedHits.map { $0.armAngleDegrees }.max() ?? 0.0), icon: "figure.volleyball", color: .blue)
+                    Button(action: { showAnalytics = true }) {
+                        VStack(spacing: 8) {
+                            Image(systemName: "chart.bar.fill")
+                                .font(.system(size: 24))
+                                .foregroundColor(.cyan)
+                            Text("Analytics")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.white)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
+                        .background(Color(red: 0.12, green: 0.12, blue: 0.14))
+                        .cornerRadius(16)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.cyan.opacity(0.4), lineWidth: 1)
+                        )
+                    }
+
+                    Button(action: { showCameraSheet = true }) {
+                        VStack(spacing: 8) {
+                            Image(systemName: "camera.fill")
+                                .font(.system(size: 24))
+                                .foregroundColor(.yellow)
+                            Text("Live Tracker")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.white)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
+                        .background(Color(red: 0.12, green: 0.12, blue: 0.14))
+                        .cornerRadius(16)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.yellow.opacity(0.4), lineWidth: 1)
+                        )
+                    }
                 }
                 .padding(.horizontal)
-                
-                // Scrolling History Log List
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Verified History Log (\(storedHits.count))")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal)
-                    
+
+                VStack(spacing: 12) {
+                    HStack {
+                        Text("Recent Activity (\(storedHits.count))")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal)
+                    }
+
                     ScrollView {
                         VStack(spacing: 10) {
                             if storedHits.isEmpty {
-                                Text("No analytics captured yet. Click below to begin.")
+                                Text("No analytics captured yet. Tap Live Tracker to begin.")
                                     .font(.caption)
                                     .foregroundColor(.gray)
                                     .padding(.top, 40)
@@ -59,34 +92,18 @@ struct ContentView: View {
                         .padding(.horizontal)
                     }
                 }
-                
+
                 Spacer()
-                
-                // Launch Live AI view trigger
-                Button(action: {
-                    showCameraSheet = true
-                }) {
-                    HStack {
-                        Image(systemName: "camera.fill")
-                        Text("Launch Live Vision Tracker")
-                            .fontWeight(.semibold)
-                    }
-                    .foregroundColor(.black)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 54)
-                    .background(Color.yellow)
-                    .cornerRadius(12)
-                    .padding(.horizontal)
-                    .padding(.bottom, 16)
-                }
             }
         }
-        // This structural modifier forces Apple to trigger your LiveAIView view port modal
         .fullScreenCover(isPresented: $showCameraSheet) {
             LiveAIView()
         }
+        .sheet(isPresented: $showAnalytics) {
+            SessionSummaryView()
+        }
     }
-    
+
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d, h:mm a"
@@ -94,42 +111,12 @@ struct ContentView: View {
     }
 }
 
-// SwiftUI UI Helper Module: Metric Cards
-struct MetricCard: View {
-    let title: String
-    let value: String
-    let icon: String
-    let color: Color
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: icon)
-                    .foregroundColor(color)
-                    .font(.system(size: 20))
-                Spacer()
-            }
-            Text(value)
-                .font(.system(size: 24, weight: .bold, design: .monospaced))
-                .foregroundColor(.white)
-            Text(title)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(.gray)
-        }
-        .padding()
-        .frame(maxWidth: .infinity)
-        .background(Color(red: 0.12, green: 0.12, blue: 0.14))
-        .cornerRadius(14)
-    }
-}
-
-// SwiftUI UI Helper Module: Dynamic List Row Rendering
 struct HistoryRow: View {
     let date: String
     let metric: String
     let status: String
     let isSuccess: Bool
-    
+
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
@@ -154,4 +141,3 @@ struct HistoryRow: View {
         .cornerRadius(10)
     }
 }
-

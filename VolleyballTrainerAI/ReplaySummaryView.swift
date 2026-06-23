@@ -22,6 +22,7 @@ struct ReplaySummaryView: View {
     var body: some View {
         GeometryReader { geo in
             let videoHeight = max(280, min(geo.size.height * 0.48, geo.size.width * 1.45))
+            let containerWidth = geo.size.width - 24
 
             ZStack {
                 Color(red: 0.08, green: 0.08, blue: 0.1)
@@ -51,7 +52,7 @@ struct ReplaySummaryView: View {
                         ZStack {
                             RoundedRectangle(cornerRadius: 12)
                                 .fill(Color.black)
-                                .frame(height: videoHeight)
+                                .frame(width: containerWidth, height: videoHeight)
                                 .clipped()
 
                             if !currentHit.videoLocalURLString.isEmpty {
@@ -63,23 +64,20 @@ struct ReplaySummaryView: View {
                                     videoURL: videoURL,
                                     hitType: currentHit.hitType,
                                     slowMotionEnabled: slowMotionEnabled,
-                                    containerSize: CGSize(
-                                        width: geo.size.width - 24,
-                                        height: videoHeight
-                                    )
+                                    containerSize: CGSize(width: containerWidth, height: videoHeight)
                                 )
-                                .frame(height: videoHeight)
+                                .frame(width: containerWidth, height: videoHeight)
                                 .cornerRadius(12)
                                 .clipped()
 
                                 SkeletonOverlayView(
                                     jointPoints: tracker.jointPoints,
-                                    videoRect: CGRect(origin: .zero, size: tracker.videoRect.size),
+                                    videoRect: tracker.videoRect,
                                     lineWidth: 2,
                                     jointSize: 5
                                 )
-                                .frame(height: videoHeight)
-                                .cornerRadius(12)
+                                .frame(width: tracker.videoRect.width, height: tracker.videoRect.height)
+                                .position(x: tracker.videoRect.midX, y: tracker.videoRect.midY)
                                 .clipped()
                                 .allowsHitTesting(false)
 
@@ -104,7 +102,7 @@ struct ReplaySummaryView: View {
                                     .foregroundColor(.gray)
                             }
                         }
-                        .frame(height: videoHeight)
+                        .frame(width: containerWidth, height: videoHeight)
                         .padding(.horizontal, 12)
 
                         ScrollView(.horizontal, showsIndicators: false) {
