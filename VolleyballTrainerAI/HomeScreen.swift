@@ -11,15 +11,16 @@ struct HomeScreen: View {
 
                     Image("background")
                         .resizable()
-                        .scaledToFit()
-                        .ignoresSafeArea()
+                        .aspectRatio(contentMode: .fill)
                         .frame(width: geo.size.width, height: geo.size.height)
+                        .clipped()
+                        .ignoresSafeArea()
 
                     VStack {
                         Spacer()
                             .frame(height: geo.size.height * 0.40)
 
-                        VStack(spacing: 4) {
+                        VStack(spacing: 2) {
                             // ROW 1 — Play Hub + Practice Hub (placeholders, no action)
                             HStack(spacing: 8) {
                                 GlowButton(imageName: "playhub") {
