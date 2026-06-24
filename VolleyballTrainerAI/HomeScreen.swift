@@ -7,32 +7,28 @@ struct HomeScreen: View {
         NavigationStack {
             GeometryReader { geo in
                 ZStack {
-                    Color.black
-                        .ignoresSafeArea()
+                    Color.black.ignoresSafeArea()
 
                     Image("background")
                         .resizable()
                         .scaledToFill()
-                        .padding(.top)
-                        .padding(.bottom, 12)
-                        .padding(.horizontal, 4)
+                        .ignoresSafeArea()
 
                     VStack(spacing: 0) {
+
+                        // TOP ROW LOCKED
                         Spacer()
                             .frame(height: geo.size.height * 0.40)
 
-                        // ROW 1 — Play Hub + Practice Hub (placeholders, no action)
                         HStack(spacing: 8) {
-                            GlowButton(imageName: "playhub") {
-                                // No action - placeholder
-                            }
-                            GlowButton(imageName: "practicehub") {
-                                // No action - placeholder
-                            }
+                            GlowButton(imageName: "playhub") { }
+                            GlowButton(imageName: "practicehub") { }
                         }
-                        .padding(.bottom, 8)
 
-                        // ROW 2 — Training Hub + Performance Hub (working navigation)
+                        // THIS WILL NOW WORK
+                        Spacer()
+                            .frame(height: geo.size.height * 0.02)
+
                         HStack(spacing: 8) {
                             GlowButton(imageName: "traininghub") {
                                 navigateTo = "TrainingHub"
@@ -44,8 +40,13 @@ struct HomeScreen: View {
 
                         Spacer()
                     }
+                    // ⭐ THIS IS THE FIX ⭐
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    // ---------------------
                     .padding(.horizontal, 12)
                 }
+
+                // Navigation
                 .navigationDestination(isPresented: Binding(
                     get: { navigateTo == "TrainingHub" },
                     set: { if !$0 { navigateTo = nil } }
@@ -62,3 +63,4 @@ struct HomeScreen: View {
         }
     }
 }
+

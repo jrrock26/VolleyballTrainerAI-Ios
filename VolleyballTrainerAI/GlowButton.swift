@@ -11,7 +11,7 @@ struct GlowButton: View {
             ZStack {
                 Image(imageName)
                     .resizable()
-                    .aspectRatio(754/511, contentMode: .fit)
+                    .aspectRatio(1.0, contentMode: .fit)
                     .scaleEffect(isPressed ? 0.95 : 1.0)
                     .animation(.easeInOut(duration: 0.12), value: isPressed)
 
