@@ -5,7 +5,7 @@ import Charts
 struct SessionSummaryView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \VolleyballHit.timestamp, order: .reverse) private var allHits: [VolleyballHit]
-    @State private var selectedHitReplay: [VolleyballHit]? = nil
+    @State private var selectedHitReplay: IdentifiableHitSession? = nil
     @State private var showDeleteAllAlert = false
 
     private var groupedSessions: [(date: Date, hits: [VolleyballHit])] {
@@ -96,10 +96,7 @@ struct SessionSummaryView: View {
                 }
             }
         }
-        .fullScreenCover(item: Binding(
-            get: { selectedHitReplay != nil ? IdentifiableHitSession(hits: selectedHitReplay!) : nil },
-            set: { selectedHitReplay = $0?.hits }
-        )) { sessionWrapper in
+        .fullScreenCover(item: $selectedHitReplay) { sessionWrapper in
             ReplaySummaryView(sessionHits: sessionWrapper.hits)
         }
         .alert("Delete all saved hits?", isPresented: $showDeleteAllAlert) {
@@ -113,7 +110,7 @@ struct SessionSummaryView: View {
     }
 
     private func replaySingle(_ hit: VolleyballHit) {
-        selectedHitReplay = [hit]
+        selectedHitReplay = IdentifiableHitSession(id: hit.id, hits: [hit])
     }
 
     private func delete(_ hit: VolleyballHit) {
@@ -235,7 +232,7 @@ extension SessionSummaryView {
 }
 
 struct IdentifiableHitSession: Identifiable {
-    let id = UUID()
+    let id: UUID
     let hits: [VolleyballHit]
 }
 
