@@ -15,6 +15,9 @@ struct PerformanceHubView: View {
                     Image("background")
                         .resizable()
                         .scaledToFill()
+                        .padding(.top)
+                        .padding(.bottom, 12)
+                        .padding(.horizontal, 4)
                         .ignoresSafeArea()
 
                     VStack(spacing: 0) {
@@ -49,30 +52,32 @@ struct PerformanceHubView: View {
                     .frame(maxHeight: .infinity, alignment: .top)
                     .padding(.horizontal, 12)
                 }
+
+                // Navigation
+                .navigationDestination(isPresented: Binding(
+                    get: { navigateTo == "SavedHits" },
+                    set: { if !$0 { navigateTo = nil } }
+                )) {
+                    SavedHitsListView()
+                }
+                .navigationDestination(isPresented: Binding(
+                    get: { navigateTo == "Charts" },
+                    set: { if !$0 { navigateTo = nil } }
+                )) {
+                    ChartsView()
+                }
+                .navigationDestination(isPresented: Binding(
+                    get: { navigateTo == "Lifetime" },
+                    set: { if !$0 { navigateTo = nil } }
+                )) {
+                    LifetimeStatsView()
+                }
             }
         }
         .navigationTitle("Performance Hub")
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $showLiveTracker) {
             LiveAIView()
-        }
-        .navigationDestination(isPresented: Binding(
-            get: { navigateTo == "SavedHits" },
-            set: { if !$0 { navigateTo = nil } }
-        )) {
-            SavedHitsListView()
-        }
-        .navigationDestination(isPresented: Binding(
-            get: { navigateTo == "Charts" },
-            set: { if !$0 { navigateTo = nil } }
-        )) {
-            ChartsView()
-        }
-        .navigationDestination(isPresented: Binding(
-            get: { navigateTo == "Lifetime" },
-            set: { if !$0 { navigateTo = nil } }
-        )) {
-            LifetimeStatsView()
         }
         .onAppear {
             NotificationCenter.default.addObserver(

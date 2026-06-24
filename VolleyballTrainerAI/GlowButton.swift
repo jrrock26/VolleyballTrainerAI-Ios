@@ -30,7 +30,7 @@ struct GlowButton: View {
                     .animation(.easeOut(duration: 0.25), value: isPressed)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: 160)
+        .frame(maxWidth: .infinity)
         .aspectRatio(1.0, contentMode: .fit)
         .buttonStyle(PlainButtonStyle())
         .simultaneousGesture(
