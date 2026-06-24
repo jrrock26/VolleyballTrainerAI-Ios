@@ -20,6 +20,7 @@ struct LiveAIView: View {
     @State private var showReplaySummary = false
     @State private var selectedEvaluationType = "Spike"
     @State private var countdownTimer: Timer? = nil
+    @State private var capturedHitMetrics: (jump: Double, arm: Double, speed: Double, launch: Double, distance: Double)? = nil
 
     var body: some View {
         GeometryReader { geo in
@@ -132,6 +133,16 @@ struct LiveAIView: View {
                             value: String(format: "%.0f°", tracker.armExtensionAngle),
                             color: .blue
                         )
+                        LiveBadge(
+                            label: "Ball Speed",
+                            value: String(format: "%.1f mph", tracker.computedBallSpeedMPH),
+                            color: .orange
+                        )
+                        LiveBadge(
+                            label: "Distance",
+                            value: String(format: "%.1f ft", tracker.computedFlightDistanceFeet),
+                            color: .purple
+                        )
                     }
                     .padding(.bottom, 20)
                     .opacity(isRecordingHit ? 1.0 : 0.0)
@@ -188,9 +199,10 @@ struct LiveAIView: View {
         }
         .onAppear {
             PortraitOrientation.lock()
-            tracker.onSingleHitExtracted = { _, _, _, _, _ in
+            tracker.onSingleHitExtracted = { jump, arm, speed, launch, distance in
                 AudioServicesPlaySystemSound(1519)
                 DispatchQueue.main.async {
+                    self.capturedHitMetrics = (jump, arm, speed, launch, distance)
                     self.isRecordingHit = false
                 }
             }
@@ -209,6 +221,7 @@ struct LiveAIView: View {
     }
 
     private func triggerPrepCountdownSequence() {
+        capturedHitMetrics = nil
         tracker.resetTrackingTokens()
         countdownRemaining = 5
         isCountingDown = true
@@ -225,14 +238,22 @@ struct LiveAIView: View {
 
     private func persistSingleHit(videoURL: URL) {
         DispatchQueue.main.async {
+            let metrics = self.capturedHitMetrics ?? (
+                jump: self.tracker.jumpHeight,
+                arm: self.tracker.armExtensionAngle,
+                speed: self.tracker.computedBallSpeedMPH,
+                launch: self.tracker.computedLaunchAngleDegrees,
+                distance: self.tracker.computedFlightDistanceFeet
+            )
+
             let hitLog = VolleyballHit(
                 sessionID: self.sessionID,
                 hitType: self.selectedEvaluationType,
-                jumpHeightInches: self.tracker.jumpHeight,
-                armAngleDegrees: self.tracker.armExtensionAngle,
-                ballSpeedMPH: self.tracker.computedBallSpeedMPH,
-                ballAngleDegrees: self.tracker.computedLaunchAngleDegrees,
-                ballDistanceFeet: self.tracker.computedFlightDistanceFeet,
+                jumpHeightInches: metrics.jump,
+                armAngleDegrees: metrics.arm,
+                ballSpeedMPH: metrics.speed,
+                ballAngleDegrees: metrics.launch,
+                ballDistanceFeet: metrics.distance,
                 videoLocalURLString: videoURL.path,
                 profile: self.profile,
                 sessionHits: self.sessionHits
@@ -244,6 +265,7 @@ struct LiveAIView: View {
 
             self.modelContext.insert(hitLog)
             self.sessionHits.append(hitLog)
+            self.capturedHitMetrics = nil
             try? self.modelContext.save()
         }
     }
@@ -305,6 +327,10 @@ struct CameraPreviewView: UIViewRepresentable {
             let input = try? AVCaptureDeviceInput(device: camera) else { return }
 
             let output = AVCaptureVideoDataOutput()
+            output.videoSettings = [
+                kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)
+            ]
+            output.alwaysDiscardsLateVideoFrames = true
             output.setSampleBufferDelegate(
                 self,
                 queue: DispatchQueue(label: "camera_processing_queue", qos: .userInteractive)
