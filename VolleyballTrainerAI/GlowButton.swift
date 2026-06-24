@@ -6,6 +6,11 @@ struct GlowButton: View {
 
     @State private var isPressed = false
 
+    init(imageName: String, action: @escaping () -> Void) {
+        self.imageName = imageName
+        self.action = action
+    }
+
     var body: some View {
         Button(action: action) {
             ZStack {
@@ -25,6 +30,8 @@ struct GlowButton: View {
                     .animation(.easeOut(duration: 0.25), value: isPressed)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: 160)
+        .aspectRatio(1.0, contentMode: .fit)
         .buttonStyle(PlainButtonStyle())
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
