@@ -219,13 +219,38 @@ struct TrainingHubView: View {
                         .ignoresSafeArea()
 
                     ScrollView {
-                        VStack(alignment: .leading, spacing: 18) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            // Back button
+                            HStack {
+                                Button(action: { dismiss() }) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "chevron.left")
+                                        Text("Back")
+                                    }
+                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                    .foregroundColor(.pink)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(Color.black.opacity(0.6))
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .stroke(Color.pink.opacity(0.6), lineWidth: 1)
+                                            )
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                Spacer()
+                            }
+                            .padding(.top, 16)
+
                             header
                             coachCard
                             generatorCard
                             libraryPreview
                         }
-                        .padding()
+                        .padding(.horizontal, 24)
                     }
                 }
                 .navigationBarHidden(true)

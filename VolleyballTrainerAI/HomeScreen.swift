@@ -20,10 +20,10 @@ struct HomeScreen: View {
                             .frame(height: geo.size.height * 0.45)
 
                         HStack(spacing: 8) {
-                            CourtButton(imageName: "playhub", title: "Play Hub") {
+                            CourtPushButton(title: "Play Hub", icon: "play.circle") {
                                 navigateTo = "PlayHub"
                             }
-                            CourtButton(imageName: "practicehub", title: "Practice Hub") {
+                            CourtPushButton(title: "Practice Hub", icon: "figure.run") {
                                 navigateTo = "PracticeHub"
                             }
                         }
@@ -32,10 +32,10 @@ struct HomeScreen: View {
                             .frame(height: geo.size.height * 0.02)
 
                         HStack(spacing: 8) {
-                            CourtButton(imageName: "traininghub", title: "Training Hub") {
+                            CourtPushButton(title: "Training Hub", icon: "dumbbell") {
                                 navigateTo = "TrainingHub"
                             }
-                            CourtButton(imageName: "performancehub", title: "Performance Hub") {
+                            CourtPushButton(title: "Performance Hub", icon: "chart.line.uptrend.xyaxis") {
                                 navigateTo = "PerformanceHub"
                             }
                         }
