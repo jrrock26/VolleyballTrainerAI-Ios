@@ -24,6 +24,11 @@
 		963E771B2FE4730D00590BC2 /* SessionSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 963E771A2FE4730D00590BC2 /* SessionSummaryView.swift */; };
 		9661C1B42FE6C3B0003317E1 /* GlowButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9661C1B32FE6C3B0003317E1 /* GlowButton.swift */; };
 		9661C1B62FE6C3E3003317E1 /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9661C1B52FE6C3E3003317E1 /* HomeScreen.swift */; };
+		96A000012FE8B00000123456 /* TrainingHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A000112FE8B00000123456 /* TrainingHubView.swift */; };
+		96A000022FE8B00000123457 /* PerformanceHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A000122FE8B00000123457 /* PerformanceHubView.swift */; };
+		96A000032FE8B00000123458 /* ChartsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A000132FE8B00000123458 /* ChartsView.swift */; };
+		96A000042FE8B00000123459 /* LifetimeStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A000142FE8B00000123459 /* LifetimeStatsView.swift */; };
+		96A000052FE8B0000012345A /* SavedHitsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A000152FE8B0000012345A /* SavedHitsListView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,6 +69,11 @@
 		963E771A2FE4730D00590BC2 /* SessionSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSummaryView.swift; sourceTree = "<group>"; };
 		9661C1B32FE6C3B0003317E1 /* GlowButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlowButton.swift; sourceTree = "<group>"; };
 		9661C1B52FE6C3E3003317E1 /* HomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreen.swift; sourceTree = "<group>"; };
+		96A000112FE8B00000123456 /* TrainingHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingHubView.swift; sourceTree = "<group>"; };
+		96A000122FE8B00000123457 /* PerformanceHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceHubView.swift; sourceTree = "<group>"; };
+		96A000132FE8B00000123458 /* ChartsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartsView.swift; sourceTree = "<group>"; };
+		96A000142FE8B00000123459 /* LifetimeStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifetimeStatsView.swift; sourceTree = "<group>"; };
+		96A000152FE8B0000012345A /* SavedHitsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedHitsListView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -118,6 +128,11 @@
 				963E77102FE457A100590BC2 /* LiveAIView.swift */,
 				9661C1B52FE6C3E3003317E1 /* HomeScreen.swift */,
 				9661C1B32FE6C3B0003317E1 /* GlowButton.swift */,
+				96A000112FE8B00000123456 /* TrainingHubView.swift */,
+				96A000122FE8B00000123457 /* PerformanceHubView.swift */,
+				96A000132FE8B00000123458 /* ChartsView.swift */,
+				96A000142FE8B00000123459 /* LifetimeStatsView.swift */,
+				96A000152FE8B0000012345A /* SavedHitsListView.swift */,
 				963E77092FE44D0700590BC2 /* CoachEngine.swift */,
 				963E77072FE44CD000590BC2 /* VolleyballHit.swift */,
 				963E76D92FE4477500590BC2 /* VolleyballTrainerAIApp.swift */,
@@ -296,6 +311,11 @@
 				963E770A2FE44D0700590BC2 /* CoachEngine.swift in Sources */,
 				963E76DC2FE4477500590BC2 /* ContentView.swift in Sources */,
 				9661C1B62FE6C3E3003317E1 /* HomeScreen.swift in Sources */,
+				96A000012FE8B00000123456 /* TrainingHubView.swift in Sources */,
+				96A000022FE8B00000123457 /* PerformanceHubView.swift in Sources */,
+				96A000032FE8B00000123458 /* ChartsView.swift in Sources */,
+				96A000042FE8B00000123459 /* LifetimeStatsView.swift in Sources */,
+				96A000052FE8B0000012345A /* SavedHitsListView.swift in Sources */,
 				963E76DA2FE4477500590BC2 /* VolleyballTrainerAIApp.swift in Sources */,
 				963E77082FE44CD000590BC2 /* VolleyballHit.swift in Sources */,
 				963E77062FE44A6100590BC2 /* PoseTracker.swift in Sources */,

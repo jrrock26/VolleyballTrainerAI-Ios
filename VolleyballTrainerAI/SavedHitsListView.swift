@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-struct SessionSummaryView: View {
+struct SavedHitsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \VolleyballHit.timestamp, order: .reverse) private var allHits: [VolleyballHit]
     @State private var selectedHitReplay: IdentifiableHitSession? = nil
@@ -22,11 +22,11 @@ struct SessionSummaryView: View {
 
             VStack(spacing: 16) {
                 VStack(spacing: 4) {
-                    Text("Saved Analytics Vault")
+                    Text("Saved Hits")
                         .font(.title2)
                         .bold()
                         .foregroundColor(.white)
-                    Text("\(allHits.count) Total Extracted Tracking Rows Verified")
+                    Text("\(allHits.count) total hits recorded")
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
@@ -38,7 +38,7 @@ struct SessionSummaryView: View {
                         Image(systemName: "folder.badge.questionmark")
                             .font(.system(size: 44))
                             .foregroundColor(.gray)
-                        Text("No training sessions on record yet.")
+                        Text("No saved hits yet.")
                             .foregroundColor(.gray)
                     }
                     Spacer()
@@ -104,6 +104,8 @@ struct SessionSummaryView: View {
         } message: {
             Text("This will permanently remove all \(allHits.count) saved hits.")
         }
+        .navigationTitle("Saved Hits")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func replaySingle(_ hit: VolleyballHit) {
@@ -134,10 +136,3 @@ struct SessionSummaryView: View {
         return formatter.string(from: date)
     }
 }
-
-
-struct IdentifiableHitSession: Identifiable {
-    let id: UUID
-    let hits: [VolleyballHit]
-}
-

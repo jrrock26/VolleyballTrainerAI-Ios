@@ -15,7 +15,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct VolleyballTrainerAIApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @State private var targetScreen: String? = nil
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -33,24 +32,7 @@ struct VolleyballTrainerAIApp: App {
     var body: some Scene {
         WindowGroup {
             NavigationStack {
-                ContentView()
-                    .navigationDestination(isPresented: Binding(
-                        get: { targetScreen == "SavedAnalytics" },
-                        set: { isPresented in if !isPresented { targetScreen = nil } }
-                    )) {
-                        SessionSummaryView()
-                    }
-                    .onAppear {
-                        NotificationCenter.default.addObserver(
-                            forName: NSNotification.Name("NavigateToScreen"),
-                            object: nil,
-                            queue: .main
-                        ) { notification in
-                            if let screen = notification.object as? String {
-                                targetScreen = screen
-                            }
-                        }
-                    }
+                HomeScreen()
             }
         }
         .modelContainer(sharedModelContainer)
