@@ -18,6 +18,9 @@ struct HomeScreen: View {
                         .padding(.horizontal, 4)
 
                     VStack(spacing: 0) {
+                        Spacer()
+                            .frame(height: geo.size.height * 0.40)
+
                         // ROW 1 — Play Hub + Practice Hub (placeholders, no action)
                         HStack(spacing: 8) {
                             GlowButton(imageName: "playhub") {
@@ -27,8 +30,7 @@ struct HomeScreen: View {
                                 // No action - placeholder
                             }
                         }
-
-                        Spacer().frame(height: -60)
+                        .padding(.bottom, 8)
 
                         // ROW 2 — Training Hub + Performance Hub (working navigation)
                         HStack(spacing: 8) {
@@ -39,9 +41,10 @@ struct HomeScreen: View {
                                 navigateTo = "PerformanceHub"
                             }
                         }
+
+                        Spacer()
                     }
                     .padding(.horizontal, 12)
-                    .padding(.top, geo.size.height * 0.25)
                 }
                 .navigationDestination(isPresented: Binding(
                     get: { navigateTo == "TrainingHub" },
