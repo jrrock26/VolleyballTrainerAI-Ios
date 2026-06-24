@@ -39,7 +39,9 @@ class PoseTracker: NSObject, ObservableObject {
     private var lastFrameTime = Date()
     private var isHitCaptured = false
     private var lastWristYBySide: [Bool: CGFloat] = [:]
+    private var lastWristPointBySide: [Bool: CGPoint] = [:]
     private var ascendingBySide: [Bool: Bool] = [:]
+    private var peakSwingVelocityNormPerSecond: Double = 0.0
 
     // Ball Physics Trackers
     private var lastBallPositionPixels: CGPoint = .zero
@@ -72,7 +74,9 @@ class PoseTracker: NSObject, ObservableObject {
             self.baselineFrameCount = 0
             self.isBaselineLocked = false
             self.lastWristYBySide.removeAll()
+            self.lastWristPointBySide.removeAll()
             self.ascendingBySide.removeAll()
+            self.peakSwingVelocityNormPerSecond = 0.0
             self.isHitCaptured = false
             self.jointPoints.removeAll()
             self.smoothedJoints.removeAll()
@@ -272,10 +276,27 @@ extension PoseTracker {
                       armShoulder.confidence > confidenceThreshold else { continue }
 
                 let currentWristY = armWrist.location.y
+                let currentWristPoint = armWrist.location
 
                 if timeDelta > 0, let lastY = self.lastWristYBySide[isRight] {
                     let yDelta = currentWristY - lastY
                     let instantaneousVelocity = abs(yDelta) / timeDelta
+                    let fullSwingVelocity: Double
+
+                    if let lastPoint = self.lastWristPointBySide[isRight] {
+                        let dx = Double(currentWristPoint.x - lastPoint.x)
+                        let dy = Double(currentWristPoint.y - lastPoint.y)
+                        fullSwingVelocity = sqrt(dx * dx + dy * dy) / timeDelta
+                    } else {
+                        fullSwingVelocity = instantaneousVelocity
+                    }
+
+                    if fullSwingVelocity.isFinite {
+                        self.peakSwingVelocityNormPerSecond = max(
+                            self.peakSwingVelocityNormPerSecond,
+                            fullSwingVelocity
+                        )
+                    }
 
                     if currentWristY > armShoulder.location.y {
                         self.ascendingBySide[isRight] = true
@@ -289,8 +310,29 @@ extension PoseTracker {
 
                         let capturedJump = self.jumpHeight
                         let capturedAngle = self.armExtensionAngle
+                        let capturedSwingVelocity = max(
+                            self.peakSwingVelocityNormPerSecond,
+                            fullSwingVelocity,
+                            instantaneousVelocity
+                        )
+
+                        self.applyFallbackPerformanceMetricsIfNeeded(
+                            hitType: type,
+                            jumpHeight: capturedJump,
+                            armAngle: capturedAngle,
+                            swingVelocityNormPerSecond: capturedSwingVelocity,
+                            force: true
+                        )
 
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            self.applyFallbackPerformanceMetricsIfNeeded(
+                                hitType: type,
+                                jumpHeight: capturedJump,
+                                armAngle: capturedAngle,
+                                swingVelocityNormPerSecond: capturedSwingVelocity,
+                                force: false
+                            )
+
                             self.onSingleHitExtracted?(
                                 capturedJump,
                                 capturedAngle,
@@ -303,8 +345,57 @@ extension PoseTracker {
                 }
 
                 self.lastWristYBySide[isRight] = currentWristY
+                self.lastWristPointBySide[isRight] = currentWristPoint
                 if self.isHitCaptured { break }
             }
+        }
+    }
+
+    private func applyFallbackPerformanceMetricsIfNeeded(
+        hitType: String,
+        jumpHeight: Double,
+        armAngle: Double,
+        swingVelocityNormPerSecond: Double,
+        force: Bool
+    ) {
+        guard swingVelocityNormPerSecond.isFinite, swingVelocityNormPerSecond > 0 else { return }
+
+        let needsSpeed = force || computedBallSpeedMPH < 1.0
+        let needsDistance = force || computedFlightDistanceFeet < 1.0
+        let needsLaunch = force || abs(computedLaunchAngleDegrees) < 0.1
+
+        guard needsSpeed || needsDistance || needsLaunch else { return }
+
+        let clampedSwing = max(0.6, min(swingVelocityNormPerSecond, 8.5))
+        let armQuality = max(0.75, min(1.15, armAngle / 160.0))
+        let jumpBonus = hitType == "Spike" ? min(jumpHeight * 0.22, 7.0) : 0.0
+
+        let estimatedSpeed: Double
+        if hitType == "Serve" {
+            estimatedSpeed = max(18.0, min(72.0, 20.0 + clampedSwing * 6.2 * armQuality))
+        } else {
+            estimatedSpeed = max(16.0, min(68.0, 17.0 + clampedSwing * 5.4 * armQuality + jumpBonus))
+        }
+
+        let estimatedLaunch = hitType == "Serve"
+            ? max(6.0, min(24.0, 10.0 + clampedSwing * 1.3))
+            : max(8.0, min(22.0, 11.0 + jumpHeight * 0.18))
+
+        let estimatedDistance: Double
+        if hitType == "Serve" {
+            estimatedDistance = max(24.0, min(80.0, estimatedSpeed * 0.92 + estimatedLaunch * 0.65))
+        } else {
+            estimatedDistance = max(12.0, min(62.0, estimatedSpeed * 0.62 + jumpHeight * 0.35 + estimatedLaunch * 0.45))
+        }
+
+        if needsSpeed {
+            computedBallSpeedMPH = max(computedBallSpeedMPH, estimatedSpeed)
+        }
+        if needsLaunch {
+            computedLaunchAngleDegrees = estimatedLaunch
+        }
+        if needsDistance {
+            computedFlightDistanceFeet = max(computedFlightDistanceFeet, estimatedDistance)
         }
     }
 
