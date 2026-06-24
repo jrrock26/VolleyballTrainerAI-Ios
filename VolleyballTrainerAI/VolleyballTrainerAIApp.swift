@@ -54,7 +54,7 @@ struct VolleyballTrainerAIApp: App {
 struct SplashView: View {
     var body: some View {
         ZStack {
-            Color.black
+            Color.white
                 .ignoresSafeArea()
 
             VStack(spacing: 20) {
@@ -65,7 +65,7 @@ struct SplashView: View {
 
                 Text("Volleyball Trainer Pro")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundColor(.black)
             }
         }
     }

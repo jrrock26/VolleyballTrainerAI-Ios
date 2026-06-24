@@ -17,11 +17,11 @@ struct HomeScreen: View {
 
                     VStack {
                         Spacer()
-                            .frame(height: geo.size.height * 0.42)
+                            .frame(height: geo.size.height * 0.40)
 
-                        VStack(spacing: 12) {
+                        VStack(spacing: 4) {
                             // ROW 1 — Play Hub + Practice Hub (placeholders, no action)
-                            HStack(spacing: 12) {
+                            HStack(spacing: 8) {
                                 GlowButton(imageName: "playhub") {
                                     // No action - placeholder
                                 }
@@ -31,7 +31,7 @@ struct HomeScreen: View {
                             }
 
                             // ROW 2 — Training Hub + Performance Hub (working navigation)
-                            HStack(spacing: 12) {
+                            HStack(spacing: 8) {
                                 GlowButton(imageName: "traininghub") {
                                     navigateTo = "TrainingHub"
                                 }
@@ -40,7 +40,7 @@ struct HomeScreen: View {
                                 }
                             }
                         }
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, 16)
 
                         Spacer()
                     }
