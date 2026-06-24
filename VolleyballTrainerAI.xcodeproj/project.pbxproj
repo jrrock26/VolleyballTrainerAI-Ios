@@ -23,6 +23,8 @@
 		963E77192FE4728A00590BC2 /* CoreFeedbackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 963E77182FE4728A00590BC2 /* CoreFeedbackEngine.swift */; };
 		963E771B2FE4730D00590BC2 /* SessionSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 963E771A2FE4730D00590BC2 /* SessionSummaryView.swift */; };
 		9661C1B42FE6C3B0003317E1 /* GlowButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9661C1B32FE6C3B0003317E1 /* GlowButton.swift */; };
+		98A000012FE8B0000012345B /* PlayHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A000112FE8B0000012345B /* PlayHubView.swift */; };
+		98A000022FE8B0000012345C /* PracticeHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A000122FE8B0000012345C /* PracticeHubView.swift */; };
 		9661C1B72FE6C3B0003317E2 /* CourtButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9661C1B82FE6C3B0003317E2 /* CourtButton.swift */; };
 		9661C1B62FE6C3E3003317E1 /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9661C1B52FE6C3E3003317E1 /* HomeScreen.swift */; };
 		96A000012FE8B00000123456 /* TrainingHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A000112FE8B00000123456 /* TrainingHubView.swift */; };
@@ -69,6 +71,8 @@
 		963E77182FE4728A00590BC2 /* CoreFeedbackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreFeedbackEngine.swift; sourceTree = "<group>"; };
 		963E771A2FE4730D00590BC2 /* SessionSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSummaryView.swift; sourceTree = "<group>"; };
 		9661C1B32FE6C3B0003317E1 /* GlowButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlowButton.swift; sourceTree = "<group>"; };
+		98A000112FE8B0000012345B /* PlayHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayHubView.swift; sourceTree = "<group>"; };
+		98A000122FE8B0000012345C /* PracticeHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeHubView.swift; sourceTree = "<group>"; };
 		9661C1B82FE6C3B0003317E2 /* CourtButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourtButton.swift; sourceTree = "<group>"; };
 		9661C1B52FE6C3E3003317E1 /* HomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreen.swift; sourceTree = "<group>"; };
 		96A000112FE8B00000123456 /* TrainingHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingHubView.swift; sourceTree = "<group>"; };
@@ -131,6 +135,8 @@
 				9661C1B52FE6C3E3003317E1 /* HomeScreen.swift */,
 				9661C1B32FE6C3B0003317E1 /* GlowButton.swift */,
 				9661C1B82FE6C3B0003317E2 /* CourtButton.swift */,
+			98A000112FE8B0000012345B /* PlayHubView.swift */,
+			98A000122FE8B0000012345C /* PracticeHubView.swift */,
 				96A000112FE8B00000123456 /* TrainingHubView.swift */,
 				96A000122FE8B00000123457 /* PerformanceHubView.swift */,
 				96A000132FE8B00000123458 /* ChartsView.swift */,
@@ -311,6 +317,8 @@
 				963E77112FE457A100590BC2 /* LiveAIView.swift in Sources */,
 				9661C1B42FE6C3B0003317E1 /* GlowButton.swift in Sources */,
 				9661C1B72FE6C3B0003317E2 /* CourtButton.swift in Sources */,
+			98A000022FE8B0000012345C /* PracticeHubView.swift in Sources */,
+			98A000012FE8B0000012345B /* PlayHubView.swift in Sources */,
 				963E771B2FE4730D00590BC2 /* SessionSummaryView.swift in Sources */,
 				963E770A2FE44D0700590BC2 /* CoachEngine.swift in Sources */,
 				963E76DC2FE4477500590BC2 /* ContentView.swift in Sources */,
