@@ -113,16 +113,16 @@ enum VolleyballTrainingLibrary {
     static let warmups: [TrainingBlock] = [
         TrainingBlock(name: "Court Run + Dynamic Prep", category: .warmup, durationMinutes: 4, intensity: .low, imageName: "stretch_court_run", focusTags: ["warmup", "movement"], instructions: ["Jog court lines at 60% speed.", "Add backpedal, side shuffle, and carioca.", "Stay tall and breathe through the nose."]),
         TrainingBlock(name: "Shoulder Prep Flow", category: .stretching, durationMinutes: 4, intensity: .low, imageName: "stretch_shoulder_prep", focusTags: ["armSwing", "shoulder", "armExtension"], instructions: ["Arm circles forward and backward.", "Cross-body shoulder stretch.", "Finish with slow shadow swings."]),
-        TrainingBlock(name: "Hip + Ankle Activation", category: .stretching, durationMinutes: 4, intensity: .low, imageName: "stretch_hip_mobility", focusTags: ["jump", "approach", "mobility"], instructions: ["World’s greatest stretch each side.", "Ankle rocks over toes.", "Bodyweight squat with pause."]),
+        TrainingBlock(name: "Hip + Ankle Activation", category: .stretching, durationMinutes: 4, intensity: .low, imageName: "stretch_hip_mobility", focusTags: ["jump", "approach", "mobility"], instructions: ["World's greatest stretch each side.", "Ankle rocks over toes.", "Bodyweight squat with pause."]),
         TrainingBlock(name: "Pre-Jump Leg Prep", category: .warmup, durationMinutes: 3, intensity: .low, imageName: "stretch_prejump", focusTags: ["plyo", "jump"], instructions: ["Pogo hops low and quick.", "Two-step approach footwork without jump.", "Stick two soft landings."])
     ]
 
     static let drills: [TrainingBlock] = [
-        TrainingBlock(name: "Arm Swing Wall Spike", category: .volleyball, durationMinutes: 8, intensity: .medium, imageName: "hitting_wall_spike", focusTags: ["armSwing", "armExtension", "powerTransfer"], instructions: ["Stand 6–8 ft from wall.", "Toss, reach high, snap through the ball.", "Keep elbow high and finish across body."]),
+        TrainingBlock(name: "Arm Swing Wall Spike", category: .volleyball, durationMinutes: 8, intensity: .medium, imageName: "hitting_wall_spike", focusTags: ["armSwing", "armExtension", "powerTransfer"], instructions: ["Stand 6-8 ft from wall.", "Toss, reach high, snap through the ball.", "Keep elbow high and finish across body."]),
         TrainingBlock(name: "Hitting Arm Swing Mechanics", category: .volleyball, durationMinutes: 10, intensity: .medium, imageName: "hitting_arm_swing", focusTags: ["armSwing", "armExtension"], instructions: ["Load elbow behind ear.", "Contact in front at full reach.", "Freeze finish and check shoulder-to-wrist line."]),
         TrainingBlock(name: "Approach Angle Reps", category: .volleyball, durationMinutes: 9, intensity: .medium, imageName: "hitting_approach_angle", focusTags: ["approach", "timing", "armSwing"], instructions: ["Mark start and target contact zone.", "Use a controlled 3-step approach.", "Plant hips open and attack through the target."]),
         TrainingBlock(name: "Max Jump Touches", category: .volleyball, durationMinutes: 8, intensity: .high, imageName: "hitting_max_jump", focusTags: ["jump", "explosiveness"], instructions: ["Approach jump to a safe wall target.", "Swing arms aggressively into takeoff.", "Land quietly and reset fully."]),
-        TrainingBlock(name: "Box Jump Power", category: .plyometrics, durationMinutes: 8, intensity: .high, imageName: "plyo_box_jumps", focusTags: ["jump", "plyo", "explosiveness"], instructions: ["Use a safe box height.", "Jump, stick landing, step down.", "Quality reps only — no sloppy landings."]),
+        TrainingBlock(name: "Box Jump Power", category: .plyometrics, durationMinutes: 8, intensity: .high, imageName: "plyo_box_jumps", focusTags: ["jump", "plyo", "explosiveness"], instructions: ["Use a safe box height.", "Jump, stick landing, step down.", "Quality reps only - no sloppy landings."]),
         TrainingBlock(name: "Approach Jump Plyos", category: .plyometrics, durationMinutes: 9, intensity: .high, imageName: "plyo_approach_jump", focusTags: ["approach", "jump", "timing"], instructions: ["Three-step approach into vertical jump.", "Reach both hands high at peak.", "Reset after each rep."]),
         TrainingBlock(name: "Depth Drop Landing Control", category: .plyometrics, durationMinutes: 7, intensity: .medium, imageName: "plyo_depth_drop", focusTags: ["landing", "kneeControl", "jump"], instructions: ["Step off a low box.", "Land knees over toes.", "Hold athletic stance for two seconds."]),
         TrainingBlock(name: "Lateral Bounds", category: .plyometrics, durationMinutes: 7, intensity: .medium, imageName: "plyo_lateral_bounds", focusTags: ["agility", "defense", "lateral"], instructions: ["Bound side to side with control.", "Stick outside-leg landing.", "Keep chest up and hips loaded."]),
@@ -203,29 +203,39 @@ struct TrainingHubView: View {
     @State private var customFocus = ""
     @State private var generatedPlan: TrainingPlan?
     @State private var showingSaved = false
+    @Environment(\.dismiss) private var dismiss
 
     private var coachFocus: String { VolleyballTrainingLibrary.recommendationFocus(from: hits) }
 
     var body: some View {
-        ZStack {
-            Color(red: 0.07, green: 0.07, blue: 0.09).ignoresSafeArea()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    header
-                    coachCard
-                    generatorCard
-                    libraryPreview
+        NavigationStack {
+            GeometryReader { geo in
+                ZStack {
+                    Color.black.ignoresSafeArea()
+
+                    Image("background")
+                        .resizable()
+                        .scaledToFill()
+                        .ignoresSafeArea()
+
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 18) {
+                            header
+                            coachCard
+                            generatorCard
+                            libraryPreview
+                        }
+                        .padding()
+                    }
                 }
-                .padding()
+                .navigationBarHidden(true)
+                .navigationDestination(item: $generatedPlan) { plan in
+                    TrainingScheduleView(plan: plan)
+                }
+                .sheet(isPresented: $showingSaved) {
+                    SavedTrainingsView()
+                }
             }
-        }
-        .navigationTitle("Training Hub")
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(item: $generatedPlan) { plan in
-            TrainingScheduleView(plan: plan)
-        }
-        .sheet(isPresented: $showingSaved) {
-            SavedTrainingsView()
         }
     }
 
@@ -234,7 +244,7 @@ struct TrainingHubView: View {
             Text("Build workouts from your AI coach feedback.")
                 .font(.title2.bold())
                 .foregroundColor(.white)
-            Text("Every generated workout starts with 3 warmup/stretch blocks and inserts water breaks every 10–15 minutes.")
+            Text("Every generated workout starts with 3 warmup/stretch blocks and inserts water breaks every 10-15 minutes.")
                 .font(.caption)
                 .foregroundColor(.gray)
         }
@@ -370,7 +380,7 @@ struct TrainingScheduleView: View {
     }
 
     private func waterBreakRow(_ block: TrainingBlock) -> some View {
-        Text("WATER BREAK — \(block.durationMinutes) MIN")
+        Text("WATER BREAK - \(block.durationMinutes) MIN")
             .font(.headline)
             .foregroundColor(Color(red: 1.0, green: 0.08, blue: 0.58))
             .frame(maxWidth: .infinity)
@@ -381,7 +391,7 @@ struct TrainingScheduleView: View {
     }
 
     private var shareText: String {
-        ([plan.name, "Total: \(plan.totalMinutes) min", "Focus: \(plan.focus)"] + plan.blocks.map { "• \($0.name) — \($0.durationMinutes) min" }).joined(separator: "\n")
+        ([plan.name, "Total: \(plan.totalMinutes) min", "Focus: \(plan.focus)"] + plan.blocks.map { "• \($0.name) - \($0.durationMinutes) min" }).joined(separator: "\n")
     }
 
     private func resetTimersIfNeeded() {
@@ -465,9 +475,9 @@ struct TrainingScheduleRow: View {
                     .font(.headline.monospacedDigit())
                     .foregroundColor(Color(red: 1.0, green: 0.08, blue: 0.58))
                 HStack(spacing: 8) {
-                    Button("▶", action: onPlay)
-                    Button("⏸", action: onPause)
-                    Button("⟲", action: onReset)
+                    Button("Play", action: onPlay)
+                    Button("Pause", action: onPause)
+                    Button("Reset", action: onReset)
                 }
                 .font(.caption.bold())
                 .foregroundColor(.white)

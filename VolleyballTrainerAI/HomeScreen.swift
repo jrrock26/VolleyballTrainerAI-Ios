@@ -16,7 +16,6 @@ struct HomeScreen: View {
 
                     VStack(spacing: 0) {
 
-                        // TOP ROW LOCKED
                         Spacer()
                             .frame(height: geo.size.height * 0.45)
 
@@ -25,7 +24,6 @@ struct HomeScreen: View {
                             GlowButton(imageName: "practicehub") { }
                         }
 
-                        // THIS WILL NOW WORK
                         Spacer()
                             .frame(height: geo.size.height * 0.02)
 
@@ -40,13 +38,10 @@ struct HomeScreen: View {
 
                         Spacer()
                     }
-                    // ⭐ THIS IS THE FIX ⭐
                     .frame(maxHeight: .infinity, alignment: .top)
-                    // ---------------------
                     .padding(.horizontal, 12)
                 }
 
-                // Navigation
                 .navigationDestination(isPresented: Binding(
                     get: { navigateTo == "TrainingHub" },
                     set: { if !$0 { navigateTo = nil } }

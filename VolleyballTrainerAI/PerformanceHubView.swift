@@ -6,6 +6,8 @@ struct PerformanceHubView: View {
     @State private var showLiveTracker = false
     @State private var navigateTo: String? = nil
 
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
         NavigationStack {
             GeometryReader { geo in
@@ -15,22 +17,19 @@ struct PerformanceHubView: View {
                     Image("background")
                         .resizable()
                         .scaledToFill()
-                        .padding(.top)
-                        .padding(.bottom, 12)
-                        .padding(.horizontal, 4)
                         .ignoresSafeArea()
 
                     VStack(spacing: 0) {
 
-                        // TOP ROW
                         Spacer()
                             .frame(height: geo.size.height * 0.45)
 
                         HStack(spacing: 8) {
-                            GlowButton(imageName: "recordhit") {
+                            CourtButton(imageName: "recordhit", title: "Record Hit") {
                                 showLiveTracker = true
                             }
-                            GlowButton(imageName: "savedhits") {
+
+                            CourtButton(imageName: "savedhits", title: "Saved Hits") {
                                 navigateTo = "SavedHits"
                             }
                         }
@@ -39,10 +38,10 @@ struct PerformanceHubView: View {
                             .frame(height: geo.size.height * 0.02)
 
                         HStack(spacing: 8) {
-                            GlowButton(imageName: "trends") {
+                            CourtButton(imageName: "trends", title: "Charts") {
                                 navigateTo = "Charts"
                             }
-                            GlowButton(imageName: "personalbests") {
+                            CourtButton(imageName: "personalbests", title: "Lifetime Hits") {
                                 navigateTo = "Lifetime"
                             }
                         }
@@ -53,7 +52,6 @@ struct PerformanceHubView: View {
                     .padding(.horizontal, 12)
                 }
 
-                // Navigation
                 .navigationDestination(isPresented: Binding(
                     get: { navigateTo == "SavedHits" },
                     set: { if !$0 { navigateTo = nil } }
@@ -74,8 +72,7 @@ struct PerformanceHubView: View {
                 }
             }
         }
-        .navigationTitle("Performance Hub")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(true)
         .fullScreenCover(isPresented: $showLiveTracker) {
             LiveAIView()
         }
