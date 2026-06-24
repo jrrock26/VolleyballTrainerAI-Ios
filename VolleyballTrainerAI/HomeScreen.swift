@@ -18,7 +18,7 @@ struct HomeScreen: View {
 
                         // TOP ROW LOCKED
                         Spacer()
-                            .frame(height: geo.size.height * 0.30)
+                            .frame(height: geo.size.height * 0.45)
 
                         HStack(spacing: 8) {
                             GlowButton(imageName: "playhub") { }
@@ -63,4 +63,3 @@ struct HomeScreen: View {
         }
     }
 }
-

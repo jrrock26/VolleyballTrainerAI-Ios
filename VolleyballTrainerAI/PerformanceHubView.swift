@@ -4,60 +4,51 @@ import SwiftData
 struct PerformanceHubView: View {
     @Query(sort: \VolleyballHit.timestamp, order: .reverse) private var allHits: [VolleyballHit]
     @State private var showLiveTracker = false
+    @State private var navigateTo: String? = nil
 
     var body: some View {
-        ZStack {
-            Color(red: 0.07, green: 0.07, blue: 0.09)
-                .ignoresSafeArea()
+        NavigationStack {
+            GeometryReader { geo in
+                ZStack {
+                    Color.black.ignoresSafeArea()
 
-            VStack(spacing: 24) {
-                Spacer().frame(height: 20)
+                    Image("background")
+                        .resizable()
+                        .scaledToFill()
+                        .ignoresSafeArea()
 
-                Image("performancehub")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 140, height: 140)
+                    VStack(spacing: 0) {
 
-                Text("Performance Hub")
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                        // TOP ROW
+                        Spacer()
+                            .frame(height: geo.size.height * 0.45)
 
-                VStack(spacing: 14) {
-                    NavigationLink(destination: LiveAIView()) {
-                        PerformanceButtonContent(
-                            icon: "recordhit",
-                            title: "Record Live Hit",
-                            subtitle: "Capture a new hit with live tracking"
-                        )
+                        HStack(spacing: 8) {
+                            GlowButton(imageName: "recordhit") {
+                                showLiveTracker = true
+                            }
+                            GlowButton(imageName: "savedhits") {
+                                navigateTo = "SavedHits"
+                            }
+                        }
+
+                        Spacer()
+                            .frame(height: geo.size.height * 0.02)
+
+                        HStack(spacing: 8) {
+                            GlowButton(imageName: "trends") {
+                                navigateTo = "Charts"
+                            }
+                            GlowButton(imageName: "personalbests") {
+                                navigateTo = "Lifetime"
+                            }
+                        }
+
+                        Spacer()
                     }
-
-                    NavigationLink(destination: SavedHitsListView()) {
-                        PerformanceButtonContent(
-                            icon: "savedhits",
-                            title: "Saved Hits",
-                            subtitle: "\(allHits.count) hits on record"
-                        )
-                    }
-
-                    NavigationLink(destination: ChartsView()) {
-                        PerformanceButtonContent(
-                            icon: "trends",
-                            title: "Charts",
-                            subtitle: "Visualize your performance trends"
-                        )
-                    }
-
-                    NavigationLink(destination: LifetimeStatsView()) {
-                        PerformanceButtonContent(
-                            icon: "personalbests",
-                            title: "Lifetime Hits",
-                            subtitle: "Stats overview of every hit"
-                        )
-                    }
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .padding(.horizontal, 12)
                 }
-                .padding(.horizontal, 24)
-
-                Spacer()
             }
         }
         .navigationTitle("Performance Hub")
@@ -65,8 +56,25 @@ struct PerformanceHubView: View {
         .fullScreenCover(isPresented: $showLiveTracker) {
             LiveAIView()
         }
+        .navigationDestination(isPresented: Binding(
+            get: { navigateTo == "SavedHits" },
+            set: { if !$0 { navigateTo = nil } }
+        )) {
+            SavedHitsListView()
+        }
+        .navigationDestination(isPresented: Binding(
+            get: { navigateTo == "Charts" },
+            set: { if !$0 { navigateTo = nil } }
+        )) {
+            ChartsView()
+        }
+        .navigationDestination(isPresented: Binding(
+            get: { navigateTo == "Lifetime" },
+            set: { if !$0 { navigateTo = nil } }
+        )) {
+            LifetimeStatsView()
+        }
         .onAppear {
-            // Listen for navigation to RecordHit from notification
             NotificationCenter.default.addObserver(
                 forName: NSNotification.Name("NavigateToPerformanceAction"),
                 object: nil,
@@ -79,43 +87,5 @@ struct PerformanceHubView: View {
                 }
             }
         }
-    }
-}
-
-struct PerformanceButtonContent: View {
-    let icon: String
-    let title: String
-    let subtitle: String
-
-    var body: some View {
-        HStack(spacing: 16) {
-            Image(icon)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 48, height: 48)
-                .cornerRadius(10)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.white)
-                Text(subtitle)
-                    .font(.system(size: 12))
-                    .foregroundColor(.gray)
-            }
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundColor(.gray)
-        }
-        .padding(16)
-        .background(Color(red: 0.14, green: 0.14, blue: 0.16))
-        .cornerRadius(14)
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        )
     }
 }
