@@ -31,9 +31,7 @@ struct VolleyballTrainerAIApp: App {
 
     var body: some Scene {
         WindowGroup {
-            NavigationStack {
-                HomeScreen()
-            }
+            HomeScreen()
         }
         .modelContainer(sharedModelContainer)
     }
