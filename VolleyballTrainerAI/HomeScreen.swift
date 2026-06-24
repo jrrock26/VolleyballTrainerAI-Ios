@@ -7,16 +7,19 @@ struct HomeScreen: View {
         NavigationStack {
             GeometryReader { geo in
                 ZStack {
-                    Color.black.ignoresSafeArea()
+                    Color.black
+                        .ignoresSafeArea()
 
                     Image("background")
                         .resizable()
                         .scaledToFill()
-                        .ignoresSafeArea()
+                        .padding(.top)
+                        .padding(.bottom, 12)
+                        .padding(.horizontal, 4)
 
                     VStack {
                         Spacer()
-                            .frame(height: geo.size.height * 0.40)
+                            .frame(height: geo.size.height * 0.32)
 
                         VStack(spacing: 1) {
                             // ROW 1 — Play Hub + Practice Hub (placeholders, no action)
@@ -39,7 +42,8 @@ struct HomeScreen: View {
                                 }
                             }
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 12)
+                        .padding(.top, 16)
 
                         Spacer()
                     }
