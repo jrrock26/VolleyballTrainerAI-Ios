@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import AudioToolbox
 
-enum TrainingCategory: String, Codable, CaseIterable {
+enum TrainingCategory: String, Codable, CaseIterable, Identifiable {
     case warmup = "Warmup"
     case stretching = "Stretching"
     case agility = "Agility"
@@ -10,6 +10,8 @@ enum TrainingCategory: String, Codable, CaseIterable {
     case volleyball = "Volleyball Skills"
     case strength = "Strength"
     case waterBreak = "Water Break"
+
+    var id: String { rawValue }
 
     var color: Color {
         switch self {
@@ -72,6 +74,14 @@ struct TrainingBlock: Identifiable, Codable, Hashable {
             ]
         )
     }
+}
+
+enum TrainingMode: String, Codable, CaseIterable, Identifiable {
+    case aiGenerated = "AI Generated"
+    case selectCategory = "Select Category"
+    case buildYourOwn = "Build Your Own"
+
+    var id: String { rawValue }
 }
 
 struct TrainingPlan: Identifiable, Hashable {
@@ -157,13 +167,20 @@ enum VolleyballTrainingLibrary {
         else if normalized.contains("angle") || normalized.contains("contact") { tags = ["contact", "timing", "accuracy"] }
         else { tags = ["armSwing", "jump", "agility", "timing"] }
 
-        var planBlocks = Array(warmups.prefix(3))
+        let warmupBlocks = Array(warmups.prefix(3))
         var candidates = drills
             .filter { block in !Set(block.focusTags).isDisjoint(with: Set(tags)) }
         if candidates.count < 5 { candidates += drills.filter { !candidates.contains($0) } }
 
+        // Scale all blocks proportionally to targetMinutes so we hit 8–10 blocks regardless of duration
+        let baseMinutes = 45
+        let scale = Double(targetMinutes) / Double(baseMinutes)
+        let scaledWarmups = warmupBlocks.map { scaled($0, scale: scale) }
+        let scaledCandidates = candidates.map { scaled($0, scale: scale) }
+
+        var planBlocks = scaledWarmups
         var activeMinutes = planBlocks.reduce(0) { $0 + $1.durationMinutes }
-        for block in candidates {
+        for block in scaledCandidates {
             guard activeMinutes + block.durationMinutes <= targetMinutes else { continue }
             planBlocks.append(block)
             activeMinutes += block.durationMinutes
@@ -176,6 +193,75 @@ enum VolleyballTrainingLibrary {
             focus: focus,
             createdAt: Date(),
             blocks: planBlocks
+        )
+    }
+
+    static func generateCategoryPlan(category: TrainingCategory, targetMinutes: Int = 45) -> TrainingPlan {
+        let scale = Double(targetMinutes) / 45.0
+        let baseWarmups = Array(warmups.prefix(3))
+        let warmupBlocks = baseWarmups.map { scaled($0, scale: scale) }
+        let categoryDrills = drills
+            .filter { $0.category == category }
+            .sorted { $0.durationMinutes > $1.durationMinutes }
+
+        var planBlocks = warmupBlocks
+        var activeMinutes = planBlocks.reduce(0) { $0 + $1.durationMinutes }
+        for block in categoryDrills {
+            let scaledBlock = scaled(block, scale: scale)
+            guard activeMinutes + scaledBlock.durationMinutes <= targetMinutes else { continue }
+            planBlocks.append(scaledBlock)
+            activeMinutes += scaledBlock.durationMinutes
+        }
+
+        planBlocks = insertWaterBreaks(in: planBlocks)
+        return TrainingPlan(
+            id: UUID(),
+            name: "Category Plan: \(category.rawValue)",
+            focus: category.rawValue,
+            createdAt: Date(),
+            blocks: planBlocks
+        )
+    }
+
+    static func generateMultiCategoryPlan(categories: [TrainingCategory], targetMinutes: Int = 45) -> TrainingPlan {
+        let scale = Double(targetMinutes) / 45.0
+        let baseWarmups = Array(warmups.prefix(3))
+        let warmupBlocks = baseWarmups.map { scaled($0, scale: scale) }
+        let categorySet = Set(categories)
+        let multiDrills = drills
+            .filter { categorySet.contains($0.category) }
+            .sorted { $0.durationMinutes > $1.durationMinutes }
+
+        var planBlocks = warmupBlocks
+        var activeMinutes = planBlocks.reduce(0) { $0 + $1.durationMinutes }
+        for block in multiDrills {
+            let scaledBlock = scaled(block, scale: scale)
+            guard activeMinutes + scaledBlock.durationMinutes <= targetMinutes else { continue }
+            planBlocks.append(scaledBlock)
+            activeMinutes += scaledBlock.durationMinutes
+        }
+
+        planBlocks = insertWaterBreaks(in: planBlocks)
+        return TrainingPlan(
+            id: UUID(),
+            name: "Multi-Category Plan",
+            focus: categories.map { $0.rawValue }.joined(separator: " + "),
+            createdAt: Date(),
+            blocks: planBlocks
+        )
+    }
+
+    private static func scaled(_ block: TrainingBlock, scale: Double) -> TrainingBlock {
+        let newMinutes = max(2, Int(Double(block.durationMinutes) * scale))
+        return TrainingBlock(
+            id: block.id,
+            name: block.name,
+            category: block.category,
+            durationMinutes: newMinutes,
+            intensity: block.intensity,
+            imageName: block.imageName,
+            focusTags: block.focusTags,
+            instructions: block.instructions
         )
     }
 
@@ -201,11 +287,36 @@ struct TrainingHubView: View {
     @Query(sort: \VolleyballHit.timestamp, order: .reverse) private var hits: [VolleyballHit]
     @Query(sort: \SavedTrainingPlan.createdAt, order: .reverse) private var savedPlans: [SavedTrainingPlan]
     @State private var customFocus = ""
+    @State private var selectedDuration: Int = 45
+    @State private var trainingMode: TrainingMode = .aiGenerated
+    @State private var selectedCategory: TrainingCategory? = nil
+    @State private var selectedCategories: Set<TrainingCategory> = []
     @State private var generatedPlan: TrainingPlan?
     @State private var showingSaved = false
     @Environment(\.dismiss) private var dismiss
 
     private var coachFocus: String { VolleyballTrainingLibrary.recommendationFocus(from: hits) }
+
+    private func generateTraining() {
+        switch trainingMode {
+        case .aiGenerated:
+            let focus = customFocus.trimmingCharacters(in: .whitespacesAndNewlines)
+            let resolved = focus.isEmpty ? "balanced volleyball performance" : focus
+            generatedPlan = VolleyballTrainingLibrary.generatePlan(focus: resolved, targetMinutes: selectedDuration)
+        case .selectCategory:
+            guard let category = selectedCategory else { return }
+            generatedPlan = VolleyballTrainingLibrary.generateCategoryPlan(
+                category: category,
+                targetMinutes: selectedDuration
+            )
+        case .buildYourOwn:
+            guard !selectedCategories.isEmpty else { return }
+            generatedPlan = VolleyballTrainingLibrary.generateMultiCategoryPlan(
+                categories: Array(selectedCategories),
+                targetMinutes: selectedDuration
+            )
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -248,7 +359,6 @@ struct TrainingHubView: View {
                             header
                             coachCard
                             generatorCard
-                            libraryPreview
                         }
                         .padding(.horizontal, 24)
                     }
@@ -292,16 +402,95 @@ struct TrainingHubView: View {
     }
 
     private var generatorCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Generate Your Own Schedule")
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Custom Training Generator")
                 .font(.headline)
                 .foregroundColor(.cyan)
-            TextField("Focus, e.g. agility, arm swing, jumping", text: $customFocus)
-                .textFieldStyle(.roundedBorder)
+
+            // Training Mode Selector
+            Picker("Training Mode", selection: $trainingMode) {
+                ForEach(TrainingMode.allCases) { mode in
+                    Text(mode.rawValue).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            // Duration selector (30–180 min in 15-min increments)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Session Duration: \(selectedDuration) min")
+                    .font(.caption.bold())
+                    .foregroundColor(.white)
+                Picker("Duration", selection: $selectedDuration) {
+                    ForEach([30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180], id: \.self) { min in
+                        Text("\(min) min").tag(min)
+                    }
+                }
+                .pickerStyle(.wheel)
+                .frame(height: 60)
+            }
+
+            // Focus / Category inputs
+            if trainingMode == .aiGenerated {
+                TextField("Focus, e.g. agility, arm swing, jumping", text: $customFocus)
+                    .textFieldStyle(.roundedBorder)
+            } else if trainingMode == .selectCategory {
+                Menu {
+                    ForEach(TrainingCategory.allCases.filter { $0 != .waterBreak }) { cat in
+                        Button(action: { selectedCategory = cat }) {
+                            HStack {
+                                Text(cat.rawValue)
+                                if selectedCategory == cat {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Text(selectedCategory?.rawValue ?? "Choose Category")
+                        Spacer()
+                        Image(systemName: "chevron.down")
+                    }
+                    .foregroundColor(selectedCategory == nil ? .gray : .white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Color(red: 0.14, green: 0.14, blue: 0.16))
+                    .cornerRadius(8)
+                }
+            } else {
+                // Build Your Own — multi-select categories
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(TrainingCategory.allCases.filter { $0 != .waterBreak }) { cat in
+                            let isSelected = selectedCategories.contains(cat)
+                            Button(action: {
+                                if isSelected {
+                                    selectedCategories.remove(cat)
+                                } else {
+                                    selectedCategories.insert(cat)
+                                }
+                            }) {
+                                Text(cat.rawValue)
+                                    .font(.caption.bold())
+                                    .foregroundColor(isSelected ? .black : cat.color)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(isSelected ? cat.color : Color.clear)
+                                    .cornerRadius(20)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .stroke(cat.color.opacity(0.6), lineWidth: 1.5)
+                                    )
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }
+                }
+            }
+
             HStack {
-                Button("Generate") {
-                    let focus = customFocus.trimmingCharacters(in: .whitespacesAndNewlines)
-                    generatedPlan = VolleyballTrainingLibrary.generatePlan(focus: focus.isEmpty ? "balanced volleyball performance" : focus)
+                Button("Generate Training") {
+                    generateTraining()
                 }
                 .buttonStyle(TrainingButtonStyle(color: .cyan, foreground: .black))
                 Button("Saved Trainings (\(savedPlans.count))") {
@@ -313,16 +502,6 @@ struct TrainingHubView: View {
         .trainingCard()
     }
 
-    private var libraryPreview: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Training Library")
-                .font(.headline)
-                .foregroundColor(.white)
-            ForEach(VolleyballTrainingLibrary.drills.prefix(6)) { block in
-                TrainingBlockRow(block: block, compact: true)
-            }
-        }
-    }
 }
 
 struct TrainingScheduleView: View {
