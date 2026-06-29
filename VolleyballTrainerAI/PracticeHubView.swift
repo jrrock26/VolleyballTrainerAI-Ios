@@ -3,7 +3,7 @@ import SwiftData
 import AudioToolbox
 
 // MARK: - Practice Models
-struct PracticeCategory: String, Codable, CaseIterable, Identifiable {
+enum PracticeCategory: String, Codable, CaseIterable, Identifiable {
     case warmup = "Warmup"
     case ballControl = "Ball Control"
     case setting = "Setting"
@@ -48,7 +48,7 @@ struct PracticeCategory: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-struct PracticeBlock: Identifiable, Codable, Hashable {
+struct PracticeBlock: Identifiable, Codable, Hashable, Equatable {
     let id: UUID
     let name: String
     let category: PracticeCategory
@@ -870,8 +870,54 @@ enum VolleyballPracticeLibrary {
             }
         }
         
+        // Insert water breaks
+        planBlocks = insertWaterBreaks(in: planBlocks)
+        
         let focusName = categories.map { $0.rawValue }.joined(separator: ", ")
         return PracticePlan(name: "Team Practice: \(focusName.isEmpty ? "Mixed Skills" : focusName)", focus: focusName.isEmpty ? "balanced" : focusName.lowercased(), blocks: planBlocks)
+    }
+    
+    static func insertWaterBreaks(in blocks: [PracticeBlock]) -> [PracticeBlock] {
+        var result: [PracticeBlock] = []
+        var minutesSinceBreak = 0
+        
+        for (index, block) in blocks.enumerated() {
+            result.append(block)
+            minutesSinceBreak += block.durationMinutes
+            
+            // Insert water break if needed (every 15 minutes)
+            if minutesSinceBreak >= 15,
+               let lastIndex = result.indices.last,
+               index < blocks.count - 1 {
+                let waterBreak = PracticeBlock(
+                    name: "Water Break",
+                    category: .warmup,
+                    durationMinutes: 2,
+                    type: "both",
+                    difficulty: "beginner",
+                    instructions: [
+                        "Drink water or electrolytes.",
+                        "Walk slowly and control your breathing.",
+                        "Restart only when your legs feel responsive."
+                    ],
+                    steps: [
+                        "Hydrate with water or sports drink.",
+                        "Walk around to keep muscles loose.",
+                        "Check in with teammates.",
+                        "Resume when ready."
+                    ]
+                )
+                result.append(waterBreak)
+                minutesSinceBreak = 0
+            }
+        }
+        
+        // Remove trailing water break if present
+        if result.last?.name == "Water Break" {
+            result.removeLast()
+        }
+        
+        return result
     }
 }
 
@@ -988,11 +1034,11 @@ struct PracticeHubView: View {
                             
                             HStack(spacing: 10) {
                                 Button("Generate Practice") { generatePractice() }
-                                    .buttonStyle(TrainingButtonStyle(color: .cyan, foreground: .black))
+                                    .buttonStyle(PracticeButtonStyle(color: .cyan, foreground: .black))
                                     .disabled(practiceMode == 1 && customDrills.isEmpty)
                                 
                                 Button("Saved Practices (\(savedPractices.count))") { showingSaved = true }
-                                    .buttonStyle(TrainingButtonStyle(color: .purple, foreground: .white))
+                                    .buttonStyle(PracticeButtonStyle(color: .purple, foreground: .white))
                             }
                         }.padding(.horizontal, 24)
                     }
@@ -1143,18 +1189,18 @@ struct PracticeRunView: View {
                             currentBlockIndex -= 1 
                             running.removeAll()
                         }
-                    }.buttonStyle(TrainingButtonStyle(color: .gray, foreground: .white))
+                    }.buttonStyle(PracticeButtonStyle(color: .gray, foreground: .white))
                     Spacer()
                     Button(running.contains(practice.blocks[currentBlockIndex]?.id ?? UUID()) ? "Pause" : "Play") {
                         toggleCurrentTimer()
-                    }.buttonStyle(TrainingButtonStyle(color: .green, foreground: .black))
+                    }.buttonStyle(PracticeButtonStyle(color: .green, foreground: .black))
                     Spacer()
                     Button("Next") { 
                         if currentBlockIndex < practice.blocks.count - 1 { 
                             currentBlockIndex += 1 
                             running.removeAll()
                         }
-                    }.buttonStyle(TrainingButtonStyle(color: .gray, foreground: .white))
+                    }.buttonStyle(PracticeButtonStyle(color: .gray, foreground: .white))
                 }.padding(.horizontal)
             }
         }
@@ -1253,7 +1299,7 @@ struct PracticeBlockDetailView: View {
                 ForEach(Array(block.steps.enumerated()), id: \.offset) { index, step in
                     Text("\(index + 1). \(step)").frame(maxWidth: .infinity, alignment: .leading)
                 }
-                Button("Close") { dismiss() }.buttonStyle(TrainingButtonStyle(color: Color(red: 1.0, green: 0.08, blue: 0.58), foreground: .white))
+                Button("Close") { dismiss() }.buttonStyle(PracticeButtonStyle(color: Color(red: 1.0, green: 0.08, blue: 0.58), foreground: .white))
             }.padding()
         }
     }
@@ -1458,8 +1504,8 @@ struct SavedPracticesView: View {
     }
 }
 
-// MARK: - Training Button Style
-struct TrainingButtonStyle: ButtonStyle {
+// MARK: - Practice Button Style
+struct PracticeButtonStyle: ButtonStyle {
     let color: Color
     let foreground: Color
     
