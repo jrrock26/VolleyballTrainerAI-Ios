@@ -702,7 +702,7 @@ struct TrainingScheduleView: View {
         lastSavedName = nil
         showSaveConfirm = false
         saveName = plan.name
-        let point =SavedPoint(id: UUID(), name: plan.name, focus: plan.focus, createdAt: Date(), totalMinutes: plan.totalMinutes, blocks: plan.blocks)
+        let point = SavedPoint(id: UUID(), name: plan.name, focus: plan.focus, createdAt: Date(), totalMinutes: plan.totalMinutes, blocks: plan.blocks)
         onSave(point)
         lastSavedName = plan.name
         showSaveConfirm = true
@@ -715,11 +715,15 @@ struct SavedTrainingsView: View {
     @Binding var savedPlans: [SavedPoint]
     @Binding var selectedPlan: TrainingPlan?
     @Environment(\.dismiss) private var dismiss
+    @State private var renameTarget:SavedPoint?
+    @State private var renameName: String = ""
+    @State private var showingRenameAlert = false
 
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(red: 0.07, green: 0.07, blue: 0.09).ignoresSafeArea()
+                Color.black.ignoresSafeArea()
+                Image("background").resizable().scaledToFill().ignoresSafeArea()
                 ScrollView {
                     LazyVStack(spacing: 10) {
                         ForEach(savedPlans) { saved in
@@ -730,21 +734,48 @@ struct SavedTrainingsView: View {
                                 Text("Saved: \(saved.createdAt, style: .date)").font(.caption2).foregroundColor(.gray.opacity(0.6))
                             }
                             .padding().frame(maxWidth: .infinity, alignment: .leading)
-                            .background(RoundedRectangle(cornerRadius: 14).fill(Color(red: 0.14, green: 0.14, blue: 0.16)))
+                            .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.4)))
                             }
                             .buttonStyle(PlainButtonStyle())
-                            .swipeActions { Button("Delete", role: .destructive) {
-                                if let idx = savedPlans.firstIndex(where: { $0.id == saved.id }) {
-                                    savedPlans.remove(at: idx)
-                                    persistSavedPlans(savedPlans)
+                            .swipeActions(edge: .leading) {
+                                Button("Rename") {
+                                    renameTarget = saved
+                                    renameName = saved.name
+                                    showingRenameAlert = true
+                                }.tint(.cyan)
+                                Button("Delete", role: .destructive) {
+                                    if let idx = savedPlans.firstIndex(where: { $0.id == saved.id }) {
+                                        savedPlans.remove(at: idx)
+                                        persistSavedPlans(savedPlans)
+                                    }
                                 }
-                            } }
+                            }
                         }
                     }.padding(16)
                 }
             }
-            .navigationTitle("Saved Trainings (\(savedPlans.count))").toolbar { Button("Done") { dismiss() } }
+            .navigationTitle("Saved Trainings (\(savedPlans.count))").foregroundColor(.white)
+            .toolbar {
+                Button("Done") { dismiss() }
+                if !savedPlans.isEmpty {
+                    Button("Delete All", role: .destructive) {
+                        savedPlans.removeAll()
+                        persistSavedPlans(savedPlans)
+                    }
+                }
+            }
             .navigationDestination(item: $selectedPlan) { plan in TrainingScheduleView(plan: plan, onSave: { _ in }) }
+            .alert("Rename Training", isPresented: $showingRenameAlert) {
+                TextField("Name", text: $renameName)
+                Button("Cancel", role: .cancel) { renameTarget = nil }
+                Button("Save") {
+                    if let target = renameTarget, let idx = savedPlans.firstIndex(where: { $0.id == target.id }) {
+                        savedPlans[idx] = SavedPoint(id: target.id, name: renameName, focus: target.focus, createdAt: target.createdAt, totalMinutes: target.totalMinutes, blocks: target.blocks)
+                        persistSavedPlans(savedPlans)
+                    }
+                    renameTarget = nil
+                }
+            }
         }
     }
 }
