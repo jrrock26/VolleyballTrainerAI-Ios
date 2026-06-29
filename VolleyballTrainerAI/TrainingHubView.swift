@@ -395,7 +395,7 @@ struct TrainingHubView: View {
                                 }.buttonStyle(PlainButtonStyle()); Spacer()
                             }.padding(.top, 16)
                             header
-                            Spacer(minLength: 220)
+                            Spacer(minLength: 320)
                             PinkSegmentedPicker(selection: $mode, options: TrainingGenerationMode.allCases)
                             durationControl
                             modeContent
@@ -699,7 +699,13 @@ struct TrainingScheduleView: View {
     private func saveTraining() {
         let name = saveName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? plan.name : saveName
         modelContext.insert(SavedTrainingPlan(name: name, focus: plan.focus, blocks: plan.blocks))
-        try? modelContext.save(); saveName = ""
+        do {
+            try modelContext.save()
+            print("Successfully saved training: \(name)")
+            saveName = ""
+        } catch {
+            print("Failed to save training: \(error.localizedDescription)")
+        }
     }
 }
 
