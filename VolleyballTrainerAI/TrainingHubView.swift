@@ -731,31 +731,16 @@ struct SavedTrainingsView: View {
                     ScrollView {
                         LazyVStack(spacing: 10) {
                             ForEach(savedPlans) { saved in
-                                HStack(alignment: .top, spacing: 12) {
-                                    Button(action: { selectedPlan = TrainingPlan(id: saved.id, name: saved.name, focus: saved.focus, createdAt: saved.createdAt, blocks: saved.blocks) }) {
-                                        VStack(alignment: .leading, spacing: 6) {
-                                            Text(saved.name).foregroundColor(.white).font(.headline)
-                                            Text("\(saved.totalMinutes) min • \(saved.focus.capitalized)").foregroundColor(.gray).font(.caption)
-                                            Text("Saved: \(saved.createdAt, style: .date)").font(.caption2).foregroundColor(.gray.opacity(0.6))
-                                        }
-                                        .padding().frame(maxWidth: .infinity, alignment: .leading)
-                                        .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.4)))
+                                Button(action: { selectedPlan = TrainingPlan(id: saved.id, name: saved.name, focus: saved.focus, createdAt: saved.createdAt, blocks: saved.blocks) }) {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text(saved.name).foregroundColor(.white).font(.headline)
+                                        Text("\(saved.totalMinutes) min • \(saved.focus.capitalized)").foregroundColor(.gray).font(.caption)
+                                        Text("Saved: \(saved.createdAt, style: .date)").font(.caption2).foregroundColor(.gray.opacity(0.6))
                                     }
-                                    .buttonStyle(PlainButtonStyle())
-                                    VStack(spacing: 12) {
-                                        Button("Rename") {
-                                            renameTarget = saved
-                                            renameName = saved.name
-                                            showingRenameAlert = true
-                                        }.font(.caption.bold()).foregroundColor(.cyan)
-                                        Button("Delete", role: .destructive) {
-                                            if let idx = savedPlans.firstIndex(where: { $0.id == saved.id }) {
-                                                savedPlans.remove(at: idx)
-                                                persistSavedPlans(savedPlans)
-                                            }
-                                        }.font(.caption.bold()).foregroundColor(.red)
-                                    }.padding(.horizontal, 4)
+                                    .padding().frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.4)))
                                 }
+                                .buttonStyle(PlainButtonStyle())
                             }
                         }.padding(16)
                     }.frame(maxHeight: 320)
@@ -763,18 +748,25 @@ struct SavedTrainingsView: View {
             }
             .navigationBarHidden(true)
             .toolbar {
-                Button("Done") { dismiss() }
-                ToolbarItem(placement: .topBarLeading) { EmptyView() }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .destructiveAction) {
                     if !savedPlans.isEmpty {
                         Button("Delete All", role: .destructive) {
                             savedPlans.removeAll()
                             persistSavedPlans(savedPlans)
+                            selectedPlan = nil
                         }
                     }
                 }
             }
-            .navigationDestination(item: $selectedPlan) { plan in TrainingScheduleView(plan: plan, onSave: { _ in }) }
+            .navigationDestination(item: $selectedPlan) { plan in
+                TrainingScheduleView(plan: plan, onSave: { point in
+                    if let idx = savedPlans.firstIndex(where: { $0.id == point.id }) {
+                        savedPlans[idx] = point
+                    }
+                    persistSavedPlans(savedPlans)
+                })
+            }
             .alert("Rename Training", isPresented: $showingRenameAlert) {
                 TextField("Name", text: $renameName)
                 Button("Cancel", role: .cancel) { renameTarget = nil }
@@ -787,6 +779,20 @@ struct SavedTrainingsView: View {
                 }
             }
         }
+    }
+
+    private func renameSelected() {
+        guard let plan = selectedPlan, let idx = savedPlans.firstIndex(where: { $0.id == plan.id }) else { return }
+        renameTarget = savedPlans[idx]
+        renameName = savedPlans[idx].name
+        showingRenameAlert = true
+    }
+
+    private func deleteSelected() {
+        guard let plan = selectedPlan, let idx = savedPlans.firstIndex(where: { $0.id == plan.id }) else { return }
+        savedPlans.remove(at: idx)
+        persistSavedPlans(savedPlans)
+        selectedPlan = nil
     }
 }
 
