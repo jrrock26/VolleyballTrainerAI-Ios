@@ -395,7 +395,7 @@ struct TrainingHubView: View {
                                 }.buttonStyle(PlainButtonStyle()); Spacer()
                             }.padding(.top, 16)
                             header
-                            Spacer(minLength: 320)
+                            Spacer(minLength: 160)
                             PinkSegmentedPicker(selection: $mode, options: TrainingGenerationMode.allCases)
                             durationControl
                             modeContent
@@ -455,8 +455,8 @@ struct TrainingHubView: View {
                     .font(.caption.bold()).foregroundColor(.white).padding(.horizontal, 10).padding(.vertical, 6)
                     .background(Color.cyan.opacity(0.3)).cornerRadius(10)
             }.buttonStyle(PlainButtonStyle())
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+            ScrollView(.vertical, showsIndicators: true) {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                     ForEach(allCategories) { cat in
                         let isSelected = selectedCategories.contains(cat)
                         Button(action: { if isSelected { selectedCategories.remove(cat) } else { selectedCategories.insert(cat) } }) {
