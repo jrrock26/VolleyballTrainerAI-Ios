@@ -725,40 +725,61 @@ struct SavedTrainingsView: View {
                 Color.black.ignoresSafeArea()
                 Image("background").resizable().scaledToFill().ignoresSafeArea()
                 VStack(spacing: 12) {
-                    Spacer(minLength: 80)
+                    HStack {
+                        Button(action: { dismiss() }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "chevron.left"); Text("Back")
+                            }
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .foregroundColor(.pink)
+                            .padding(.horizontal, 12).padding(.vertical, 8)
+                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.black.opacity(0.4))
+                                .background(RoundedRectangle(cornerRadius: 10).stroke(Color.pink.opacity(0.5), lineWidth: 1)))
+                        }.buttonStyle(PlainButtonStyle())
+                        Spacer()
+                    }.padding(.top, 16)
+                    Spacer(minLength: 40)
                     Text("Saved Trainings (\(savedPlans.count))").font(.title2.bold()).foregroundColor(.white)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     ScrollView {
                         LazyVStack(spacing: 10) {
                             ForEach(savedPlans) { saved in
-                                Button(action: { selectedPlan = TrainingPlan(id: saved.id, name: saved.name, focus: saved.focus, createdAt: saved.createdAt, blocks: saved.blocks) }) {
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Text(saved.name).foregroundColor(.white).font(.headline)
-                                        Text("\(saved.totalMinutes) min • \(saved.focus.capitalized)").foregroundColor(.gray).font(.caption)
-                                        Text("Saved: \(saved.createdAt, style: .date)").font(.caption2).foregroundColor(.gray.opacity(0.6))
-                                    }
-                                    .padding().frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.4)))
+                                HStack(alignment: .top, spacing: 10) {
+                                    Color.clear
+                                        .contentShape(Rectangle())
+                                        .onTapGesture {
+                                            selectedPlan = TrainingPlan(id: saved.id, name: saved.name, focus: saved.focus, createdAt: saved.createdAt, blocks: saved.blocks)
+                                        }
+                                        .overlay(
+                                            VStack(alignment: .leading, spacing: 6) {
+                                                Text(saved.name).foregroundColor(.white).font(.headline)
+                                                Text("\(saved.totalMinutes) min • \(saved.focus.capitalized)").foregroundColor(.gray).font(.caption)
+                                                Text("Saved: \(saved.createdAt, style: .date)").font(.caption2).foregroundColor(.gray.opacity(0.6))
+                                            }
+                                            .padding().frame(maxWidth: .infinity, alignment: .leading)
+                                            .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.4)))
+                                        )
+                                    VStack(spacing: 12) {
+                                        Button("Rename") {
+                                            renameTarget = saved
+                                            renameName = saved.name
+                                            showingRenameAlert = true
+                                        }.font(.caption.bold()).foregroundColor(.cyan).buttonStyle(PlainButtonStyle())
+                                        Button("Delete", role: .destructive) {
+                                            if let idx = savedPlans.firstIndex(where: { $0.id == saved.id }) {
+                                                savedPlans.remove(at: idx)
+                                                persistSavedPlans(savedPlans)
+                                            }
+                                        }.font(.caption.bold()).foregroundColor(.red).buttonStyle(PlainButtonStyle())
+                                    }.padding(.horizontal, 4)
                                 }
-                                .buttonStyle(PlainButtonStyle())
                             }
                         }.padding(16)
                     }.frame(maxHeight: 320)
                 }.padding(.horizontal, 24)
             }
             .navigationBarHidden(true)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
-                ToolbarItem(placement: .destructiveAction) {
-                    if !savedPlans.isEmpty {
-                        Button("Delete All", role: .destructive) {
-                            savedPlans.removeAll()
-                            persistSavedPlans(savedPlans)
-                            selectedPlan = nil
-                        }
-                    }
-                }
-            }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .navigationDestination(item: $selectedPlan) { plan in
                 TrainingScheduleView(plan: plan, onSave: { point in
                     if let idx = savedPlans.firstIndex(where: { $0.id == point.id }) {
