@@ -59,30 +59,19 @@ struct TrainingBlock: Identifiable, Codable, Hashable {
 }
 
 struct TrainingPlan: Identifiable, Hashable {
-    let id: UUID
-    var name: String
-    var focus: String
-    var createdAt: Date
-    var blocks: [TrainingBlock]
+    let id: UUID; var name: String; var focus: String; var createdAt: Date; var blocks: [TrainingBlock]
     var totalMinutes: Int { blocks.reduce(0) { $0 + $1.durationMinutes } }
 }
 
 @Model
 final class SavedTrainingPlan {
-    var id: UUID
-    var name: String
-    var focus: String
-    var createdAt: Date
-    var totalMinutes: Int
-    var blocksJSON: String
-
+    var id: UUID; var name: String; var focus: String; var createdAt: Date; var totalMinutes: Int; var blocksJSON: String
     init(name: String, focus: String, blocks: [TrainingBlock]) {
         self.id = UUID(); self.name = name; self.focus = focus; self.createdAt = Date()
         self.totalMinutes = blocks.reduce(0) { $0 + $1.durationMinutes }
         let data = (try? JSONEncoder().encode(blocks)) ?? Data()
         self.blocksJSON = String(data: data, encoding: .utf8) ?? "[]"
     }
-
     var blocks: [TrainingBlock] {
         guard let data = blocksJSON.data(using: .utf8) else { return [] }
         return (try? JSONDecoder().decode([TrainingBlock].self, from: data)) ?? []
@@ -114,6 +103,9 @@ enum VolleyballTrainingLibrary {
         TrainingBlock(name: "Cross Court Target Hits", category: .volleyball, durationMinutes: 10, intensity: .medium, imageName: "hitting_cross_court", focusTags: ["accuracy", "armSwing", "vision"], instructions: ["Set a cross-court target.", "Open shoulders, finish thumb down.", "Track makes vs misses."]),
         TrainingBlock(name: "Core Stability Holds", category: .strength, durationMinutes: 7, intensity: .medium, imageName: "core_stability", focusTags: ["core", "powerTransfer", "stability"], instructions: ["Front plank 30 seconds.", "Side plank each side.", "Dead bug reps slow and controlled."])
     ]
+
+    /// All blocks that can be used for a custom drill builder
+    static var allLibraryDrills: [TrainingBlock] { warmups + drills }
 
     static func recommendationFocus(from hits: [VolleyballHit]) -> String {
         guard let hit = hits.first else { return "balanced volleyball performance" }
@@ -148,6 +140,15 @@ enum VolleyballTrainingLibrary {
             activeMinutes += block.durationMinutes
         }
 
+        // Fill remaining with shorter drills if time allows
+        if activeMinutes < targetMinutes - 3 {
+            for block in candidates.shuffled() {
+                guard activeMinutes + block.durationMinutes <= targetMinutes, !planBlocks.contains(block) else { continue }
+                planBlocks.append(block)
+                activeMinutes += block.durationMinutes
+            }
+        }
+
         planBlocks = insertWaterBreaks(in: planBlocks)
         return TrainingPlan(id: UUID(), name: "Coach Plan: \(focus.capitalized)", focus: focus, createdAt: Date(), blocks: planBlocks)
     }
@@ -163,6 +164,14 @@ enum VolleyballTrainingLibrary {
             guard activeMinutes + block.durationMinutes <= targetMinutes else { continue }
             planBlocks.append(block)
             activeMinutes += block.durationMinutes
+        }
+
+        if activeMinutes < targetMinutes - 3 {
+            for block in candidates.shuffled() {
+                guard activeMinutes + block.durationMinutes <= targetMinutes, !planBlocks.contains(block) else { continue }
+                planBlocks.append(block)
+                activeMinutes += block.durationMinutes
+            }
         }
 
         planBlocks = insertWaterBreaks(in: planBlocks)
@@ -187,6 +196,24 @@ enum VolleyballTrainingLibrary {
     }
 }
 
+// MARK: - Blended card modifier
+private struct BlendedCard: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.black.opacity(0.35))
+            .cornerRadius(16)
+    }
+}
+
+private extension View {
+    func blendedCard() -> some View {
+        modifier(BlendedCard())
+    }
+}
+
+// MARK: - Training Hub View
 struct TrainingHubView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \VolleyballHit.timestamp, order: .reverse) private var hits: [VolleyballHit]
@@ -201,7 +228,6 @@ struct TrainingHubView: View {
     @Environment(\.dismiss) private var dismiss
 
     private var coachFocus: String { VolleyballTrainingLibrary.recommendationFocus(from: hits) }
-    private let durationOptions = stride(from: 30, through: 120, by: 15).map { $0 }
 
     private func generatePlan() {
         switch mode {
@@ -212,8 +238,7 @@ struct TrainingHubView: View {
             generatedPlan = VolleyballTrainingLibrary.generatePlan(categories: cats.isEmpty ? TrainingCategory.allCases.filter { $0 != .waterBreak } : cats, targetMinutes: durationMinutes)
         case .customBuilt:
             if !customDrills.isEmpty {
-                var blocks = customDrills
-                blocks = VolleyballTrainingLibrary.insertWaterBreaks(in: blocks)
+                var blocks = VolleyballTrainingLibrary.insertWaterBreaks(in: customDrills)
                 generatedPlan = TrainingPlan(id: UUID(), name: "Custom Plan", focus: "Custom", createdAt: Date(), blocks: blocks)
             }
         }
@@ -224,7 +249,6 @@ struct TrainingHubView: View {
             GeometryReader { geo in
                 ZStack {
                     Color.black.ignoresSafeArea()
-
                     Image("background")
                         .resizable()
                         .scaledToFill()
@@ -232,6 +256,8 @@ struct TrainingHubView: View {
 
                     ScrollView {
                         VStack(alignment: .leading, spacing: 12) {
+                            Spacer(minLength: 60)
+
                             HStack {
                                 Button(action: { dismiss() }) {
                                     HStack(spacing: 6) {
@@ -299,14 +325,8 @@ struct TrainingHubView: View {
         .pickerStyle(.segmented)
         .padding()
         .frame(maxWidth: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.ultraThinMaterial)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.cyan.opacity(0.3), lineWidth: 1)
-        )
+        .background(Color.black.opacity(0.35))
+        .cornerRadius(16)
     }
 
     private var durationControl: some View {
@@ -320,27 +340,15 @@ struct TrainingHubView: View {
             ), in: 30...120, step: 15)
             .tint(.cyan)
         }
-        .padding()
-        .frame(maxWidth: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.ultraThinMaterial)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.cyan.opacity(0.3), lineWidth: 1)
-        )
+        .blendedCard()
     }
 
     @ViewBuilder
     private var modeContent: some View {
         switch mode {
-        case .aiCoach:
-            aiCoachCard
-        case .userGenerated:
-            userGeneratedCard
-        case .customBuilt:
-            customBuiltCard
+        case .aiCoach: aiCoachCard
+        case .userGenerated: userGeneratedCard
+        case .customBuilt: customBuiltCard
         }
     }
 
@@ -356,16 +364,7 @@ struct TrainingHubView: View {
                 .font(.caption)
                 .foregroundColor(.gray)
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.ultraThinMaterial)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.yellow.opacity(0.3), lineWidth: 1)
-        )
+        .blendedCard()
     }
 
     private var userGeneratedCard: some View {
@@ -417,16 +416,7 @@ struct TrainingHubView: View {
                 }
             }
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.ultraThinMaterial)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.cyan.opacity(0.3), lineWidth: 1)
-        )
+        .blendedCard()
     }
 
     private var customBuiltCard: some View {
@@ -468,16 +458,7 @@ struct TrainingHubView: View {
             }
             .buttonStyle(PlainButtonStyle())
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.ultraThinMaterial)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.purple.opacity(0.3), lineWidth: 1)
-        )
+        .blendedCard()
     }
 
     private var actionButtons: some View {
@@ -496,6 +477,7 @@ struct TrainingHubView: View {
     }
 }
 
+// MARK: - Custom Drill Builder
 struct CustomDrillBuilderView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var selectedDrills: [TrainingBlock]
@@ -507,7 +489,7 @@ struct CustomDrillBuilderView: View {
 
     private var availableDrills: [TrainingBlock] {
         let cats = selectedCategories.isEmpty ? allCategories : Array(selectedCategories)
-        return VolleyballTrainingLibrary.drills.filter { cats.contains($0.category) }
+        return VolleyballTrainingLibrary.allLibraryDrills.filter { cats.contains($0.category) }
     }
 
     var body: some View {
@@ -524,9 +506,7 @@ struct CustomDrillBuilderView: View {
             .navigationTitle("Pick Drills")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
         }
     }
@@ -599,6 +579,7 @@ struct CustomDrillBuilderView: View {
     }
 }
 
+// MARK: - Training Schedule View
 struct TrainingScheduleView: View {
     @Environment(\.modelContext) private var modelContext
     let plan: TrainingPlan
@@ -665,24 +646,17 @@ struct TrainingScheduleView: View {
                 .font(.title3.bold())
                 .foregroundColor(.white)
             Text("\(plan.blocks.count) blocks • \(plan.totalMinutes) min • Focus: \(plan.focus.capitalized)")
-                .font(.caption)
-                .foregroundColor(.gray)
+                .font(.caption).foregroundColor(.gray)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(Color.blue.opacity(0.16))
-        .cornerRadius(14)
-        .padding(.horizontal)
+        .padding().background(Color.blue.opacity(0.16)).cornerRadius(14).padding(.horizontal)
     }
 
     private func waterBreakRow(_ block: TrainingBlock) -> some View {
         Text("WATER BREAK - \(block.durationMinutes) MIN")
-            .font(.headline)
-            .foregroundColor(Color(red: 1.0, green: 0.08, blue: 0.58))
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color(red: 1.0, green: 0.08, blue: 0.58).opacity(0.16))
-            .cornerRadius(12)
+            .font(.headline).foregroundColor(Color(red: 1.0, green: 0.08, blue: 0.58))
+            .frame(maxWidth: .infinity).padding()
+            .background(Color(red: 1.0, green: 0.08, blue: 0.58).opacity(0.16)).cornerRadius(12)
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(red: 1.0, green: 0.08, blue: 0.58), lineWidth: 1))
     }
 
@@ -692,9 +666,7 @@ struct TrainingScheduleView: View {
 
     private func resetTimersIfNeeded() {
         guard timers.isEmpty else { return }
-        for block in plan.blocks where block.category != .waterBreak {
-            timers[block.id] = block.durationMinutes * 60
-        }
+        for block in plan.blocks where block.category != .waterBreak { timers[block.id] = block.durationMinutes * 60 }
     }
 
     private func tickTimers() {
@@ -708,11 +680,11 @@ struct TrainingScheduleView: View {
     private func saveTraining() {
         let name = saveName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? plan.name : saveName
         modelContext.insert(SavedTrainingPlan(name: name, focus: plan.focus, blocks: plan.blocks))
-        try? modelContext.save()
-        saveName = ""
+        try? modelContext.save(); saveName = ""
     }
 }
 
+// MARK: - Supporting Views
 struct SavedTrainingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -747,103 +719,59 @@ struct SavedTrainingsView: View {
 }
 
 struct TrainingScheduleRow: View {
-    let block: TrainingBlock
-    let seconds: Int
-    let isRunning: Bool
-    let onTap: () -> Void
-    let onPlay: () -> Void
-    let onPause: () -> Void
-    let onReset: () -> Void
-
+    let block: TrainingBlock; let seconds: Int; let isRunning: Bool
+    let onTap: () -> Void; let onPlay: () -> Void; let onPause: () -> Void; let onReset: () -> Void
     var body: some View {
         HStack(spacing: 10) {
-            Button(action: onTap) { TrainingBlockRow(block: block, compact: false) }
-                .buttonStyle(.plain)
+            Button(action: onTap) { TrainingBlockRow(block: block, compact: false) }.buttonStyle(.plain)
             VStack(spacing: 4) {
-                Text(format(seconds))
-                    .font(.headline.monospacedDigit())
-                    .foregroundColor(Color(red: 1.0, green: 0.08, blue: 0.58))
+                Text(format(seconds)).font(.headline.monospacedDigit()).foregroundColor(Color(red: 1.0, green: 0.08, blue: 0.58))
                 HStack(spacing: 8) {
-                    Button("Play", action: onPlay)
-                    Button("Pause", action: onPause)
-                    Button("Reset", action: onReset)
-                }
-                .font(.caption.bold())
-                .foregroundColor(.white)
+                    Button("Play", action: onPlay); Button("Pause", action: onPause); Button("Reset", action: onReset)
+                }.font(.caption.bold()).foregroundColor(.white)
             }
         }
-        .padding(10)
-        .background(Color.white.opacity(0.08))
-        .cornerRadius(12)
+        .padding(10).background(Color.white.opacity(0.08)).cornerRadius(12)
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(block.category.color.opacity(isRunning ? 1 : 0.45), lineWidth: 1))
     }
-
     private func format(_ seconds: Int) -> String { "\(seconds / 60):\(String(format: "%02d", seconds % 60))" }
 }
 
 struct TrainingBlockRow: View {
-    let block: TrainingBlock
-    let compact: Bool
-
+    let block: TrainingBlock; let compact: Bool
     var body: some View {
         HStack(spacing: 10) {
-            Image(block.imageName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: compact ? 44 : 56, height: compact ? 44 : 56)
-                .cornerRadius(8)
+            Image(block.imageName).resizable().scaledToFit().frame(width: compact ? 44 : 56, height: compact ? 44 : 56).cornerRadius(8)
             VStack(alignment: .leading, spacing: 3) {
-                Text(block.name)
-                    .font(compact ? .subheadline.bold() : .headline)
-                    .foregroundColor(.white)
-                Text("\(block.durationMinutes) min • \(block.category.rawValue) • \(block.intensity.rawValue.uppercased())")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-            }
-            Spacer()
+                Text(block.name).font(compact ? .subheadline.bold() : .headline).foregroundColor(.white)
+                Text("\(block.durationMinutes) min • \(block.category.rawValue) • \(block.intensity.rawValue.uppercased())").font(.caption).foregroundColor(.gray)
+            }; Spacer()
         }
     }
 }
 
 struct TrainingBlockDetailView: View {
-    let block: TrainingBlock
-    @Environment(\.dismiss) private var dismiss
-
+    let block: TrainingBlock; @Environment(\.dismiss) private var dismiss
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                Image(block.imageName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 240)
-                    .background(Color.black.opacity(0.08))
-                    .cornerRadius(16)
+                Image(block.imageName).resizable().scaledToFit().frame(maxWidth: .infinity).frame(height: 240).background(Color.black.opacity(0.08)).cornerRadius(16)
                 Text(block.name).font(.title2.bold())
-                Text("\(block.durationMinutes) min • \(block.category.rawValue) • \(block.intensity.rawValue.uppercased())")
-                    .foregroundColor(.secondary)
+                Text("\(block.durationMinutes) min • \(block.category.rawValue) • \(block.intensity.rawValue.uppercased())").foregroundColor(.secondary)
                 Text("Instructions").font(.headline)
-                ForEach(block.instructions, id: \.self) { line in
-                    Text("• \(line)").frame(maxWidth: .infinity, alignment: .leading)
-                }
-                Button("Close") { dismiss() }
-                    .buttonStyle(TrainingButtonStyle(color: Color(red: 1.0, green: 0.08, blue: 0.58), foreground: .white))
-            }
-            .padding()
+                ForEach(block.instructions, id: \.self) { line in Text("• \(line)").frame(maxWidth: .infinity, alignment: .leading) }
+                Button("Close") { dismiss() }.buttonStyle(TrainingButtonStyle(color: Color(red: 1.0, green: 0.08, blue: 0.58), foreground: .white))
+            }.padding()
         }
     }
 }
 
 struct TrainingButtonStyle: ButtonStyle {
-    let color: Color
-    let foreground: Color
+    let color: Color; let foreground: Color
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.caption.bold())
-            .foregroundColor(foreground)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(color.opacity(configuration.isPressed ? 0.75 : 1.0))
-            .cornerRadius(10)
+            .font(.caption.bold()).foregroundColor(foreground)
+            .padding(.horizontal, 14).padding(.vertical, 10)
+            .background(color.opacity(configuration.isPressed ? 0.75 : 1.0)).cornerRadius(10)
     }
 }
