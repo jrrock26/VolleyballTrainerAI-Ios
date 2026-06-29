@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import AudioToolbox
 
-enum TrainingCategory: String, Codable, CaseIterable {
+enum TrainingCategory: String, Codable, CaseIterable, Identifiable {
     case warmup = "Warmup"
     case stretching = "Stretching"
     case agility = "Agility"
@@ -11,6 +11,7 @@ enum TrainingCategory: String, Codable, CaseIterable {
     case strength = "Strength"
     case waterBreak = "Water Break"
 
+    var id: String { rawValue }
     var color: Color {
         switch self {
         case .warmup, .stretching: return .green
@@ -27,6 +28,13 @@ enum TrainingIntensity: String, Codable {
     case low, medium, high
 }
 
+enum TrainingGenerationMode: String, CaseIterable, Identifiable {
+    case aiCoach = "AI Coach"
+    case userGenerated = "User Generated"
+    case customBuilt = "Custom Built"
+    var id: String { rawValue }
+}
+
 struct TrainingBlock: Identifiable, Codable, Hashable {
     let id: UUID
     let name: String
@@ -37,40 +45,16 @@ struct TrainingBlock: Identifiable, Codable, Hashable {
     let focusTags: [String]
     let instructions: [String]
 
-    init(
-        id: UUID = UUID(),
-        name: String,
-        category: TrainingCategory,
-        durationMinutes: Int,
-        intensity: TrainingIntensity,
-        imageName: String,
-        focusTags: [String],
-        instructions: [String]
-    ) {
-        self.id = id
-        self.name = name
-        self.category = category
-        self.durationMinutes = durationMinutes
-        self.intensity = intensity
-        self.imageName = imageName
-        self.focusTags = focusTags
-        self.instructions = instructions
+    init(id: UUID = UUID(), name: String, category: TrainingCategory, durationMinutes: Int, intensity: TrainingIntensity, imageName: String, focusTags: [String], instructions: [String]) {
+        self.id = id; self.name = name; self.category = category; self.durationMinutes = durationMinutes; self.intensity = intensity; self.imageName = imageName; self.focusTags = focusTags; self.instructions = instructions
     }
 
     static func waterBreak(minutes: Int = 2) -> TrainingBlock {
-        TrainingBlock(
-            name: "Water Break",
-            category: .waterBreak,
-            durationMinutes: minutes,
-            intensity: .low,
-            imageName: "icon",
-            focusTags: ["recovery"],
-            instructions: [
-                "Drink water or electrolytes.",
-                "Walk slowly and control your breathing.",
-                "Restart only when your legs feel responsive."
-            ]
-        )
+        TrainingBlock(name: "Water Break", category: .waterBreak, durationMinutes: minutes, intensity: .low, imageName: "icon", focusTags: ["recovery"], instructions: [
+            "Drink water or electrolytes.",
+            "Walk slowly and control your breathing.",
+            "Restart only when your legs feel responsive."
+        ])
     }
 }
 
@@ -80,7 +64,6 @@ struct TrainingPlan: Identifiable, Hashable {
     var focus: String
     var createdAt: Date
     var blocks: [TrainingBlock]
-
     var totalMinutes: Int { blocks.reduce(0) { $0 + $1.durationMinutes } }
 }
 
@@ -94,10 +77,7 @@ final class SavedTrainingPlan {
     var blocksJSON: String
 
     init(name: String, focus: String, blocks: [TrainingBlock]) {
-        self.id = UUID()
-        self.name = name
-        self.focus = focus
-        self.createdAt = Date()
+        self.id = UUID(); self.name = name; self.focus = focus; self.createdAt = Date()
         self.totalMinutes = blocks.reduce(0) { $0 + $1.durationMinutes }
         let data = (try? JSONEncoder().encode(blocks)) ?? Data()
         self.blocksJSON = String(data: data, encoding: .utf8) ?? "[]"
@@ -158,8 +138,7 @@ enum VolleyballTrainingLibrary {
         else { tags = ["armSwing", "jump", "agility", "timing"] }
 
         var planBlocks = Array(warmups.prefix(3))
-        var candidates = drills
-            .filter { block in !Set(block.focusTags).isDisjoint(with: Set(tags)) }
+        var candidates = drills.filter { block in !Set(block.focusTags).isDisjoint(with: Set(tags)) }
         if candidates.count < 5 { candidates += drills.filter { !candidates.contains($0) } }
 
         var activeMinutes = planBlocks.reduce(0) { $0 + $1.durationMinutes }
@@ -170,16 +149,28 @@ enum VolleyballTrainingLibrary {
         }
 
         planBlocks = insertWaterBreaks(in: planBlocks)
-        return TrainingPlan(
-            id: UUID(),
-            name: "Coach Plan: \(focus.capitalized)",
-            focus: focus,
-            createdAt: Date(),
-            blocks: planBlocks
-        )
+        return TrainingPlan(id: UUID(), name: "Coach Plan: \(focus.capitalized)", focus: focus, createdAt: Date(), blocks: planBlocks)
     }
 
-    private static func insertWaterBreaks(in blocks: [TrainingBlock]) -> [TrainingBlock] {
+    static func generatePlan(categories: [TrainingCategory], targetMinutes: Int) -> TrainingPlan {
+        let categorySet = Set(categories)
+        var planBlocks = Array(warmups.shuffled().prefix(3))
+        var candidates = drills.filter { categorySet.contains($0.category) }
+        if candidates.isEmpty { candidates = Array(drills.shuffled().prefix(5)) }
+
+        var activeMinutes = planBlocks.reduce(0) { $0 + $1.durationMinutes }
+        for block in candidates {
+            guard activeMinutes + block.durationMinutes <= targetMinutes else { continue }
+            planBlocks.append(block)
+            activeMinutes += block.durationMinutes
+        }
+
+        planBlocks = insertWaterBreaks(in: planBlocks)
+        let focusName = categories.map { $0.rawValue }.joined(separator: " + ")
+        return TrainingPlan(id: UUID(), name: "User Plan: \(focusName)", focus: focusName, createdAt: Date(), blocks: planBlocks)
+    }
+
+    static func insertWaterBreaks(in blocks: [TrainingBlock]) -> [TrainingBlock] {
         var result: [TrainingBlock] = []
         var minutesSinceBreak = 0
         for (index, block) in blocks.enumerated() {
@@ -200,12 +191,33 @@ struct TrainingHubView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \VolleyballHit.timestamp, order: .reverse) private var hits: [VolleyballHit]
     @Query(sort: \SavedTrainingPlan.createdAt, order: .reverse) private var savedPlans: [SavedTrainingPlan]
-    @State private var customFocus = ""
     @State private var generatedPlan: TrainingPlan?
     @State private var showingSaved = false
+    @State private var mode: TrainingGenerationMode = .aiCoach
+    @State private var selectedCategories: Set<TrainingCategory> = []
+    @State private var customDrills: [TrainingBlock] = []
+    @State private var durationMinutes: Int = 60
+    @State private var showingCustomBuilder = false
     @Environment(\.dismiss) private var dismiss
 
     private var coachFocus: String { VolleyballTrainingLibrary.recommendationFocus(from: hits) }
+    private let durationOptions = stride(from: 30, through: 120, by: 15).map { $0 }
+
+    private func generatePlan() {
+        switch mode {
+        case .aiCoach:
+            generatedPlan = VolleyballTrainingLibrary.generatePlan(focus: coachFocus, targetMinutes: durationMinutes)
+        case .userGenerated:
+            let cats = Array(selectedCategories)
+            generatedPlan = VolleyballTrainingLibrary.generatePlan(categories: cats.isEmpty ? TrainingCategory.allCases.filter { $0 != .waterBreak } : cats, targetMinutes: durationMinutes)
+        case .customBuilt:
+            if !customDrills.isEmpty {
+                var blocks = customDrills
+                blocks = VolleyballTrainingLibrary.insertWaterBreaks(in: blocks)
+                generatedPlan = TrainingPlan(id: UUID(), name: "Custom Plan", focus: "Custom", createdAt: Date(), blocks: blocks)
+            }
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -220,7 +232,6 @@ struct TrainingHubView: View {
 
                     ScrollView {
                         VStack(alignment: .leading, spacing: 12) {
-                            // Back button
                             HStack {
                                 Button(action: { dismiss() }) {
                                     HStack(spacing: 6) {
@@ -233,10 +244,10 @@ struct TrainingHubView: View {
                                     .padding(.vertical, 8)
                                     .background(
                                         RoundedRectangle(cornerRadius: 10)
-                                            .fill(Color.black.opacity(0.6))
+                                            .fill(Color.black.opacity(0.4))
                                             .background(
                                                 RoundedRectangle(cornerRadius: 10)
-                                                    .stroke(Color.pink.opacity(0.6), lineWidth: 1)
+                                                    .stroke(Color.pink.opacity(0.5), lineWidth: 1)
                                             )
                                     )
                                 }
@@ -246,9 +257,10 @@ struct TrainingHubView: View {
                             .padding(.top, 16)
 
                             header
-                            coachCard
-                            generatorCard
-                            libraryPreview
+                            modePicker
+                            durationControl
+                            modeContent
+                            actionButtons
                         }
                         .padding(.horizontal, 24)
                     }
@@ -260,22 +272,79 @@ struct TrainingHubView: View {
                 .sheet(isPresented: $showingSaved) {
                     SavedTrainingsView()
                 }
+                .sheet(isPresented: $showingCustomBuilder) {
+                    CustomDrillBuilderView(selectedDrills: $customDrills)
+                }
             }
         }
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Build workouts from your AI coach feedback.")
+            Text("Training Hub")
                 .font(.title2.bold())
                 .foregroundColor(.white)
-            Text("Every generated workout starts with 3 warmup/stretch blocks and inserts water breaks every 10-15 minutes.")
+            Text("Generate workouts from AI coach feedback, category focus, or build your own custom routine.")
                 .font(.caption)
                 .foregroundColor(.gray)
         }
     }
 
-    private var coachCard: some View {
+    private var modePicker: some View {
+        Picker("Mode", selection: $mode) {
+            ForEach(TrainingGenerationMode.allCases) { m in
+                Text(m.rawValue).tag(m)
+            }
+        }
+        .pickerStyle(.segmented)
+        .padding()
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.cyan.opacity(0.3), lineWidth: 1)
+        )
+    }
+
+    private var durationControl: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Duration: \(durationMinutes) min")
+                .font(.caption.bold())
+                .foregroundColor(.white)
+            Slider(value: Binding(
+                get: { Double(durationMinutes) },
+                set: { durationMinutes = Int($0) }
+            ), in: 30...120, step: 15)
+            .tint(.cyan)
+        }
+        .padding()
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.cyan.opacity(0.3), lineWidth: 1)
+        )
+    }
+
+    @ViewBuilder
+    private var modeContent: some View {
+        switch mode {
+        case .aiCoach:
+            aiCoachCard
+        case .userGenerated:
+            userGeneratedCard
+        case .customBuilt:
+            customBuiltCard
+        }
+    }
+
+    private var aiCoachCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Coach Recommendation")
                 .font(.headline)
@@ -283,45 +352,250 @@ struct TrainingHubView: View {
             Text(coachFocus.capitalized)
                 .font(.title3.bold())
                 .foregroundColor(.white)
-            Button("Generate Coach Plan") {
-                generatedPlan = VolleyballTrainingLibrary.generatePlan(focus: coachFocus)
-            }
-            .buttonStyle(TrainingButtonStyle(color: .yellow, foreground: .black))
+            Text("Based on your most recent hit feedback. Adjust duration above and generate a plan.")
+                .font(.caption)
+                .foregroundColor(.gray)
         }
-        .trainingCard()
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.yellow.opacity(0.3), lineWidth: 1)
+        )
     }
 
-    private var generatorCard: some View {
+    private var userGeneratedCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Generate Your Own Schedule")
+            Text("Select Categories")
                 .font(.headline)
                 .foregroundColor(.cyan)
-            TextField("Focus, e.g. agility, arm swing, jumping", text: $customFocus)
-                .textFieldStyle(.roundedBorder)
-            HStack {
-                Button("Generate") {
-                    let focus = customFocus.trimmingCharacters(in: .whitespacesAndNewlines)
-                    generatedPlan = VolleyballTrainingLibrary.generatePlan(focus: focus.isEmpty ? "balanced volleyball performance" : focus)
+
+            let allCategories = TrainingCategory.allCases.filter { $0 != .waterBreak }
+            Button(action: {
+                if selectedCategories.count == allCategories.count {
+                    selectedCategories = []
+                } else {
+                    selectedCategories = Set(allCategories)
                 }
-                .buttonStyle(TrainingButtonStyle(color: .cyan, foreground: .black))
-                Button("Saved Trainings (\(savedPlans.count))") {
-                    showingSaved = true
+            }) {
+                Text(selectedCategories.count == allCategories.count ? "Deselect All" : "Select All")
+                    .font(.caption.bold())
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.cyan.opacity(0.3))
+                    .cornerRadius(10)
+            }
+            .buttonStyle(PlainButtonStyle())
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(allCategories) { cat in
+                        let isSelected = selectedCategories.contains(cat)
+                        Button(action: {
+                            if isSelected { selectedCategories.remove(cat) }
+                            else { selectedCategories.insert(cat) }
+                        }) {
+                            Text(cat.rawValue)
+                                .font(.caption.bold())
+                                .foregroundColor(isSelected ? .black : cat.color)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(isSelected ? cat.color : Color.clear)
+                                .cornerRadius(20)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .stroke(cat.color.opacity(0.6), lineWidth: 1.5)
+                                )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
                 }
-                .buttonStyle(TrainingButtonStyle(color: .purple, foreground: .white))
             }
         }
-        .trainingCard()
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.cyan.opacity(0.3), lineWidth: 1)
+        )
     }
 
-    private var libraryPreview: some View {
+    private var customBuiltCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Training Library")
+            Text("Custom Drill Builder")
                 .font(.headline)
-                .foregroundColor(.white)
-            ForEach(VolleyballTrainingLibrary.drills.prefix(6)) { block in
-                TrainingBlockRow(block: block, compact: true)
+                .foregroundColor(.purple)
+            if customDrills.isEmpty {
+                Text("No drills selected yet. Tap the button below to pick drills by category.")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            } else {
+                Text("\(customDrills.count) drills selected • \(customDrills.reduce(0) { $0 + $1.durationMinutes }) min total")
+                    .font(.caption)
+                    .foregroundColor(.cyan)
+                ScrollView {
+                    ForEach(customDrills) { drill in
+                        HStack {
+                            Text(drill.name).font(.caption).foregroundColor(.white)
+                            Spacer()
+                            Text("\(drill.durationMinutes) min").font(.caption2).foregroundColor(.gray)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.white.opacity(0.08))
+                        .cornerRadius(6)
+                    }
+                }
+                .frame(maxHeight: 120)
+            }
+            Button(action: { showingCustomBuilder = true }) {
+                Text(customDrills.isEmpty ? "Select Drills" : "Edit Drills")
+                    .font(.caption.bold())
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(Color.purple)
+                    .cornerRadius(10)
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.purple.opacity(0.3), lineWidth: 1)
+        )
+    }
+
+    private var actionButtons: some View {
+        VStack(spacing: 10) {
+            Button("Generate Plan") {
+                generatePlan()
+            }
+            .buttonStyle(TrainingButtonStyle(color: .cyan, foreground: .black))
+            .disabled(mode == .customBuilt && customDrills.isEmpty)
+
+            Button("Saved Trainings (\(savedPlans.count))") {
+                showingSaved = true
+            }
+            .buttonStyle(TrainingButtonStyle(color: .purple, foreground: .white))
+        }
+    }
+}
+
+struct CustomDrillBuilderView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var selectedDrills: [TrainingBlock]
+    @State private var selectedCategories: Set<TrainingCategory> = []
+
+    private var allCategories: [TrainingCategory] {
+        TrainingCategory.allCases.filter { $0 != .waterBreak }
+    }
+
+    private var availableDrills: [TrainingBlock] {
+        let cats = selectedCategories.isEmpty ? allCategories : Array(selectedCategories)
+        return VolleyballTrainingLibrary.drills.filter { cats.contains($0.category) }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color(red: 0.07, green: 0.07, blue: 0.09).ignoresSafeArea()
+                VStack(spacing: 12) {
+                    categoryFilter
+                    drillGrid
+                    selectedSummary
+                }
+                .padding()
+            }
+            .navigationTitle("Pick Drills")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
             }
         }
+    }
+
+    private var categoryFilter: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                Button(action: { selectedCategories.removeAll() }) {
+                    Text("All")
+                        .font(.caption.bold())
+                        .foregroundColor(selectedCategories.isEmpty ? .black : .white)
+                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .background(selectedCategories.isEmpty ? Color.cyan : Color.clear)
+                        .cornerRadius(20)
+                        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.cyan.opacity(0.6), lineWidth: 1.5))
+                }
+                .buttonStyle(PlainButtonStyle())
+                ForEach(allCategories) { cat in
+                    let isSelected = selectedCategories.contains(cat)
+                    Button(action: {
+                        if isSelected { selectedCategories.remove(cat) } else { selectedCategories.insert(cat) }
+                    }) {
+                        Text(cat.rawValue)
+                            .font(.caption.bold())
+                            .foregroundColor(isSelected ? .black : cat.color)
+                            .padding(.horizontal, 12).padding(.vertical, 8)
+                            .background(isSelected ? cat.color : Color.clear)
+                            .cornerRadius(20)
+                            .overlay(RoundedRectangle(cornerRadius: 20).stroke(cat.color.opacity(0.6), lineWidth: 1.5))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+        }
+    }
+
+    private var drillGrid: some View {
+        ScrollView {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                ForEach(availableDrills) { drill in
+                    let isSelected = selectedDrills.contains(drill)
+                    Button(action: {
+                        if isSelected { selectedDrills.removeAll { $0.id == drill.id } }
+                        else { selectedDrills.append(drill) }
+                    }) {
+                        VStack(spacing: 6) {
+                            Image(drill.imageName)
+                                .resizable().scaledToFit().frame(height: 50).cornerRadius(8)
+                            Text(drill.name).font(.caption2.bold()).foregroundColor(.white).multilineTextAlignment(.center)
+                            Text("\(drill.durationMinutes) min").font(.caption2).foregroundColor(.gray)
+                        }
+                        .padding(10)
+                        .frame(maxWidth: .infinity)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(isSelected ? drill.category.color.opacity(0.25) : Color(red: 0.14, green: 0.14, blue: 0.16)))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(drill.category.color.opacity(isSelected ? 0.8 : 0.3), lineWidth: isSelected ? 2 : 1))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+        }
+    }
+
+    private var selectedSummary: some View {
+        HStack {
+            Text("\(selectedDrills.count) drills selected")
+                .font(.caption).foregroundColor(.gray)
+            Spacer()
+        }
+        .padding(.horizontal)
     }
 }
 
@@ -362,9 +636,6 @@ struct TrainingScheduleView: View {
                 HStack {
                     Button("Save") { showSaveName = true }
                         .buttonStyle(TrainingButtonStyle(color: .cyan, foreground: .black))
-                    Button("PDF") { }
-                        .buttonStyle(TrainingButtonStyle(color: Color(red: 1.0, green: 0.08, blue: 0.58), foreground: .white))
-                        .disabled(true)
                     ShareLink(item: shareText) {
                         Text("Share")
                     }
@@ -430,10 +701,7 @@ struct TrainingScheduleView: View {
         for id in running {
             guard let value = timers[id], value > 0 else { continue }
             timers[id] = value - 1
-            if value - 1 == 0 {
-                running.remove(id)
-                AudioServicesPlaySystemSound(1519)
-            }
+            if value - 1 == 0 { running.remove(id); AudioServicesPlaySystemSound(1519) }
         }
     }
 
@@ -473,9 +741,7 @@ struct SavedTrainingsView: View {
             }
             .navigationTitle("Saved Trainings")
             .toolbar { Button("Done") { dismiss() } }
-            .navigationDestination(item: $selectedPlan) { plan in
-                TrainingScheduleView(plan: plan)
-            }
+            .navigationDestination(item: $selectedPlan) { plan in TrainingScheduleView(plan: plan) }
         }
     }
 }
@@ -491,10 +757,8 @@ struct TrainingScheduleRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Button(action: onTap) {
-                TrainingBlockRow(block: block, compact: false)
-            }
-            .buttonStyle(.plain)
+            Button(action: onTap) { TrainingBlockRow(block: block, compact: false) }
+                .buttonStyle(.plain)
             VStack(spacing: 4) {
                 Text(format(seconds))
                     .font(.headline.monospacedDigit())
@@ -514,9 +778,7 @@ struct TrainingScheduleRow: View {
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(block.category.color.opacity(isRunning ? 1 : 0.45), lineWidth: 1))
     }
 
-    private func format(_ seconds: Int) -> String {
-        "\(seconds / 60):\(String(format: "%02d", seconds % 60))"
-    }
+    private func format(_ seconds: Int) -> String { "\(seconds / 60):\(String(format: "%02d", seconds % 60))" }
 }
 
 struct TrainingBlockRow: View {
@@ -583,14 +845,5 @@ struct TrainingButtonStyle: ButtonStyle {
             .padding(.vertical, 10)
             .background(color.opacity(configuration.isPressed ? 0.75 : 1.0))
             .cornerRadius(10)
-    }
-}
-
-private extension View {
-    func trainingCard() -> some View {
-        padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(red: 0.14, green: 0.14, blue: 0.16))
-            .cornerRadius(16)
     }
 }
