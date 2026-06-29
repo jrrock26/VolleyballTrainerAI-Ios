@@ -63,18 +63,16 @@ struct TrainingPlan: Identifiable, Hashable {
     var totalMinutes: Int { blocks.reduce(0) { $0 + $1.durationMinutes } }
 }
 
-@Model
-final class SavedTrainingPlan {
-    var id: UUID; var name: String; var focus: String; var createdAt: Date; var totalMinutes: Int; var blocksJSON: String
-    init(name: String, focus: String, blocks: [TrainingBlock]) {
-        self.id = UUID(); self.name = name; self.focus = focus; self.createdAt = Date()
-        self.totalMinutes = blocks.reduce(0) { $0 + $1.durationMinutes }
-        let data = (try? JSONEncoder().encode(blocks)) ?? Data()
-        self.blocksJSON = String(data: data, encoding: .utf8) ?? "[]"
-    }
-    var blocks: [TrainingBlock] {
-        guard let data = blocksJSON.data(using: .utf8) else { return [] }
-        return (try? JSONDecoder().decode([TrainingBlock].self, from: data)) ?? []
+struct SavedPoint: Codable, Identifiable {
+    let id: UUID
+    let name: String
+    let focus: String
+    let createdAt: Date
+    let totalMinutes: Int
+    let blocks: [TrainingBlock]
+
+    init(id: UUID = UUID(), name: String, focus: String, createdAt: Date = Date(), totalMinutes: Int, blocks: [TrainingBlock]) {
+        self.id = id; self.name = name; self.focus = focus; self.createdAt = createdAt; self.totalMinutes = totalMinutes; self.blocks = blocks
     }
 }
 
@@ -104,7 +102,6 @@ enum VolleyballTrainingLibrary {
     ]
 
     static let drills: [TrainingBlock] = [
-        // ===== HITTING / ATTACK =====
         TrainingBlock(name: "Hitting Arm Swing Mechanics", category: .volleyball, durationMinutes: 10, intensity: .medium, imageName: "hitting_arm_swing", focusTags: ["armSwing", "armExtension", "tempo"], instructions: ["Load your hitting elbow behind your ear at takeoff.", "Contact the ball in front of your body at full reach.", "Freeze the finish position and check shoulder-to-wrist alignment."]),
         TrainingBlock(name: "Approach Angle Reps", category: .volleyball, durationMinutes: 9, intensity: .medium, imageName: "hitting_approach_angle", focusTags: ["approach", "timing", "armSwing"], instructions: ["Mark your start position and target contact zone.", "Use a controlled 3-step approach — left, right-left — with explosive arm drive.", "Plant your hips open and attack through the ball into the target."]),
         TrainingBlock(name: "Max Jump Touches", category: .volleyball, durationMinutes: 8, intensity: .high, imageName: "hitting_max_jump", focusTags: ["jump", "explosiveness", "vertical"], instructions: ["Take a 3-step approach and jump as high as possible toward a safe wall target.", "Swing arms aggressively into the takeoff and reach with both hands.", "Land softly and reset fully before the next rep — quality over quantity."]),
@@ -147,7 +144,6 @@ enum VolleyballTrainingLibrary {
         TrainingBlock(name: "Block + Recover to Defense", category: .volleyball, durationMinutes: 8, intensity: .high, imageName: "blocking", focusTags: ["blockToDefense", "transition", "recovery"], instructions: ["Jump block at the net, then land and immediately drop into a defensive stance.", "Coach attacks a ball after your block — dig the ball to the setter.", "This drill replicates the block → dig sequence that happens on every rally."]),
         TrainingBlock(name: "Double-Block Timing", category: .volleyball, durationMinutes: 8, intensity: .high, imageName: "blocking", focusTags: ["doubleBlock", "timing", "communication"], instructions: ["Set up with a blocking partner and an outside hitter — the hitter attacks at game speed.", "Your block call should come before the set arrives: 'Together!' or 'Stay!'", "Both blockers must jump at the same millisecond — no window between hands."]),
 
-        // ===== AGILITY =====
         TrainingBlock(name: "Ladder Quick Footwork", category: .agility, durationMinutes: 8, intensity: .medium, imageName: "agility_ladder", focusTags: ["agility", "footwork", "quickness"], instructions: ["Set up an agility ladder — 2 feet in each box, staying on the balls of your feet.", "Progress through: lateral steps, Icky shuffle, in-in-out pattern.", "Increase speed only when the rhythm is clean — 3 sets of each pattern."]),
         TrainingBlock(name: "Lateral Slide Defense", category: .agility, durationMinutes: 8, intensity: .medium, imageName: "agility_lateral_slides", focusTags: ["defense", "agility", "lateral"], instructions: ["Stay low in a defensive posture the entire drill.", "Push from the inside edge of your foot — keep feet shoulder-width.", "No crossing your feet unless a directional cue is given."]),
         TrainingBlock(name: "5-10-5 Change of Direction", category: .agility, durationMinutes: 9, intensity: .high, imageName: "agility_5_10_5", focusTags: ["agility", "reaction", "explosiveness"], instructions: ["Sprint 5 yards to the right, plant the outside foot, sprint 10 yards left.", "Plant foot under your hip — do not lean before the cut.", "Explode out of each cut — 4-6 reps with full recovery."]),
@@ -160,12 +156,9 @@ enum VolleyballTrainingLibrary {
         TrainingBlock(name: "Box Shuffle Pattern", category: .agility, durationMinutes: 7, intensity: .medium, imageName: "agility_box_shuffle", focusTags: ["boxPattern", "changeOfDirection", "footwork"], instructions: ["Set up 4 cones in a 5x5 yard box — start at cone 1, shuffle forward to cone 2.", "Slide right to cone 3, backpedal to cone 4, shuffle left back to cone 1.", "Complete 5 full cycles in each direction."]),
         TrainingBlock(name: "Single-Leg Hops (Speed)", category: .agility, durationMinutes: 5, intensity: .medium, imageName: "agility_single_leg_hops", focusTags: ["singleLeg", "explosiveness", "ankleStiffness"], instructions: ["Stand on one leg — hop forward 10 yards, hop backward to start.", "Switch legs — minimal ground contact, like a quick rebound.", "This drill builds the ankle stiffness needed for explosive blocking and landing."]),
         TrainingBlock(name: "Ball Drop Reaction", category: .agility, durationMinutes: 6, intensity: .high, imageName: "agility_ball_drop", focusTags: ["reaction", "speed", "explosiveness"], instructions: ["Hold a ball at shoulder height and drop it — catch it before it bounces twice.", "Variation: partner drops the ball from behind you — you must turn and catch.", "This trains the split-second reactive speed required for emergency digs."]),
-        TrainingBlock(name: "Icky Shuffle Ladder", category: .agility, durationMinutes: 6, intensity: .medium, imageName: "agility_icky_shuffle", focusTags: ["icky", "coordination", "footworkPattern"], instructions: ["Face the ladder at one end — pattern: in, in, out (left foot in, right foot in, both feet out).", "Repeat down the ladder, then shuffle backward to the start.", "The Icky shuffle trains the complex footwork needed for multi-directional volleyball movement."]),
         TrainingBlock(name: "Perimeter Court Sprint", category: .agility, durationMinutes: 6, intensity: .high, imageName: "agility_court_perimeter", focusTags: ["endurance", "speed", "changeOfDirection"], instructions: ["Start at the center of the baseline — sprint to the right sideline, shuffle to the net.", "Sprint across the net line, shuffle down the left sideline, backpedal to start.", "Complete 3 full laps — this is game-level conditioning."]),
         TrainingBlock(name: "Figure-8 Cone Drill", category: .agility, durationMinutes: 7, intensity: .medium, imageName: "agility_figure8", focusTags: ["figure8", "curvilinear", "footwork"], instructions: ["Set two cones 6 yards apart — weave through them in a figure-8 pattern.", "Stay low and push off the outside foot around each cone.", "This drill trains curvilinear speed — moving around blockers and defenders."]),
-        TrainingBlock(name: "Hexagon Agility Test", category: .agility, durationMinutes: 6, intensity: .high, imageName: "agility_combo", focusTags: ["hexagon", "multiDirectional", "speed"], instructions: ["Draw a hexagon with 24-inch sides — stand in the center facing one direction.", "Hop over each side and back to center without turning your body.", "Complete 3 clockwise rotations and 3 counter-clockwise — stay on the balls of your feet."]),
 
-        // ===== PLYOMETRICS =====
         TrainingBlock(name: "Box Jump Power", category: .plyometrics, durationMinutes: 8, intensity: .high, imageName: "plyo_box_jumps", focusTags: ["jump", "plyo", "explosiveness"], instructions: ["Use a safe box height (12-24 inches depending on ability).", "Step off the box, immediately jump vertically as high as possible.", "Land softly — stick the landing for 2 seconds before resetting."]),
         TrainingBlock(name: "Depth Drop + Vertical", category: .plyometrics, durationMinutes: 8, intensity: .high, imageName: "plyo_depth_jump_vertical", focusTags: ["reactive", "vertical", "explosiveness"], instructions: ["Step off a 12-18 inch box — upon landing, explode into a max vertical jump.", "Minimize ground contact time — think 'hot plate' under your feet.", "3 sets of 5 reps with 90 seconds rest between sets."]),
         TrainingBlock(name: "Lateral Bounds (Skater Hops)", category: .plyometrics, durationMinutes: 7, intensity: .medium, imageName: "plyo_lateral_bounds", focusTags: ["agility", "lateral", "explosiveness"], instructions: ["Stand on one leg — bound laterally as far as possible, landing on the opposite leg.", "Stick the landing for 1 second before exploding back the other direction.", "Keep your chest up and hips loaded — 3 sets of 6 per side."]),
@@ -183,22 +176,16 @@ enum VolleyballTrainingLibrary {
         TrainingBlock(name: "Jump Matrix Pattern", category: .plyometrics, durationMinutes: 8, intensity: .high, imageName: "plyo_jump_matrix", focusTags: ["matrix", "multiDirectional", "endurance"], instructions: ["Stand in the center of a 4-cone matrix (front, back, left, right cones spaced 3 yards).", "Jump to the front cone, back to center, right cone, back to center — complete all 4 directions.", "Each direction counts as one rep — complete 10 total reps with no pausing."]),
         TrainingBlock(name: "Ankle Stiffness Hops", category: .plyometrics, durationMinutes: 5, intensity: .medium, imageName: "plyo_ankle_stiffness", focusTags: ["ankleStiffness", "rhythm", "groundContact"], instructions: ["Keep your knees as straight as possible — hop forward and backward using only ankle movement.", "The goal is 50 hops in 30 seconds — stiff ankles = faster rebounds = higher blocks.", "3 sets of 30 seconds with 30 seconds rest."]),
 
-        // ===== STRENGTH =====
         TrainingBlock(name: "Core Stability Holds", category: .strength, durationMinutes: 7, intensity: .medium, imageName: "core_stability", focusTags: ["core", "stability", "powerTransfer"], instructions: ["Front plank: 30 seconds — keep a straight line from head to heels.", "Side plank: 20 seconds each side — stack your feet and lift hips.", "Dead bugs: 10 reps each side — slow, controlled, press lower back into the floor."]),
         TrainingBlock(name: "Glute + Hamstring Activation", category: .strength, durationMinutes: 6, intensity: .low, imageName: "core_stability", focusTags: ["glute", "hamstring", "mobility"], instructions: ["Glute bridges: 15 reps — squeeze at the top for 2 seconds.", "Single-leg Romanian deadlifts: 8 reps per leg — slow tempo.", "Walking lunges: 10 reps per leg — keep your front shin vertical."]),
-        TrainingBlock(name: "Rotator Cuff + Shoulder Stability", category: .strength, durationMinutes: 6, intensity: .low, imageName: "stretch_shoulder_prep", focusTags: ["shoulder", "stability", "injuryPrevention"], instructions: ["External rotation with band: 12 reps per arm.", "Y-T-W-L raises: 8 reps each letter — slow and controlled.", "Finish with scapular push-ups: 10 reps."]),
         TrainingBlock(name: "Bulgarian Split Squats", category: .strength, durationMinutes: 8, intensity: .medium, imageName: "core_stability", focusTags: ["singleLeg", "strength", "balance"], instructions: ["Place your back foot on a bench or box — lower into a lunge with your front leg.", "Drive through your front heel to return to standing — this builds unilateral leg power for jumping.", "3 sets of 8 reps per leg with 60 seconds rest."]),
         TrainingBlock(name: "Hip Thrusters", category: .strength, durationMinutes: 6, intensity: .medium, imageName: "core_stability", focusTags: ["glute", "hipExtension", "power"], instructions: ["Sit on the floor with your upper back against a bench — place a barbell or plate across your hips.", "Drive through your heels to lift your hips as high as possible — squeeze glutes at the top.", "This is the most important strength exercise for vertical jump development."]),
         TrainingBlock(name: "Medicine Ball Rotational Toss", category: .strength, durationMinutes: 6, intensity: .medium, imageName: "core_stability", focusTags: ["rotation", "powerTransfer", "core"], instructions: ["Stand sideways to a wall — hold a medicine ball at hip height and rotate your torso away from the wall.", "Explosively rotate back and throw the ball against the wall — catch and repeat.", "This builds the rotational power needed for arm swing velocity."]),
         TrainingBlock(name: "Single-Leg Calf Raises", category: .strength, durationMinutes: 5, intensity: .low, imageName: "core_stability", focusTags: ["calf", "ankleStrength", "stability"], instructions: ["Stand on one leg on a step — lower your heel below the step level, then press up as high as possible.", "This directly strengthens the ankle and calf for explosive jumping and safe landing.", "3 sets of 15 reps per leg with minimal rest."]),
         TrainingBlock(name: "Pull-Ups / Lat Pulldowns", category: .strength, durationMinutes: 7, intensity: .medium, imageName: "core_stability", focusTags: ["back", "lat", "armSwing"], instructions: ["Perform pull-ups or lat pulldowns with a wide grip — focus on driving your elbows down.", "The lats (latissimus dorsi) are the primary muscle for arm swing power in a volleyball spike.", "3 sets of as many reps as possible with 90 seconds rest."]),
         TrainingBlock(name: "Overhead Medicine Ball Slam", category: .strength, durationMinutes: 5, intensity: .high, imageName: "core_stability", focusTags: ["slam", "explosiveness", "totalBody"], instructions: ["Hold a medicine ball overhead — slam it into the ground as hard as possible.", "Sit down into the slam to engage your legs and core — not just your arms.", "This full-body explosive movement translates directly to attack power."]),
-        TrainingBlock(name: "Kettlebell Swing", category: .strength, durationMinutes: 7, intensity: .medium, imageName: "stretch_leg_prep", focusTags: ["kettlebell", "hipHinge", "power"], instructions: ["Stand with feet shoulder-width apart — hinge at your hips, not your knees.", "Drive your hips forward to swing the kettlebell to chest height — the power comes from your glutes, not your arms.", "3 sets of 15 reps — this builds the explosive hip extension needed for jumping."]),
-        TrainingBlock(name: "Pistol Squat Progression", category: .strength, durationMinutes: 6, intensity: .medium, imageName: "stretch_hamstring_dynamic", focusTags: ["pistolSquat", "singleLeg", "balance"], instructions: ["Stand on one leg with the other leg extended forward — lower as far as you can control.", "Use a bench or TRX strap for assistance if needed — the goal is full range of motion.", "Single-leg strength is the #1 predictor of landing injury prevention in volleyball."]),
         TrainingBlock(name: "Farmer's Carry", category: .strength, durationMinutes: 5, intensity: .medium, imageName: "stretch_full_body", focusTags: ["grip", "stability", "endurance"], instructions: ["Hold a dumbbell (or kettlebell) in each hand — walk 30 yards with perfect posture.", "Keep your shoulders back, chest up, and core braced — do not lean to one side.", "This builds the shoulder stability needed for repetitive arm swing motion."]),
-        TrainingBlock(name: "Resistance Band Lateral Walk", category: .strength, durationMinutes: 5, intensity: .low, imageName: "stretch_leg_prep", focusTags: ["lateral", "gluteActivation", "injuryPrevention"], instructions: ["Place a resistance band around your ankles — stay in a quarter-squat position.", "Take controlled lateral steps — keep tension on the band the entire time.", "This activates the gluteus medius — critical for knee stability during blocking and landing."]),
 
-        // ===== STRETCHING / WARMUP =====
         TrainingBlock(name: "Arm Circles Dynamic", category: .stretching, durationMinutes: 3, intensity: .low, imageName: "stretch_shoulder_prep", focusTags: ["shoulder", "mobility", "warmup"], instructions: ["Stand with arms extended to your sides — make small, controlled circles forward for 15 seconds.", "Gradually increase the circle size each set — repeat backward for 15 seconds.", "This dynamic stretch improves shoulder range of motion for the arm swing."]),
         TrainingBlock(name: "Leg Swings (Forward + Lateral)", category: .stretching, durationMinutes: 3, intensity: .low, imageName: "stretch_hamstring_dynamic", focusTags: ["hamstring", "hip", "mobility"], instructions: ["Hold onto a wall or post — swing your leg forward and backward 10 times per leg.", "Then face the wall and swing your leg side to side 10 times per leg.", "This dynamic movement prepares the hamstrings and hips for explosive jumping."]),
         TrainingBlock(name: "Walking Knee Hugs", category: .stretching, durationMinutes: 3, intensity: .low, imageName: "stretch_leg_prep", focusTags: ["glute", "hipMobility", "warmup"], instructions: ["Walk forward — as you step, pull your knee into your chest and hold for 2 seconds.", "Alternate legs each step — this stretches the glutes and opens the hips.", "Perform 10 reps per leg — this is a standard college volleyball warmup movement."]),
@@ -305,6 +292,19 @@ enum VolleyballTrainingLibrary {
     }
 }
 
+// MARK: - UserDefaults helpers for saved plans
+private let savedPlansKey = "savedTrainingPlans"
+
+private func loadSavedPlans() -> [SavedPoint] {
+    guard let data = UserDefaults.standard.data(forKey: savedPlansKey) else { return [] }
+    return (try? JSONDecoder().decode([SavedPoint].self, from: data)) ?? []
+}
+
+private func persistSavedPlans(_ plans: [SavedPoint]) {
+    let data = (try? JSONEncoder().encode(plans)) ?? Data()
+    UserDefaults.standard.set(data, forKey: savedPlansKey)
+}
+
 // MARK: - Blended card modifier
 private struct BlendedCard: ViewModifier {
     func body(content: Content) -> some View {
@@ -344,9 +344,7 @@ private struct PinkSegmentedPicker: View {
 
 // MARK: - Training Hub View
 struct TrainingHubView: View {
-    @Environment(\.modelContext) private var modelContext
     @Query(sort: \VolleyballHit.timestamp, order: .reverse) private var hits: [VolleyballHit]
-    @Query(sort: \SavedTrainingPlan.createdAt, order: .reverse) private var savedPlans: [SavedTrainingPlan]
     @State private var generatedPlan: TrainingPlan?
     @State private var showingSaved = false
     @State private var mode: TrainingGenerationMode = .aiCoach
@@ -354,6 +352,7 @@ struct TrainingHubView: View {
     @State private var customDrills: [TrainingBlock] = []
     @State private var durationMinutes: Int = 60
     @State private var showingCustomBuilder = false
+    @State private var savedPlans: [SavedPoint] = []
     @Environment(\.dismiss) private var dismiss
 
     private var coachFocus: String { VolleyballTrainingLibrary.recommendationFocus(from: hits) }
@@ -395,29 +394,39 @@ struct TrainingHubView: View {
                                 }.buttonStyle(PlainButtonStyle()); Spacer()
                             }.padding(.top, 16)
                             header
-                            Spacer(minLength: 160)
+                            Spacer(minLength: 120)
                             PinkSegmentedPicker(selection: $mode, options: TrainingGenerationMode.allCases)
                             durationControl
                             modeContent
-                            actionButtons
+                            HStack(spacing: 10) {
+                                Button("Generate Plan") { generatePlan() }
+                                    .buttonStyle(TrainingButtonStyle(color: .cyan, foreground: .black))
+                                    .disabled(mode == .customBuilt && customDrills.isEmpty)
+                                Button("Saved Trainings (\(savedPlans.count))") { showingSaved = true }
+                                    .buttonStyle(TrainingButtonStyle(color: .purple, foreground: .white))
+                            }
                         }.padding(.horizontal, 24)
                     }
                 }
                 .navigationBarHidden(true)
-                .navigationDestination(item: $generatedPlan) { plan in TrainingScheduleView(plan: plan) }
-                .sheet(isPresented: $showingSaved) { SavedTrainingsView() }
+                .navigationDestination(item: $generatedPlan) { plan in TrainingScheduleView(plan: plan, onSave: addSavedPlan) }
+                .sheet(isPresented: $showingSaved) { SavedTrainingsView(savedPlans: $savedPlans, selectedPlan: $generatedPlan) }
                 .sheet(isPresented: $showingCustomBuilder) {
                     CustomDrillBuilderView(selectedDrills: $customDrills, targetMinutes: durationMinutes)
                 }
-            }
+            }.onAppear { savedPlans = loadSavedPlans() }
         }
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Training Hub").font(.title2.bold()).foregroundColor(.white)
-            Text("Generate workouts from AI coach feedback, category focus, or build your own custom routine.").font(.caption).foregroundColor(.gray)
-        }
+        Text("Generate workouts from AI coach feedback, category focus, or build your own custom routine.")
+            .font(.subheadline)
+            .foregroundColor(.white)
+    }
+
+    private func addSavedPlan(_ plan: SavedPoint) {
+        savedPlans.append(plan)
+        persistSavedPlans(savedPlans)
     }
 
     private var durationControl: some View {
@@ -487,7 +496,7 @@ struct TrainingHubView: View {
                             Text("\(drill.durationMinutes) min").font(.caption2).foregroundColor(.gray)
                         }.padding(.horizontal, 8).padding(.vertical, 4).background(Color.white.opacity(0.08)).cornerRadius(6)
                     }
-                }.frame(maxHeight: 120)
+                }.frame(maxHeight: 60)
             }
             Button(action: { showingCustomBuilder = true }) {
                 Text(customDrills.isEmpty ? "Select Drills" : "Edit Drills")
@@ -495,16 +504,6 @@ struct TrainingHubView: View {
                     .background(Color.purple).cornerRadius(10)
             }.buttonStyle(PlainButtonStyle())
         }.blendedCard()
-    }
-
-    private var actionButtons: some View {
-        VStack(spacing: 10) {
-            Button("Generate Plan") { generatePlan() }
-                .buttonStyle(TrainingButtonStyle(color: .cyan, foreground: .black))
-                .disabled(mode == .customBuilt && customDrills.isEmpty)
-            Button("Saved Trainings (\(savedPlans.count))") { showingSaved = true }
-                .buttonStyle(TrainingButtonStyle(color: .purple, foreground: .white))
-        }
     }
 }
 
@@ -530,7 +529,6 @@ struct CustomDrillBuilderView: View {
             ZStack {
                 Color(red: 0.07, green: 0.07, blue: 0.09).ignoresSafeArea()
                 VStack(spacing: 12) {
-                    // Header with cumulative time
                     HStack {
                         Text("Pick Drills")
                             .font(.title2.bold())
@@ -540,7 +538,6 @@ struct CustomDrillBuilderView: View {
                     .padding(.horizontal)
                     .padding(.top, 8)
 
-                    // Cumulative time bar
                     HStack {
                         Image(systemName: "clock.fill").foregroundColor(.cyan).font(.caption)
                         Text("\(selectedMinutes) min selected of \(targetMinutes) min target")
@@ -628,15 +625,15 @@ struct CustomDrillBuilderView: View {
 
 // MARK: - Training Schedule View
 struct TrainingScheduleView: View {
-    @Environment(\.modelContext) private var modelContext
     let plan: TrainingPlan
+    let onSave: (SavedPoint) -> Void
     @State private var selectedBlock: TrainingBlock?
     @State private var saveName = ""
-    @State private var showSaveName = false
     @State private var lastSavedName: String?
     @State private var showSaveConfirm = false
     @State private var timers: [UUID: Int] = [:]
     @State private var running: Set<UUID> = []
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         ZStack {
@@ -657,7 +654,7 @@ struct TrainingScheduleView: View {
                     }.padding(.horizontal)
                 }
                 HStack {
-                    Button("Save") { showSaveName = true }.buttonStyle(TrainingButtonStyle(color: .cyan, foreground: .black))
+                    Button("Save") { showSaveSheet() }.buttonStyle(TrainingButtonStyle(color: .cyan, foreground: .black))
                     ShareLink(item: shareText) { Text("Share") }.buttonStyle(TrainingButtonStyle(color: .yellow, foreground: .black))
                 }.padding(.horizontal).padding(.bottom, 8)
             }
@@ -666,11 +663,6 @@ struct TrainingScheduleView: View {
         .onAppear { resetTimersIfNeeded() }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in tickTimers() }
         .sheet(item: $selectedBlock) { block in TrainingBlockDetailView(block: block) }
-        .alert("Name Your Training", isPresented: $showSaveName) {
-            TextField("Training name", text: $saveName)
-            Button("Cancel", role: .cancel) { saveName = "" }
-            Button("Save") { saveTraining() }
-        }
         .overlay(Group {
             if showSaveConfirm, let name = lastSavedName {
                 VStack { Spacer(); Text("✓ Saved: \(name)").font(.caption.bold()).foregroundColor(.green).padding().background(.black.opacity(0.8)).cornerRadius(12).padding(.bottom, 60) }
@@ -705,31 +697,24 @@ struct TrainingScheduleView: View {
         }
     }
 
-    private func saveTraining() {
-        let name = saveName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? plan.name : saveName
-        modelContext.insert(SavedTrainingPlan(name: name, focus: plan.focus, blocks: plan.blocks))
-        do {
-            try modelContext.save()
-            print("Successfully saved training: \(name)")
-            lastSavedName = name
-            showSaveConfirm = true
-            saveName = ""
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { showSaveConfirm = false }
-        } catch {
-            print("Failed to save training: \(error.localizedDescription)")
-            lastSavedName = "FAILED"
-            showSaveConfirm = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { showSaveConfirm = false }
-        }
+    private func showSaveSheet() {
+        saveName = ""
+        lastSavedName = nil
+        showSaveConfirm = false
+        saveName = plan.name
+        let point =SavedPoint(id: UUID(), name: plan.name, focus: plan.focus, createdAt: Date(), totalMinutes: plan.totalMinutes, blocks: plan.blocks)
+        onSave(point)
+        lastSavedName = plan.name
+        showSaveConfirm = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { showSaveConfirm = false }
     }
 }
 
 // MARK: - Supporting Views
 struct SavedTrainingsView: View {
-    @Environment(\.modelContext) private var modelContext
+    @Binding var savedPlans: [SavedPoint]
+    @Binding var selectedPlan: TrainingPlan?
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \SavedTrainingPlan.createdAt, order: .reverse) private var savedPlans: [SavedTrainingPlan]
-    @State private var selectedPlan: TrainingPlan?
 
     var body: some View {
         NavigationStack {
@@ -748,12 +733,18 @@ struct SavedTrainingsView: View {
                             .background(RoundedRectangle(cornerRadius: 14).fill(Color(red: 0.14, green: 0.14, blue: 0.16)))
                             }
                             .buttonStyle(PlainButtonStyle())
+                            .swipeActions { Button("Delete", role: .destructive) {
+                                if let idx = savedPlans.firstIndex(where: { $0.id == saved.id }) {
+                                    savedPlans.remove(at: idx)
+                                    persistSavedPlans(savedPlans)
+                                }
+                            } }
                         }
                     }.padding(16)
                 }
             }
             .navigationTitle("Saved Trainings (\(savedPlans.count))").toolbar { Button("Done") { dismiss() } }
-            .navigationDestination(item: $selectedPlan) { plan in TrainingScheduleView(plan: plan) }
+            .navigationDestination(item: $selectedPlan) { plan in TrainingScheduleView(plan: plan, onSave: { _ in }) }
         }
     }
 }
