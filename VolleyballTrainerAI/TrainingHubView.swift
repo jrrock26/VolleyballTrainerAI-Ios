@@ -732,14 +732,14 @@ struct SavedTrainingsView: View {
                         LazyVStack(spacing: 10) {
                             ForEach(savedPlans) { saved in
                                 HStack(alignment: .top, spacing: 12) {
-                                    Button { selectedPlan = TrainingPlan(id: saved.id, name: saved.name, focus: saved.focus, createdAt: saved.createdAt, blocks: saved.blocks) }
-                                    label: { VStack(alignment: .leading, spacing: 6) {
-                                        Text(saved.name).foregroundColor(.white).font(.headline)
-                                        Text("\(saved.totalMinutes) min • \(saved.focus.capitalized)").foregroundColor(.gray).font(.caption)
-                                        Text("Saved: \(saved.createdAt, style: .date)").font(.caption2).foregroundColor(.gray.opacity(0.6))
-                                    }
-                                    .padding().frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.4)))
+                                    Button(action: { selectedPlan = TrainingPlan(id: saved.id, name: saved.name, focus: saved.focus, createdAt: saved.createdAt, blocks: saved.blocks) }) {
+                                        VStack(alignment: .leading, spacing: 6) {
+                                            Text(saved.name).foregroundColor(.white).font(.headline)
+                                            Text("\(saved.totalMinutes) min • \(saved.focus.capitalized)").foregroundColor(.gray).font(.caption)
+                                            Text("Saved: \(saved.createdAt, style: .date)").font(.caption2).foregroundColor(.gray.opacity(0.6))
+                                        }
+                                        .padding().frame(maxWidth: .infinity, alignment: .leading)
+                                        .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.4)))
                                     }
                                     .buttonStyle(PlainButtonStyle())
                                     VStack(spacing: 12) {
