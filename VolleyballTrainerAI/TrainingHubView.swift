@@ -78,33 +78,240 @@ final class SavedTrainingPlan {
     }
 }
 
+// MARK: - World-Class Training Library
 enum VolleyballTrainingLibrary {
     static let warmups: [TrainingBlock] = [
-        TrainingBlock(name: "Court Run + Dynamic Prep", category: .warmup, durationMinutes: 4, intensity: .low, imageName: "stretch_court_run", focusTags: ["warmup", "movement"], instructions: ["Jog court lines at 60% speed.", "Add backpedal, side shuffle, and carioca.", "Stay tall and breathe through the nose."]),
-        TrainingBlock(name: "Shoulder Prep Flow", category: .stretching, durationMinutes: 4, intensity: .low, imageName: "stretch_shoulder_prep", focusTags: ["armSwing", "shoulder", "armExtension"], instructions: ["Arm circles forward and backward.", "Cross-body shoulder stretch.", "Finish with slow shadow swings."]),
-        TrainingBlock(name: "Hip + Ankle Activation", category: .stretching, durationMinutes: 4, intensity: .low, imageName: "stretch_hip_mobility", focusTags: ["jump", "approach", "mobility"], instructions: ["World's greatest stretch each side.", "Ankle rocks over toes.", "Bodyweight squat with pause."]),
-        TrainingBlock(name: "Pre-Jump Leg Prep", category: .warmup, durationMinutes: 3, intensity: .low, imageName: "stretch_prejump", focusTags: ["plyo", "jump"], instructions: ["Pogo hops low and quick.", "Two-step approach footwork without jump.", "Stick two soft landings."])
+        TrainingBlock(name: "Court Run + Dynamic Prep", category: .warmup, durationMinutes: 4, intensity: .low, imageName: "stretch_court_run", focusTags: ["warmup", "movement"], instructions: [
+            "Begin with a light jog along the court perimeter — accelerate gradually to 60 % of max speed.",
+            "Integrate dynamic movements: high knees, butt kicks, carioca, and walking lunges for 15 yards each.",
+            "Maintain upright posture, controlled breathing, and active arm drive throughout the sequence."
+        ]),
+        TrainingBlock(name: "Shoulder Prep Flow", category: .stretching, durationMinutes: 4, intensity: .low, imageName: "stretch_shoulder_prep", focusTags: ["armSwing", "shoulder", "armExtension"], instructions: [
+            "Perform arm circles (forward & backward), 10 reps each direction, gradually increasing range of motion.",
+            "Cross-body shoulder stretch — pull the elbow across your chest and hold for 15 seconds per side.",
+            "Complete 10 slow, deliberate shadow swings, focusing on high elbow position and full arm extension."
+        ]),
+        TrainingBlock(name: "Hip + Ankle Activation", category: .stretching, durationMinutes: 4, intensity: .low, imageName: "stretch_hip_mobility", focusTags: ["jump", "approach", "mobility"], instructions: [
+            "Worlds greatest stretch: lunge forward, drop the back knee, rotate the torso open — 5 breaths per side.",
+            "Ankle rocks: sit back on heels, lift toes, then rock forward onto the balls of your feet — 12 reps.",
+            "Body-weight squat with a 3-second pause at the bottom, keeping knees tracking over toes."
+        ]),
+        TrainingBlock(name: "Pre-Jump Leg Prep", category: .warmup, durationMinutes: 3, intensity: .low, imageName: "stretch_prejump", focusTags: ["plyo", "jump"], instructions: [
+            "Low pogo hops — keep ankles stiff, rebound off the floor as quickly as possible for 30 seconds.",
+            "Two-step approach footwork without jumping — accelerate, plant, and close the block 6 times.",
+            "Finish with 5 slow, exaggerated arm swings to reinforce vertical-arm patterning."
+        ])
     ]
 
     static let drills: [TrainingBlock] = [
-        TrainingBlock(name: "Arm Swing Wall Spike", category: .volleyball, durationMinutes: 8, intensity: .medium, imageName: "hitting_wall_spike", focusTags: ["armSwing", "armExtension", "powerTransfer"], instructions: ["Stand 6-8 ft from wall.", "Toss, reach high, snap through the ball.", "Keep elbow high and finish across body."]),
-        TrainingBlock(name: "Hitting Arm Swing Mechanics", category: .volleyball, durationMinutes: 10, intensity: .medium, imageName: "hitting_arm_swing", focusTags: ["armSwing", "armExtension"], instructions: ["Load elbow behind ear.", "Contact in front at full reach.", "Freeze finish and check shoulder-to-wrist line."]),
-        TrainingBlock(name: "Approach Angle Reps", category: .volleyball, durationMinutes: 9, intensity: .medium, imageName: "hitting_approach_angle", focusTags: ["approach", "timing", "armSwing"], instructions: ["Mark start and target contact zone.", "Use a controlled 3-step approach.", "Plant hips open and attack through the target."]),
-        TrainingBlock(name: "Max Jump Touches", category: .volleyball, durationMinutes: 8, intensity: .high, imageName: "hitting_max_jump", focusTags: ["jump", "explosiveness"], instructions: ["Approach jump to a safe wall target.", "Swing arms aggressively into takeoff.", "Land quietly and reset fully."]),
-        TrainingBlock(name: "Box Jump Power", category: .plyometrics, durationMinutes: 8, intensity: .high, imageName: "plyo_box_jumps", focusTags: ["jump", "plyo", "explosiveness"], instructions: ["Use a safe box height.", "Jump, stick landing, step down.", "Quality reps only - no sloppy landings."]),
-        TrainingBlock(name: "Approach Jump Plyos", category: .plyometrics, durationMinutes: 9, intensity: .high, imageName: "plyo_approach_jump", focusTags: ["approach", "jump", "timing"], instructions: ["Three-step approach into vertical jump.", "Reach both hands high at peak.", "Reset after each rep."]),
-        TrainingBlock(name: "Depth Drop Landing Control", category: .plyometrics, durationMinutes: 7, intensity: .medium, imageName: "plyo_depth_drop", focusTags: ["landing", "kneeControl", "jump"], instructions: ["Step off a low box.", "Land knees over toes.", "Hold athletic stance for two seconds."]),
-        TrainingBlock(name: "Lateral Bounds", category: .plyometrics, durationMinutes: 7, intensity: .medium, imageName: "plyo_lateral_bounds", focusTags: ["agility", "defense", "lateral"], instructions: ["Bound side to side with control.", "Stick outside-leg landing.", "Keep chest up and hips loaded."]),
-        TrainingBlock(name: "Ladder Quick Feet", category: .agility, durationMinutes: 8, intensity: .medium, imageName: "agility_ladder", focusTags: ["agility", "footwork"], instructions: ["Two feet in each box.", "Stay on balls of feet.", "Add speed only when rhythm is clean."]),
-        TrainingBlock(name: "Lateral Slide Defense", category: .agility, durationMinutes: 8, intensity: .medium, imageName: "agility_lateral_slides", focusTags: ["defense", "agility", "lateral"], instructions: ["Stay low in defensive posture.", "Push from inside edge of foot.", "No feet crossing unless cued."]),
-        TrainingBlock(name: "5-10-5 Change of Direction", category: .agility, durationMinutes: 9, intensity: .high, imageName: "agility_5_10_5", focusTags: ["agility", "reaction", "defense"], instructions: ["Sprint five yards, change direction.", "Plant outside foot under hip.", "Explode out of each cut."]),
-        TrainingBlock(name: "Reaction Shuffle", category: .agility, durationMinutes: 8, intensity: .high, imageName: "agility_reaction_shuffle", focusTags: ["reaction", "defense", "agility"], instructions: ["Partner points left/right/short/deep.", "React and shuffle hard.", "Return to base after every cue."]),
-        TrainingBlock(name: "Timing Toss + Hit", category: .volleyball, durationMinutes: 10, intensity: .medium, imageName: "hitting_timing", focusTags: ["timing", "approach", "contact"], instructions: ["Toss or partner toss high ball.", "Delay approach until ball descends.", "Contact at peak reach."]),
-        TrainingBlock(name: "Cross Court Target Hits", category: .volleyball, durationMinutes: 10, intensity: .medium, imageName: "hitting_cross_court", focusTags: ["accuracy", "armSwing", "vision"], instructions: ["Set a cross-court target.", "Open shoulders, finish thumb down.", "Track makes vs misses."]),
-        TrainingBlock(name: "Core Stability Holds", category: .strength, durationMinutes: 7, intensity: .medium, imageName: "core_stability", focusTags: ["core", "powerTransfer", "stability"], instructions: ["Front plank 30 seconds.", "Side plank each side.", "Dead bug reps slow and controlled."])
+        // ------ VOL 1: HITTING / ATTACK ------
+        TrainingBlock(name: "Hitting Arm Swing Mechanics", category: .volleyball, durationMinutes: 10, intensity: .medium, imageName: "hitting_arm_swing", focusTags: ["armSwing", "armExtension", "tempo"], instructions: [
+            "Load your hitting elbow behind your ear at takeoff.",
+            "Contact the ball in front of your body at full reach.",
+            "Freeze the finish position and check shoulder-to-wrist alignment."
+        ]),
+        TrainingBlock(name: "Approach Angle Reps", category: .volleyball, durationMinutes: 9, intensity: .medium, imageName: "hitting_approach_angle", focusTags: ["approach", "timing", "armSwing"], instructions: [
+            "Mark your start position and target contact zone.",
+            "Use a controlled 3-step approach — left, right-left — with explosive arm drive.",
+            "Plant your hips open and attack through the ball into the target."
+        ]),
+        TrainingBlock(name: "Max Jump Touches", category: .volleyball, durationMinutes: 8, intensity: .high, imageName: "hitting_max_jump", focusTags: ["jump", "explosiveness", "vertical"], instructions: [
+            "Take a 3-step approach and jump as high as possible toward a safe wall target.",
+            "Swing arms aggressively into the takeoff and reach with both hands.",
+            "Land softly and reset fully before the next rep — quality over quantity."
+        ]),
+        TrainingBlock(name: "Hitting High Ball", category: .volleyball, durationMinutes: 8, intensity: .medium, imageName: "hitting_high_ball", focusTags: ["highBall", "contact", "timing"], instructions: [
+            "Have a partner toss a high ball or use a ball machine.",
+            "Delay the start of your approach until the ball begins to descend.",
+            "Contact the ball above your forehead with full wrist snap."
+        ]),
+        TrainingBlock(name: "Cross Court Target Hits", category: .volleyball, durationMinutes: 10, intensity: .medium, imageName: "hitting_cross_court", focusTags: ["accuracy", "vision", "armSwing"], instructions: [
+            "Set up a target in the cross-court zone (1-2 feet inside the line).",
+            "Open your shoulders, contact high, and finish with your thumb down.",
+            "Track makes vs misses and adjust your approach angle accordingly."
+        ]),
+        TrainingBlock(name: "Line Shot Accuracy", category: .volleyball, durationMinutes: 8, intensity: .medium, imageName: "hitting_line_shot", focusTags: ["line", "accuracy", "contact"], instructions: [
+            "Aim the ball down the line — 1-2 feet inside the sideline.",
+            "Keep the ball in front and reach for the top of the ball.",
+            "Land balanced and reset to the same starting spot each rep."
+        ]),
+        TrainingBlock(name: "Hitting Roll Shot", category: .volleyball, durationMinutes: 8, intensity: .low, imageName: "hitting_roll_shot", focusTags: ["touch", "placement", "finesse"], instructions: [
+            "Approach with the same tempo as a power swing but reduce arm speed.",
+            "Open your hand and roll your fingers over the top of the ball.",
+            "Land under control — the roll shot is about placement, not power."
+        ]),
+        TrainingBlock(name: "Tool the Block Drill", category: .volleyball, durationMinutes: 8, intensity: .high, imageName: "hitting_tool_block", focusTags: ["tool", "power", "vision"], instructions: [
+            "Set up a blocker or a block target (pads / cones).",
+            "Attack aggressively, aiming to hit the top of the blocker's hands.",
+            "Use the block to deflect the ball out of bounds — develop block vision."
+        ]),
+        TrainingBlock(name: "Transition Hitting", category: .volleyball, durationMinutes: 10, intensity: .high, imageName: "hitting_transition", focusTags: ["transition", "decision", "speed"], instructions: [
+            "Simulate a defensive-to-offensive transition: start in a base defensive position.",
+            "React to a cue (coach toss / hit), then transition into an attack approach.",
+            "Make a split-second decision on shot location based on the block."
+        ]),
+        TrainingBlock(name: "Game Simulation Hitting", category: .volleyball, durationMinutes: 12, intensity: .high, imageName: "hitting_game_sim", focusTags: ["gameSpeed", "readBlock", "decision"], instructions: [
+            "Full-court 6-on-6 or 3-on-3 scrimmage focusing on offensive execution.",
+            "For each transition, call out your attack choice (line / cross / tool).",
+            "Debrief with a teammate after each rally — what worked, what to adjust."
+        ]),
+        TrainingBlock(name: "Wall Spike Reps", category: .volleyball, durationMinutes: 8, intensity: .medium, imageName: "hitting_wall_spike", focusTags: ["armSwing", "powerTransfer", "contact"], instructions: [
+            "Stand 6-8 feet from a solid wall. Toss the ball up and spike into the wall.",
+            "Focus on high elbow, full extension, and wrist snap at contact.",
+            "Catch the rebound and repeat — 5 sets of 10 quality reps."
+        ]),
+
+        // ------ VOL 2: SETTING ------
+        TrainingBlock(name: "Setting Hand Position", category: .volleyball, durationMinutes: 6, intensity: .low, imageName: "setting", focusTags: ["hands", "placement", "touch"], instructions: [
+            "Form a diamond with your thumbs and index fingers above your forehead.",
+            "Push through the ball using legs, not just arms — extend fully.",
+            "Release with backspin and repeat 30 quality reps."
+        ]),
+        TrainingBlock(name: "Setting Footwork + Accuracy", category: .volleyball, durationMinutes: 8, intensity: .medium, imageName: "setting", focusTags: ["footwork", "accuracy", "hands"], instructions: [
+            "Start at center court: shuffle to a target location, set to a specific spot.",
+            "Alternate between forward sets, back sets, and jump sets.",
+            "Track how many of 20 sets hit the target zone."
+        ]),
+        TrainingBlock(name: "Quick Set Repetition", category: .volleyball, durationMinutes: 6, intensity: .medium, imageName: "setting", focusTags: ["quickness", "hands", "rhythm"], instructions: [
+            "Receive a rapid series of tossed balls (every 3-4 seconds).",
+            "Focus on fast hand preparation, soft touch, and accurate release.",
+            "Complete 3 rounds of 15 quick sets without a miss."
+        ]),
+
+        // ------ VOL 3: SERVE / SERVE-RECEIVE ------
+        TrainingBlock(name: "Serve Toss + Contact", category: .volleyball, durationMinutes: 6, intensity: .low, imageName: "serving", focusTags: ["toss", "contact", "consistency"], instructions: [
+            "Practice your serve toss in a mirror — consistent height and placement.",
+            "Contact the ball at your peak reach with a firm, flat hand.",
+            "Hit 10 float serves, then 10 topspin serves."
+        ]),
+        TrainingBlock(name: "Serve Placement Targets", category: .volleyball, durationMinutes: 8, intensity: .medium, imageName: "serving", focusTags: ["accuracy", "placement", "vision"], instructions: [
+            "Place a target in Zone 1 (deep right), Zone 5 (deep left), and Zone 6 (deep middle).",
+            "Serve 5 balls to each zone, aiming to hit the target area.",
+            "Challenge yourself: call out the zone before each serve."
+        ]),
+        TrainingBlock(name: "Serve Receive Platform", category: .volleyball, durationMinutes: 8, intensity: .medium, imageName: "serveReceive", focusTags: ["platform", "footwork", "control"], instructions: [
+            "Have a partner serve from the baseline — start in a ready position.",
+            "Present a flat, angled platform to the target (center court).",
+            "Move through the ball, do not reach — 30 quality passes."
+        ]),
+        TrainingBlock(name: "Serve Receive Under Pressure", category: .volleyball, durationMinutes: 8, intensity: .high, imageName: "serveReceive", focusTags: ["pressure", "platform", "reaction"], instructions: [
+            "Partner serves to random zones — you must read, move, and pass.",
+            "Focus on a low, athletic stance and split-step before the serve.",
+            "Target: 8 out of 10 passes land within 3 feet of the setter target."
+        ]),
+
+        // ------ VOL 4: DEFENSE ------
+        TrainingBlock(name: "Defensive Platform Basics", category: .volleyball, durationMinutes: 6, intensity: .low, imageName: "defense", focusTags: ["platform", "bodyPosition", "control"], instructions: [
+            "Get in a low defensive stance — feet shoulder-width, weight on the balls of your feet.",
+            "Present your platform at 45 degrees — absorb the ball, do not swing.",
+            "Shuffle laterally to a coach-tossed ball and pass to target."
+        ]),
+        TrainingBlock(name: "Defensive Digging Reads", category: .volleyball, durationMinutes: 8, intensity: .high, imageName: "defense", focusTags: ["read", "reaction", "dig"], instructions: [
+            "Partner or coach attacks from a box — start in base defense.",
+            "Read the attacker's shoulder line and arm speed to anticipate shot location.",
+            "Dig the ball up to a target zone — 4 sets of 6 attacks."
+        ]),
+        TrainingBlock(name: "Roll and Pancake Saves", category: .volleyball, durationMinutes: 6, intensity: .high, imageName: "defense", focusTags: ["hustle", "save", "reaction"], instructions: [
+            "Coach tosses balls just out of reach — execute a controlled roll to save.",
+            "Practice the pancake: dive flat, slide the back of your hand under the ball.",
+            "Get up quickly and reset to your base position."
+        ]),
+
+        // ------ VOL 5: BLOCKING ------
+        TrainingBlock(name: "Block Footwork + Seal", category: .volleyball, durationMinutes: 8, intensity: .medium, imageName: "blocking", focusTags: ["footwork", "seal", "penetrate"], instructions: [
+            "Start at the net in a ready blocking position.",
+            "Shuffle step to the contact point — keep your hands up and active.",
+            "Penetrate over the net with your hands, sealing the seam."
+        ]),
+        TrainingBlock(name: "Read Block vs Outside Hitter", category: .volleyball, durationMinutes: 8, intensity: .high, imageName: "blocking", focusTags: ["readHitter", "timing", "angle"], instructions: [
+            "Face an outside hitter (live or simulated).",
+            "Read their approach angle and arm swing to decide block position.",
+            "Close the block with your partner — no seam, no split."
+        ]),
+
+        // ------ AGILITY ------
+        TrainingBlock(name: "Ladder Quick Footwork", category: .agility, durationMinutes: 8, intensity: .medium, imageName: "agility_ladder", focusTags: ["agility", "footwork", "quickness"], instructions: [
+            "Set up an agility ladder — 2 feet in each box, staying on the balls of your feet.",
+            "Progress through: lateral steps, Icky shuffle, in-in-out pattern.",
+            "Increase speed only when the rhythm is clean — 3 sets of each pattern."
+        ]),
+        TrainingBlock(name: "Lateral Slide Defense", category: .agility, durationMinutes: 8, intensity: .medium, imageName: "agility_lateral_slides", focusTags: ["defense", "agility", "lateral"], instructions: [
+            "Stay low in a defensive posture the entire drill.",
+            "Push from the inside edge of your foot — keep feet shoulder-width.",
+            "No crossing your feet unless a directional cue is given."
+        ]),
+        TrainingBlock(name: "5-10-5 Change of Direction", category: .agility, durationMinutes: 9, intensity: .high, imageName: "agility_5_10_5", focusTags: ["agility", "reaction", "explosiveness"], instructions: [
+            "Sprint 5 yards to the right, plant the outside foot, sprint 10 yards left.",
+            "Plant foot under your hip — do not lean before the cut.",
+            "Explode out of each cut — 4-6 reps with full recovery."
+        ]),
+        TrainingBlock(name: "Reaction Shuffle + Dig", category: .agility, durationMinutes: 8, intensity: .high, imageName: "agility_reaction_shuffle", focusTags: ["reaction", "defense", "coordination"], instructions: [
+            "Partner points left/right/short/deep — you react and shuffle hard.",
+            "Return to base after every cue before the next direction.",
+            "Add a ball dig at the end of each shuffle to combine agility with defense."
+        ]),
+        TrainingBlock(name: "T-Drill Agility", category: .agility, durationMinutes: 8, intensity: .high, imageName: "agility_t_drill", focusTags: ["agility", "footwork", "changeOfDirection"], instructions: [
+            "Set up cones in a T-shape: start at the base, sprint forward to the T junction.",
+            "Shuffle left to touch the cone, shuffle right to the far cone, shuffle back to center.",
+            "Backpedal to the start — 4 reps, rest 60 seconds."
+        ]),
+        TrainingBlock(name: "Short-Long Recovery Drill", category: .agility, durationMinutes: 6, intensity: .high, imageName: "agility_short_long", focusTags: ["endurance", "agility", "explosiveness"], instructions: [
+            "Sprint 5 yards (short), immediately backpedal to start, then sprint 15 yards (long).",
+            "Focus on explosive acceleration and controlled deceleration.",
+            "Complete 5 sets with 30 seconds rest between sets."
+        ]),
+
+        // ------ PLYOMETRICS ------
+        TrainingBlock(name: "Box Jump Power", category: .plyometrics, durationMinutes: 8, intensity: .high, imageName: "plyo_box_jumps", focusTags: ["jump", "plyo", "explosiveness"], instructions: [
+            "Use a safe box height (12-24 inches depending on ability).",
+            "Step off the box, immediately jump vertically as high as possible.",
+            "Land softly — stick the landing for 2 seconds before resetting."
+        ]),
+        TrainingBlock(name: "Depth Drop + Vertical", category: .plyometrics, durationMinutes: 8, intensity: .high, imageName: "plyo_depth_jump_vertical", focusTags: ["reactive", "vertical", "explosiveness"], instructions: [
+            "Step off a 12-18 inch box — upon landing, explode into a max vertical jump.",
+            "Minimize ground contact time — think 'hot plate' under your feet.",
+            "3 sets of 5 reps with 90 seconds rest between sets."
+        ]),
+        TrainingBlock(name: "Lateral Bounds (Skater Hops)", category: .plyometrics, durationMinutes: 7, intensity: .medium, imageName: "plyo_lateral_bounds", focusTags: ["agility", "lateral", "explosiveness"], instructions: [
+            "Stand on one leg — bound laterally as far as possible, landing on the opposite leg.",
+            "Stick the landing for 1 second before exploding back the other direction.",
+            "Keep your chest up and hips loaded — 3 sets of 6 per side."
+        ]),
+        TrainingBlock(name: "Split Jumps", category: .plyometrics, durationMinutes: 6, intensity: .medium, imageName: "plyo_split_jumps", focusTags: ["split", "rhythm", "groundContact"], instructions: [
+            "Start in a lunge position — jump and switch legs in the air.",
+            "Land softly with both knees bent — minimize ground contact time.",
+            "4 sets of 8 (each leg) with 45 seconds rest."
+        ]),
+        TrainingBlock(name: "Broad Jump + Stick", category: .plyometrics, durationMinutes: 6, intensity: .high, imageName: "plyo_broad_jump", focusTags: ["explosiveness", "deceleration", "power"], instructions: [
+            "Stand with feet shoulder-width — squat, load hips, explode horizontally.",
+            "Land with both feet simultaneously and stick the landing for 2 seconds.",
+            "Measure your distance and try to beat your previous mark — 4 sets of 3."
+        ]),
+        TrainingBlock(name: "Pogo Hops", category: .plyometrics, durationMinutes: 5, intensity: .medium, imageName: "plyo_pogo", focusTags: ["ankleStiffness", "rhythm", "groundContact"], instructions: [
+            "Keep your legs straight — bounce off the balls of your feet like a pogo stick.",
+            "Minimize ground contact — the goal is quick, reactive rebounds.",
+            "3 sets of 15 seconds, rest 30 seconds."
+        ]),
+
+        // ------ STRENGTH ------
+        TrainingBlock(name: "Core Stability Holds", category: .strength, durationMinutes: 7, intensity: .medium, imageName: "core_stability", focusTags: ["core", "stability", "powerTransfer"], instructions: [
+            "Front plank: 30 seconds — keep a straight line from head to heels.",
+            "Side plank: 20 seconds each side — stack your feet and lift hips.",
+            "Dead bugs: 10 reps each side — slow, controlled, press lower back into the floor."
+        ]),
+        TrainingBlock(name: "Glute + Hamstring Activation", category: .strength, durationMinutes: 6, intensity: .low, imageName: "core_stability", focusTags: ["glute", "hamstring", "mobility"], instructions: [
+            "Glute bridges: 15 reps — squeeze at the top for 2 seconds.",
+            "Single-leg Romanian deadlifts: 8 reps per leg — slow tempo.",
+            "Walking lunges: 10 reps per leg — keep your front shin vertical."
+        ]),
+        TrainingBlock(name: "Rotator Cuff + Shoulder Stability", category: .strength, durationMinutes: 6, intensity: .low, imageName: "stretch_shoulder_prep", focusTags: ["shoulder", "stability", "injuryPrevention"], instructions: [
+            "External rotation with band: 12 reps per arm.",
+            "Y-T-W-L raises: 8 reps each letter — slow and controlled.",
+            "Finish with scapular push-ups: 10 reps."
+        ])
     ]
 
-    /// All blocks that can be used for a custom drill builder
+    /// All blocks for the custom drill builder
     static var allLibraryDrills: [TrainingBlock] { warmups + drills }
 
     static func recommendationFocus(from hits: [VolleyballHit]) -> String {
@@ -140,7 +347,7 @@ enum VolleyballTrainingLibrary {
             activeMinutes += block.durationMinutes
         }
 
-        // Fill remaining with shorter drills if time allows
+        // Fill remaining time
         if activeMinutes < targetMinutes - 3 {
             for block in candidates.shuffled() {
                 guard activeMinutes + block.durationMinutes <= targetMinutes, !planBlocks.contains(block) else { continue }
@@ -202,7 +409,7 @@ private struct BlendedCard: ViewModifier {
         content
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.black.opacity(0.35))
+            .background(Color.black.opacity(0.5))
             .cornerRadius(16)
     }
 }
@@ -238,7 +445,7 @@ struct TrainingHubView: View {
             generatedPlan = VolleyballTrainingLibrary.generatePlan(categories: cats.isEmpty ? TrainingCategory.allCases.filter { $0 != .waterBreak } : cats, targetMinutes: durationMinutes)
         case .customBuilt:
             if !customDrills.isEmpty {
-                var blocks = VolleyballTrainingLibrary.insertWaterBreaks(in: customDrills)
+                let blocks = VolleyballTrainingLibrary.insertWaterBreaks(in: customDrills)
                 generatedPlan = TrainingPlan(id: UUID(), name: "Custom Plan", focus: "Custom", createdAt: Date(), blocks: blocks)
             }
         }
@@ -256,7 +463,7 @@ struct TrainingHubView: View {
 
                     ScrollView {
                         VStack(alignment: .leading, spacing: 12) {
-                            Spacer(minLength: 60)
+                            Spacer(minLength: 80)
 
                             HStack {
                                 Button(action: { dismiss() }) {
@@ -319,13 +526,13 @@ struct TrainingHubView: View {
     private var modePicker: some View {
         Picker("Mode", selection: $mode) {
             ForEach(TrainingGenerationMode.allCases) { m in
-                Text(m.rawValue).tag(m)
+                Text(m.rawValue).foregroundColor(.pink).tag(m)
             }
         }
         .pickerStyle(.segmented)
         .padding()
         .frame(maxWidth: .infinity)
-        .background(Color.black.opacity(0.35))
+        .background(Color.black.opacity(0.5))
         .cornerRadius(16)
     }
 
@@ -356,7 +563,7 @@ struct TrainingHubView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Coach Recommendation")
                 .font(.headline)
-                .foregroundColor(.yellow)
+                .foregroundColor(.pink)
             Text(coachFocus.capitalized)
                 .font(.title3.bold())
                 .foregroundColor(.white)
@@ -371,7 +578,7 @@ struct TrainingHubView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Select Categories")
                 .font(.headline)
-                .foregroundColor(.cyan)
+                .foregroundColor(.pink)
 
             let allCategories = TrainingCategory.allCases.filter { $0 != .waterBreak }
             Button(action: {
@@ -423,7 +630,7 @@ struct TrainingHubView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Custom Drill Builder")
                 .font(.headline)
-                .foregroundColor(.purple)
+                .foregroundColor(.pink)
             if customDrills.isEmpty {
                 Text("No drills selected yet. Tap the button below to pick drills by category.")
                     .font(.caption)
@@ -463,16 +670,12 @@ struct TrainingHubView: View {
 
     private var actionButtons: some View {
         VStack(spacing: 10) {
-            Button("Generate Plan") {
-                generatePlan()
-            }
-            .buttonStyle(TrainingButtonStyle(color: .cyan, foreground: .black))
-            .disabled(mode == .customBuilt && customDrills.isEmpty)
+            Button("Generate Plan") { generatePlan() }
+                .buttonStyle(TrainingButtonStyle(color: .cyan, foreground: .black))
+                .disabled(mode == .customBuilt && customDrills.isEmpty)
 
-            Button("Saved Trainings (\(savedPlans.count))") {
-                showingSaved = true
-            }
-            .buttonStyle(TrainingButtonStyle(color: .purple, foreground: .white))
+            Button("Saved Trainings (\(savedPlans.count))") { showingSaved = true }
+                .buttonStyle(TrainingButtonStyle(color: .purple, foreground: .white))
         }
     }
 }
@@ -483,10 +686,7 @@ struct CustomDrillBuilderView: View {
     @Binding var selectedDrills: [TrainingBlock]
     @State private var selectedCategories: Set<TrainingCategory> = []
 
-    private var allCategories: [TrainingCategory] {
-        TrainingCategory.allCases.filter { $0 != .waterBreak }
-    }
-
+    private var allCategories: [TrainingCategory] { TrainingCategory.allCases.filter { $0 != .waterBreak } }
     private var availableDrills: [TrainingBlock] {
         let cats = selectedCategories.isEmpty ? allCategories : Array(selectedCategories)
         return VolleyballTrainingLibrary.allLibraryDrills.filter { cats.contains($0.category) }
@@ -505,9 +705,7 @@ struct CustomDrillBuilderView: View {
             }
             .navigationTitle("Pick Drills")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
-            }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
     }
 
@@ -515,29 +713,25 @@ struct CustomDrillBuilderView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 Button(action: { selectedCategories.removeAll() }) {
-                    Text("All")
-                        .font(.caption.bold())
+                    Text("All").font(.caption.bold())
                         .foregroundColor(selectedCategories.isEmpty ? .black : .white)
                         .padding(.horizontal, 12).padding(.vertical, 8)
                         .background(selectedCategories.isEmpty ? Color.cyan : Color.clear)
                         .cornerRadius(20)
                         .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.cyan.opacity(0.6), lineWidth: 1.5))
-                }
-                .buttonStyle(PlainButtonStyle())
+                }.buttonStyle(PlainButtonStyle())
                 ForEach(allCategories) { cat in
                     let isSelected = selectedCategories.contains(cat)
                     Button(action: {
                         if isSelected { selectedCategories.remove(cat) } else { selectedCategories.insert(cat) }
                     }) {
-                        Text(cat.rawValue)
-                            .font(.caption.bold())
+                        Text(cat.rawValue).font(.caption.bold())
                             .foregroundColor(isSelected ? .black : cat.color)
                             .padding(.horizontal, 12).padding(.vertical, 8)
                             .background(isSelected ? cat.color : Color.clear)
                             .cornerRadius(20)
                             .overlay(RoundedRectangle(cornerRadius: 20).stroke(cat.color.opacity(0.6), lineWidth: 1.5))
-                    }
-                    .buttonStyle(PlainButtonStyle())
+                    }.buttonStyle(PlainButtonStyle())
                 }
             }
         }
@@ -558,24 +752,17 @@ struct CustomDrillBuilderView: View {
                             Text(drill.name).font(.caption2.bold()).foregroundColor(.white).multilineTextAlignment(.center)
                             Text("\(drill.durationMinutes) min").font(.caption2).foregroundColor(.gray)
                         }
-                        .padding(10)
-                        .frame(maxWidth: .infinity)
+                        .padding(10).frame(maxWidth: .infinity)
                         .background(RoundedRectangle(cornerRadius: 12).fill(isSelected ? drill.category.color.opacity(0.25) : Color(red: 0.14, green: 0.14, blue: 0.16)))
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(drill.category.color.opacity(isSelected ? 0.8 : 0.3), lineWidth: isSelected ? 2 : 1))
-                    }
-                    .buttonStyle(PlainButtonStyle())
+                    }.buttonStyle(PlainButtonStyle())
                 }
             }
         }
     }
 
     private var selectedSummary: some View {
-        HStack {
-            Text("\(selectedDrills.count) drills selected")
-                .font(.caption).foregroundColor(.gray)
-            Spacer()
-        }
-        .padding(.horizontal)
+        HStack { Text("\(selectedDrills.count) drills selected").font(.caption).foregroundColor(.gray); Spacer() }.padding(.horizontal)
     }
 }
 
@@ -600,39 +787,23 @@ struct TrainingScheduleView: View {
                             if block.category == .waterBreak {
                                 waterBreakRow(block)
                             } else {
-                                TrainingScheduleRow(
-                                    block: block,
-                                    seconds: timers[block.id] ?? block.durationMinutes * 60,
-                                    isRunning: running.contains(block.id),
-                                    onTap: { selectedBlock = block },
-                                    onPlay: { running.insert(block.id) },
-                                    onPause: { running.remove(block.id) },
-                                    onReset: { timers[block.id] = block.durationMinutes * 60; running.remove(block.id) }
-                                )
+                                TrainingScheduleRow(block: block, seconds: timers[block.id] ?? block.durationMinutes * 60, isRunning: running.contains(block.id),
+                                    onTap: { selectedBlock = block }, onPlay: { running.insert(block.id) }, onPause: { running.remove(block.id) },
+                                    onReset: { timers[block.id] = block.durationMinutes * 60; running.remove(block.id) })
                             }
                         }
-                    }
-                    .padding(.horizontal)
+                    }.padding(.horizontal)
                 }
                 HStack {
-                    Button("Save") { showSaveName = true }
-                        .buttonStyle(TrainingButtonStyle(color: .cyan, foreground: .black))
-                    ShareLink(item: shareText) {
-                        Text("Share")
-                    }
-                    .buttonStyle(TrainingButtonStyle(color: .yellow, foreground: .black))
-                }
-                .padding(.horizontal)
-                .padding(.bottom, 8)
+                    Button("Save") { showSaveName = true }.buttonStyle(TrainingButtonStyle(color: .cyan, foreground: .black))
+                    ShareLink(item: shareText) { Text("Share") }.buttonStyle(TrainingButtonStyle(color: .yellow, foreground: .black))
+                }.padding(.horizontal).padding(.bottom, 8)
             }
         }
-        .navigationTitle("Training Schedule")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Training Schedule").navigationBarTitleDisplayMode(.inline)
         .onAppear { resetTimersIfNeeded() }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in tickTimers() }
-        .sheet(item: $selectedBlock) { block in
-            TrainingBlockDetailView(block: block)
-        }
+        .sheet(item: $selectedBlock) { block in TrainingBlockDetailView(block: block) }
         .alert("Name Your Training", isPresented: $showSaveName) {
             TextField("Training name", text: $saveName)
             Button("Cancel", role: .cancel) { saveName = "" }
@@ -642,21 +813,14 @@ struct TrainingScheduleView: View {
 
     private var summary: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(plan.name)
-                .font(.title3.bold())
-                .foregroundColor(.white)
-            Text("\(plan.blocks.count) blocks • \(plan.totalMinutes) min • Focus: \(plan.focus.capitalized)")
-                .font(.caption).foregroundColor(.gray)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding().background(Color.blue.opacity(0.16)).cornerRadius(14).padding(.horizontal)
+            Text(plan.name).font(.title3.bold()).foregroundColor(.white)
+            Text("\(plan.blocks.count) blocks • \(plan.totalMinutes) min • Focus: \(plan.focus.capitalized)").font(.caption).foregroundColor(.gray)
+        }.frame(maxWidth: .infinity, alignment: .leading).padding().background(Color.blue.opacity(0.16)).cornerRadius(14).padding(.horizontal)
     }
 
     private func waterBreakRow(_ block: TrainingBlock) -> some View {
-        Text("WATER BREAK - \(block.durationMinutes) MIN")
-            .font(.headline).foregroundColor(Color(red: 1.0, green: 0.08, blue: 0.58))
-            .frame(maxWidth: .infinity).padding()
-            .background(Color(red: 1.0, green: 0.08, blue: 0.58).opacity(0.16)).cornerRadius(12)
+        Text("WATER BREAK - \(block.durationMinutes) MIN").font(.headline).foregroundColor(Color(red: 1.0, green: 0.08, blue: 0.58))
+            .frame(maxWidth: .infinity).padding().background(Color(red: 1.0, green: 0.08, blue: 0.58).opacity(0.16)).cornerRadius(12)
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(red: 1.0, green: 0.08, blue: 0.58), lineWidth: 1))
     }
 
@@ -697,22 +861,17 @@ struct SavedTrainingsView: View {
                 Color(red: 0.07, green: 0.07, blue: 0.09).ignoresSafeArea()
                 List {
                     ForEach(savedPlans) { saved in
-                        Button {
-                            selectedPlan = TrainingPlan(id: saved.id, name: saved.name, focus: saved.focus, createdAt: saved.createdAt, blocks: saved.blocks)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(saved.name).foregroundColor(.white).font(.headline)
-                                Text("\(saved.totalMinutes) min • \(saved.focus.capitalized)").foregroundColor(.gray).font(.caption)
-                            }
-                        }
+                        Button { selectedPlan = TrainingPlan(id: saved.id, name: saved.name, focus: saved.focus, createdAt: saved.createdAt, blocks: saved.blocks) }
+                        label: { VStack(alignment: .leading, spacing: 4) {
+                            Text(saved.name).foregroundColor(.white).font(.headline)
+                            Text("\(saved.totalMinutes) min • \(saved.focus.capitalized)").foregroundColor(.gray).font(.caption)
+                        }}
                         .listRowBackground(Color(red: 0.14, green: 0.14, blue: 0.16))
                         .swipeActions { Button("Delete", role: .destructive) { modelContext.delete(saved); try? modelContext.save() } }
                     }
-                }
-                .scrollContentBackground(.hidden)
+                }.scrollContentBackground(.hidden)
             }
-            .navigationTitle("Saved Trainings")
-            .toolbar { Button("Done") { dismiss() } }
+            .navigationTitle("Saved Trainings").toolbar { Button("Done") { dismiss() } }
             .navigationDestination(item: $selectedPlan) { plan in TrainingScheduleView(plan: plan) }
         }
     }
@@ -726,12 +885,10 @@ struct TrainingScheduleRow: View {
             Button(action: onTap) { TrainingBlockRow(block: block, compact: false) }.buttonStyle(.plain)
             VStack(spacing: 4) {
                 Text(format(seconds)).font(.headline.monospacedDigit()).foregroundColor(Color(red: 1.0, green: 0.08, blue: 0.58))
-                HStack(spacing: 8) {
-                    Button("Play", action: onPlay); Button("Pause", action: onPause); Button("Reset", action: onReset)
-                }.font(.caption.bold()).foregroundColor(.white)
+                HStack(spacing: 8) { Button("Play", action: onPlay); Button("Pause", action: onPause); Button("Reset", action: onReset) }
+                    .font(.caption.bold()).foregroundColor(.white)
             }
-        }
-        .padding(10).background(Color.white.opacity(0.08)).cornerRadius(12)
+        }.padding(10).background(Color.white.opacity(0.08)).cornerRadius(12)
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(block.category.color.opacity(isRunning ? 1 : 0.45), lineWidth: 1))
     }
     private func format(_ seconds: Int) -> String { "\(seconds / 60):\(String(format: "%02d", seconds % 60))" }

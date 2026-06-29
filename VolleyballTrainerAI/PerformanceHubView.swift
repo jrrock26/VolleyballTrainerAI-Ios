@@ -4,7 +4,9 @@ import SwiftData
 struct PerformanceHubView: View {
     @Query(sort: \VolleyballHit.timestamp, order: .reverse) private var allHits: [VolleyballHit]
     @State private var showLiveTracker = false
-    @State private var navigateTo: String? = nil
+    @State private var showCharts = false
+    @State private var showSavedHits = false
+    @State private var showLifetimeStats = false
 
     @Environment(\.dismiss) private var dismiss
 
@@ -20,7 +22,6 @@ struct PerformanceHubView: View {
                         .ignoresSafeArea()
 
                     VStack(spacing: 12) {
-
                         // Back button
                         HStack {
                             Button(action: { dismiss() }) {
@@ -49,19 +50,15 @@ struct PerformanceHubView: View {
                         CourtPushButton(title: "Record Hit", icon: "record.circle") {
                             showLiveTracker = true
                         }
-
                         CourtPushButton(title: "Saved Hits", icon: "list.bullet") {
-                            navigateTo = "SavedHits"
+                            showSavedHits = true
                         }
-
                         CourtPushButton(title: "Charts", icon: "chart.line.uptrend.xyaxis") {
-                            navigateTo = "Charts"
+                            showCharts = true
                         }
-
                         CourtPushButton(title: "Lifetime Hits", icon: "rosette") {
-                            navigateTo = "Lifetime"
+                            showLifetimeStats = true
                         }
-
                         Spacer()
                     }
                     .frame(maxHeight: .infinity, alignment: .top)
@@ -73,18 +70,14 @@ struct PerformanceHubView: View {
         .fullScreenCover(isPresented: $showLiveTracker) {
             LiveAIView()
         }
-        .onAppear {
-            NotificationCenter.default.addObserver(
-                forName: NSNotification.Name("NavigateToPerformanceAction"),
-                object: nil,
-                queue: .main
-            ) { notification in
-                if let action = notification.object as? String {
-                    if action == "RecordHit" {
-                        showLiveTracker = true
-                    }
-                }
-            }
+        .navigationDestination(isPresented: $showSavedHits) {
+            SavedHitsListView()
+        }
+        .navigationDestination(isPresented: $showCharts) {
+            ChartsView()
+        }
+        .navigationDestination(isPresented: $showLifetimeStats) {
+            LifetimeStatsView()
         }
     }
 }
