@@ -22,46 +22,89 @@ struct ContentView: View {
                 }
                 .padding(.top, 20)
 
-                HStack(spacing: 16) {
-                    Button(action: { showAnalytics = true }) {
-                        VStack(spacing: 8) {
-                            Image(systemName: "chart.bar.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.cyan)
-                            Text("Analytics")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.white)
+                VStack(spacing: 12) {
+                    HStack(spacing: 12) {
+                        Button(action: { showAnalytics = true }) {
+                            VStack(spacing: 8) {
+                                Image(systemName: "chart.bar.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.cyan)
+                                Text("Analytics")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color(red: 0.12, green: 0.12, blue: 0.14))
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.cyan.opacity(0.4), lineWidth: 1)
+                            )
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 18)
-                        .background(Color(red: 0.12, green: 0.12, blue: 0.14))
-                        .cornerRadius(16)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.cyan.opacity(0.4), lineWidth: 1)
-                        )
-                    }
 
-                    Button(action: { showCameraSheet = true }) {
-                        VStack(spacing: 8) {
-                            Image(systemName: "camera.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.yellow)
-                            Text("Live Tracker")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.white)
+                        Button(action: { showCameraSheet = true }) {
+                            VStack(spacing: 8) {
+                                Image(systemName: "camera.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.yellow)
+                                Text("Live Tracker")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color(red: 0.12, green: 0.12, blue: 0.14))
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.yellow.opacity(0.4), lineWidth: 1)
+                            )
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 18)
-                        .background(Color(red: 0.12, green: 0.12, blue: 0.14))
-                        .cornerRadius(16)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.yellow.opacity(0.4), lineWidth: 1)
-                        )
                     }
+                    .padding(.horizontal)
+
+                    HStack(spacing: 12) {
+                        NavigationLink(destination: TrainingHubView()) {
+                            VStack(spacing: 8) {
+                                Image(systemName: "dumbbell.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.purple)
+                                Text("Training Hub")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color(red: 0.12, green: 0.12, blue: 0.14))
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.purple.opacity(0.4), lineWidth: 1)
+                            )
+                        }
+
+                        NavigationLink(destination: PracticeHubView()) {
+                            VStack(spacing: 8) {
+                                Image(systemName: "person.3.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.pink)
+                                Text("Practice Hub")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color(red: 0.12, green: 0.12, blue: 0.14))
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.pink.opacity(0.4), lineWidth: 1)
+                            )
+                        }
+                    }
+                    .padding(.horizontal)
                 }
-                .padding(.horizontal)
 
                 VStack(spacing: 12) {
                     HStack {
