@@ -633,6 +633,8 @@ struct TrainingScheduleView: View {
     @State private var selectedBlock: TrainingBlock?
     @State private var saveName = ""
     @State private var showSaveName = false
+    @State private var lastSavedName: String?
+    @State private var showSaveConfirm = false
     @State private var timers: [UUID: Int] = [:]
     @State private var running: Set<UUID> = []
 
@@ -669,6 +671,13 @@ struct TrainingScheduleView: View {
             Button("Cancel", role: .cancel) { saveName = "" }
             Button("Save") { saveTraining() }
         }
+        .overlay(Group {
+            if showSaveConfirm, let name = lastSavedName {
+                VStack { Spacer(); Text("✓ Saved: \(name)").font(.caption.bold()).foregroundColor(.green).padding().background(.black.opacity(0.8)).cornerRadius(12).padding(.bottom, 60) }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .animation(.easeInOut, value: showSaveConfirm)
+            }
+        })
     }
 
     private var summary: some View {
@@ -702,9 +711,15 @@ struct TrainingScheduleView: View {
         do {
             try modelContext.save()
             print("Successfully saved training: \(name)")
+            lastSavedName = name
+            showSaveConfirm = true
             saveName = ""
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { showSaveConfirm = false }
         } catch {
             print("Failed to save training: \(error.localizedDescription)")
+            lastSavedName = "FAILED"
+            showSaveConfirm = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { showSaveConfirm = false }
         }
     }
 }
@@ -720,19 +735,24 @@ struct SavedTrainingsView: View {
         NavigationStack {
             ZStack {
                 Color(red: 0.07, green: 0.07, blue: 0.09).ignoresSafeArea()
-                List {
-                    ForEach(savedPlans) { saved in
-                        Button { selectedPlan = TrainingPlan(id: saved.id, name: saved.name, focus: saved.focus, createdAt: saved.createdAt, blocks: saved.blocks) }
-                        label: { VStack(alignment: .leading, spacing: 4) {
-                            Text(saved.name).foregroundColor(.white).font(.headline)
-                            Text("\(saved.totalMinutes) min • \(saved.focus.capitalized)").foregroundColor(.gray).font(.caption)
-                        }}
-                        .listRowBackground(Color(red: 0.14, green: 0.14, blue: 0.16))
-                        .swipeActions { Button("Delete", role: .destructive) { modelContext.delete(saved); try? modelContext.save() } }
-                    }
-                }.scrollContentBackground(.hidden)
+                ScrollView {
+                    LazyVStack(spacing: 10) {
+                        ForEach(savedPlans) { saved in
+                            Button { selectedPlan = TrainingPlan(id: saved.id, name: saved.name, focus: saved.focus, createdAt: saved.createdAt, blocks: saved.blocks) }
+                            label: { VStack(alignment: .leading, spacing: 6) {
+                                Text(saved.name).foregroundColor(.white).font(.headline)
+                                Text("\(saved.totalMinutes) min • \(saved.focus.capitalized)").foregroundColor(.gray).font(.caption)
+                                Text("Saved: \(saved.createdAt, style: .date)").font(.caption2).foregroundColor(.gray.opacity(0.6))
+                            }
+                            .padding().frame(maxWidth: .infinity, alignment: .leading)
+                            .background(RoundedRectangle(cornerRadius: 14).fill(Color(red: 0.14, green: 0.14, blue: 0.16)))
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }.padding(16)
+                }
             }
-            .navigationTitle("Saved Trainings").toolbar { Button("Done") { dismiss() } }
+            .navigationTitle("Saved Trainings (\(savedPlans.count))").toolbar { Button("Done") { dismiss() } }
             .navigationDestination(item: $selectedPlan) { plan in TrainingScheduleView(plan: plan) }
         }
     }
