@@ -738,44 +738,48 @@ struct SavedTrainingsView: View {
                         }.buttonStyle(PlainButtonStyle())
                         Spacer()
                     }.padding(.top, 16)
-                    Spacer(minLength: 40)
                     Text("Saved Trainings (\(savedPlans.count))").font(.title2.bold()).foregroundColor(.white)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     ScrollView {
                         LazyVStack(spacing: 10) {
                             ForEach(savedPlans) { saved in
-                                HStack(alignment: .top, spacing: 10) {
-                                    Color.clear
-                                        .contentShape(Rectangle())
-                                        .onTapGesture {
-                                            selectedPlan = TrainingPlan(id: saved.id, name: saved.name, focus: saved.focus, createdAt: saved.createdAt, blocks: saved.blocks)
+                                Color.clear
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        selectedPlan = TrainingPlan(id: saved.id, name: saved.name, focus: saved.focus, createdAt: saved.createdAt, blocks: saved.blocks)
+                                    }
+                                    .overlay(
+                                        VStack(alignment: .leading, spacing: 6) {
+                                            HStack(alignment: .top, spacing: 10) {
+                                                VStack(alignment: .leading, spacing: 4) {
+                                                    Text(saved.name).foregroundColor(.white).font(.headline)
+                                                    Text("\(saved.totalMinutes) min • \(saved.focus.capitalized)").foregroundColor(.gray).font(.caption)
+                                                    Text("Saved: \(saved.createdAt, style: .date)").font(.caption2).foregroundColor(.gray.opacity(0.6))
+                                                }
+                                                Spacer()
+                                            }
+                                            HStack(spacing: 12) {
+                                                Spacer()
+                                                Button("Rename") {
+                                                    renameTarget = saved
+                                                    renameName = saved.name
+                                                    showingRenameAlert = true
+                                                }.font(.caption.bold()).foregroundColor(.cyan).buttonStyle(PlainButtonStyle())
+                                                Button("Delete", role: .destructive) {
+                                                    if let idx = savedPlans.firstIndex(where: { $0.id == saved.id }) {
+                                                        savedPlans.remove(at: idx)
+                                                        persistSavedPlans(savedPlans)
+                                                    }
+                                                }.font(.caption.bold()).foregroundColor(.red).buttonStyle(PlainButtonStyle())
+                                            }
                                         }
-                                        .overlay(
-                                            VStack(alignment: .leading, spacing: 6) {
-                                                Text(saved.name).foregroundColor(.white).font(.headline)
-                                                Text("\(saved.totalMinutes) min • \(saved.focus.capitalized)").foregroundColor(.gray).font(.caption)
-                                                Text("Saved: \(saved.createdAt, style: .date)").font(.caption2).foregroundColor(.gray.opacity(0.6))
-                                            }
-                                            .padding().frame(maxWidth: .infinity, alignment: .leading)
-                                            .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.4)))
-                                        )
-                                    VStack(spacing: 12) {
-                                        Button("Rename") {
-                                            renameTarget = saved
-                                            renameName = saved.name
-                                            showingRenameAlert = true
-                                        }.font(.caption.bold()).foregroundColor(.cyan).buttonStyle(PlainButtonStyle())
-                                        Button("Delete", role: .destructive) {
-                                            if let idx = savedPlans.firstIndex(where: { $0.id == saved.id }) {
-                                                savedPlans.remove(at: idx)
-                                                persistSavedPlans(savedPlans)
-                                            }
-                                        }.font(.caption.bold()).foregroundColor(.red).buttonStyle(PlainButtonStyle())
-                                    }.padding(.horizontal, 4)
-                                }
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 10)
+                                        .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.4)))
+                                    )
                             }
                         }.padding(16)
-                    }.frame(maxHeight: 320)
+                    }.frame(maxHeight: 340)
                 }.padding(.horizontal, 24)
             }
             .navigationBarHidden(true)
