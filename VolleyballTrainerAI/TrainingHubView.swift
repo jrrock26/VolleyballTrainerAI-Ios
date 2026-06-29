@@ -104,7 +104,7 @@ enum VolleyballTrainingLibrary {
     ]
 
     static let drills: [TrainingBlock] = [
-        // ------ VOL 1: HITTING / ATTACK ------
+        // ===== VOLLEYBALL SKILLS — HITTING / ATTACK (11 existing + 6 new = 17) =====
         TrainingBlock(name: "Hitting Arm Swing Mechanics", category: .volleyball, durationMinutes: 10, intensity: .medium, imageName: "hitting_arm_swing", focusTags: ["armSwing", "armExtension", "tempo"], instructions: [
             "Load your hitting elbow behind your ear at takeoff.",
             "Contact the ball in front of your body at full reach.",
@@ -160,8 +160,38 @@ enum VolleyballTrainingLibrary {
             "Focus on high elbow, full extension, and wrist snap at contact.",
             "Catch the rebound and repeat — 5 sets of 10 quality reps."
         ]),
+        TrainingBlock(name: "Back Row Attack", category: .volleyball, durationMinutes: 8, intensity: .high, imageName: "hitting_back_row", focusTags: ["backRow", "approach", "power"], instructions: [
+            "Start at the 10-foot (3-meter) line — take a controlled step-close approach.",
+            "Jump off both feet and contact the ball high, driving through the seam.",
+            "Land balanced inside the court — back row attacks require precision over max power."
+        ]),
+        TrainingBlock(name: "Slide Attack Timing", category: .volleyball, durationMinutes: 9, intensity: .medium, imageName: "hitting_slide", focusTags: ["slide", "timing", "rhythm"], instructions: [
+            "Start wide on the right side of the court — approach on a curved path toward the setter.",
+            "Jump off your left foot and attack the ball just behind the setter's location.",
+            "Focus on timing the jump with the set arrival — the slide is about rhythm, not height."
+        ]),
+        TrainingBlock(name: "Quick Set (First Tempo)", category: .volleyball, durationMinutes: 7, intensity: .medium, imageName: "hitting_quick_set", focusTags: ["quickSet", "timing", "tempo"], instructions: [
+            "Communicate with your setter — you must be in the air before the ball leaves their hands.",
+            "Attack a quick first-tempo set directly in front of the setter's forehead.",
+            "This drill requires trust and timing — run 10 consecutive reps with your setter."
+        ]),
+        TrainingBlock(name: "Block Vision Read + Hit", category: .volleyball, durationMinutes: 8, intensity: .high, imageName: "hitting_read_block", focusTags: ["readBlock", "vision", "decision"], instructions: [
+            "Facing a live block or block simulator — read the block as you approach.",
+            "Decide in the air: tool, roll shot deep corner, or hard-driven cross.",
+            "Score one point for each correct read that results in a kill — 10 points to complete."
+        ]),
+        TrainingBlock(name: "Serve Float + Topspin Mix", category: .volleyball, durationMinutes: 8, intensity: .medium, imageName: "serving", focusTags: ["floatServe", "topspin", "consistency"], instructions: [
+            "Alternate between float serves and topspin serves — 5 of each.",
+            "For float: contact the ball with a flat, rigid hand — no follow-through spin.",
+            "For topspin: snap your wrist at contact, follow through low and across your body."
+        ]),
+        TrainingBlock(name: "Jump Serve Approach", category: .volleyball, durationMinutes: 8, intensity: .high, imageName: "serving", focusTags: ["jumpServe", "approach", "power"], instructions: [
+            "Start 10-12 feet behind the baseline — toss the ball high and 3 feet in front.",
+            "Take a 3-step approach: left, right-left — jump and contact at the peak.",
+            "Land inside the court and immediately transition to defense."
+        ]),
 
-        // ------ VOL 2: SETTING ------
+        // ===== VOLLEYBALL SKILLS — SETTING (3 existing + 4 new = 7) =====
         TrainingBlock(name: "Setting Hand Position", category: .volleyball, durationMinutes: 6, intensity: .low, imageName: "setting", focusTags: ["hands", "placement", "touch"], instructions: [
             "Form a diamond with your thumbs and index fingers above your forehead.",
             "Push through the ball using legs, not just arms — extend fully.",
@@ -177,18 +207,28 @@ enum VolleyballTrainingLibrary {
             "Focus on fast hand preparation, soft touch, and accurate release.",
             "Complete 3 rounds of 15 quick sets without a miss."
         ]),
+        TrainingBlock(name: "Setter Defense Transition", category: .volleyball, durationMinutes: 8, intensity: .high, imageName: "setting", focusTags: ["setterDefense", "transition", "decision"], instructions: [
+            "Start in setter position — coach attacks a ball toward you.",
+            "Dig or deflect the ball to yourself, then stand and deliver a hittable set.",
+            "This simulates the setter as a primary defender — a world-class skill."
+        ]),
+        TrainingBlock(name: "Set the Long Ball (Back Row)", category: .volleyball, durationMinutes: 6, intensity: .medium, imageName: "setting", focusTags: ["backSet", "accuracy", "power"], instructions: [
+            "Start at the net facing your target — push the ball to a back-row attacker.",
+            "Open your hips to the target and drive through the ball with legs.",
+            "The back-row set requires more arc and pace — land 8 of 10 in the hitting zone."
+        ]),
+        TrainingBlock(name: "Setter Decision: Dump or Set", category: .volleyball, durationMinutes: 7, intensity: .high, imageName: "setting", focusTags: ["dump", "decision", "vision"], instructions: [
+            "On a tight pass, decide in real-time: set your hitter or dump the ball over.",
+            "When dumping, use soft hands to place the ball over the net into open space.",
+            "Watch the opposing block — if they leave early, the dump is open."
+        ]),
+        TrainingBlock(name: "Combination Set Play", category: .volleyball, durationMinutes: 10, intensity: .high, imageName: "setting", focusTags: ["combo", "rhythm", "timing"], instructions: [
+            "Run a 2-setter offense or a setter-middle combination: quick set to middle, then back set to right side.",
+            "Alternate between 1-ball (quick), 2-ball (high outside), and a shoot set to the pin.",
+            "Communication is key — call out the set before the pass arrives."
+        ]),
 
-        // ------ VOL 3: SERVE / SERVE-RECEIVE ------
-        TrainingBlock(name: "Serve Toss + Contact", category: .volleyball, durationMinutes: 6, intensity: .low, imageName: "serving", focusTags: ["toss", "contact", "consistency"], instructions: [
-            "Practice your serve toss in a mirror — consistent height and placement.",
-            "Contact the ball at your peak reach with a firm, flat hand.",
-            "Hit 10 float serves, then 10 topspin serves."
-        ]),
-        TrainingBlock(name: "Serve Placement Targets", category: .volleyball, durationMinutes: 8, intensity: .medium, imageName: "serving", focusTags: ["accuracy", "placement", "vision"], instructions: [
-            "Place a target in Zone 1 (deep right), Zone 5 (deep left), and Zone 6 (deep middle).",
-            "Serve 5 balls to each zone, aiming to hit the target area.",
-            "Challenge yourself: call out the zone before each serve."
-        ]),
+        // ===== VOLLEYBALL SKILLS — SERVE RECEIVE (2 existing + 3 new = 5) =====
         TrainingBlock(name: "Serve Receive Platform", category: .volleyball, durationMinutes: 8, intensity: .medium, imageName: "serveReceive", focusTags: ["platform", "footwork", "control"], instructions: [
             "Have a partner serve from the baseline — start in a ready position.",
             "Present a flat, angled platform to the target (center court).",
@@ -199,8 +239,23 @@ enum VolleyballTrainingLibrary {
             "Focus on a low, athletic stance and split-step before the serve.",
             "Target: 8 out of 10 passes land within 3 feet of the setter target."
         ]),
+        TrainingBlock(name: "Short Serve Recovery", category: .volleyball, durationMinutes: 6, intensity: .high, imageName: "serveReceive", focusTags: ["shortServe", "reaction", "agility"], instructions: [
+            "Partner serves short (drop) balls just over the net into Zone 2 or 3.",
+            "Explode forward from your base position — pass high to your setter.",
+            "This is the most common missed pass in volleyball — master it."
+        ]),
+        TrainingBlock(name: "Serve Receive + Attack Transition", category: .volleyball, durationMinutes: 10, intensity: .high, imageName: "serveReceive", focusTags: ["transition", "receiveToAttack", "endurance"], instructions: [
+            "Receive a serve, pass to setter, then immediately transition into an attack approach.",
+            "The sequence must be seamless: pass → watch setter → approach → hit.",
+            "Complete 8-10 repetitions — this builds game-ready endurance."
+        ]),
+        TrainingBlock(name: "Two-Person Passing Triangle", category: .volleyball, durationMinutes: 6, intensity: .low, imageName: "serveReceive", focusTags: ["passing", "footwork", "consistency"], instructions: [
+            "Two passers stand in base positions — coach tosses to alternating zones.",
+            "Each passer shuffles to the ball, presents platform, and passes to target.",
+            "Focus on moving before the ball crosses the net — early preparation."
+        ]),
 
-        // ------ VOL 4: DEFENSE ------
+        // ===== VOLLEYBALL SKILLS — DEFENSE (3 existing + 4 new = 7) =====
         TrainingBlock(name: "Defensive Platform Basics", category: .volleyball, durationMinutes: 6, intensity: .low, imageName: "defense", focusTags: ["platform", "bodyPosition", "control"], instructions: [
             "Get in a low defensive stance — feet shoulder-width, weight on the balls of your feet.",
             "Present your platform at 45 degrees — absorb the ball, do not swing.",
@@ -216,8 +271,28 @@ enum VolleyballTrainingLibrary {
             "Practice the pancake: dive flat, slide the back of your hand under the ball.",
             "Get up quickly and reset to your base position."
         ]),
+        TrainingBlock(name: "Defense from Deep Court", category: .volleyball, durationMinutes: 8, intensity: .high, imageName: "defense", focusTags: ["deepDefense", "read", "recovery"], instructions: [
+            "Start on the baseline — coach or partner attacks a deep ball from 30 feet.",
+            "Read the trajectory early, take a drop step, and pursue the ball.",
+            "Dig the ball high to center court — your recovery speed determines success."
+        ]),
+        TrainingBlock(name: "Two-on-Two Cover Drill", category: .volleyball, durationMinutes: 10, intensity: .high, imageName: "defense", focusTags: ["cover", "communication", "teamDefense"], instructions: [
+            "Two defenders on one side vs two attackers on the opposite side.",
+            "The attackers can tip, roll, or power swing — defenders must talk and move.",
+            "Score by digging the ball up to a controlled location — first to 10 wins."
+        ]),
+        TrainingBlock(name: "Tip Defense Read", category: .volleyball, durationMinutes: 6, intensity: .medium, imageName: "defense", focusTags: ["tipRead", "reaction", "agility"], instructions: [
+            "Partner approaches but instead of hitting, they tip the ball over the net.",
+            "Read the open palm / soft elbow — this signals a tip — step in immediately.",
+            "Dig the tip high to your setter — do not let it drop."
+        ]),
+        TrainingBlock(name: "Pepper Progression", category: .volleyball, durationMinutes: 10, intensity: .medium, imageName: "defense", focusTags: ["pepper", "control", "touch"], instructions: [
+            "Standard pepper with a partner: dig → set → hit on a continuous loop.",
+            "Progression 1: 50 consecutive touches without a miss.",
+            "Progression 2: add movement — shuffle laterally between each touch."
+        ]),
 
-        // ------ VOL 5: BLOCKING ------
+        // ===== VOLLEYBALL SKILLS — BLOCKING (2 existing + 3 new = 5) =====
         TrainingBlock(name: "Block Footwork + Seal", category: .volleyball, durationMinutes: 8, intensity: .medium, imageName: "blocking", focusTags: ["footwork", "seal", "penetrate"], instructions: [
             "Start at the net in a ready blocking position.",
             "Shuffle step to the contact point — keep your hands up and active.",
@@ -228,8 +303,23 @@ enum VolleyballTrainingLibrary {
             "Read their approach angle and arm swing to decide block position.",
             "Close the block with your partner — no seam, no split."
         ]),
+        TrainingBlock(name: "Adjustable Block (Middle + Pin)", category: .volleyball, durationMinutes: 8, intensity: .high, imageName: "blocking", focusTags: ["adjust", "middleBlock", "read"], instructions: [
+            "Start in a middle-block position — coach signals left or right pin.",
+            "Shuffle to the pin and press — read the hitter's shoulder for direction.",
+            "Improve your lateral speed: touch each pin 5 times in under 15 seconds."
+        ]),
+        TrainingBlock(name: "Block + Recover to Defense", category: .volleyball, durationMinutes: 8, intensity: .high, imageName: "blocking", focusTags: ["blockToDefense", "transition", "recovery"], instructions: [
+            "Jump block at the net, then land and immediately drop into a defensive stance.",
+            "Coach attacks a ball after your block — dig the ball to the setter.",
+            "This drill replicates the block → dig sequence that happens on every rally."
+        ]),
+        TrainingBlock(name: "Double-Block Timing", category: .volleyball, durationMinutes: 8, intensity: .high, imageName: "blocking", focusTags: ["doubleBlock", "timing", "communication"], instructions: [
+            "Set up with a blocking partner and an outside hitter — the hitter attacks at game speed.",
+            "Your block call should come before the set arrives: 'Together!' or 'Stay!'",
+            "Both blockers must jump at the same millisecond — no window between hands."
+        ]),
 
-        // ------ AGILITY ------
+        // ===== AGILITY (6 existing + 10 new = 16) =====
         TrainingBlock(name: "Ladder Quick Footwork", category: .agility, durationMinutes: 8, intensity: .medium, imageName: "agility_ladder", focusTags: ["agility", "footwork", "quickness"], instructions: [
             "Set up an agility ladder — 2 feet in each box, staying on the balls of your feet.",
             "Progress through: lateral steps, Icky shuffle, in-in-out pattern.",
@@ -260,8 +350,58 @@ enum VolleyballTrainingLibrary {
             "Focus on explosive acceleration and controlled deceleration.",
             "Complete 5 sets with 30 seconds rest between sets."
         ]),
+        TrainingBlock(name: "Crossover Shuffle Sprint", category: .agility, durationMinutes: 6, intensity: .high, imageName: "agility_crossover", focusTags: ["crossover", "lateralSpeed", "hipOpening"], instructions: [
+            "Start in a defensive stance — crossover step to the right for 2 steps, then shuffle for 2 steps.",
+            "Alternate direction each set — keep your hips open and eyes forward.",
+            "This is a volleyball-specific agility move that mimics a blocker chasing a quick set."
+        ]),
+        TrainingBlock(name: "Hopscotch Agility", category: .agility, durationMinutes: 6, intensity: .medium, imageName: "agility_hopscotch", focusTags: ["coordination", "rhythm", "footwork"], instructions: [
+            "Use a hopscotch grid (or tape on the floor) — single-leg hops alternating with two-foot landings.",
+            "Maintain a rapid cadence — 3 sets of 30 seconds with 30 seconds rest.",
+            "This drill improves reactive footwork and single-leg stability for landing."
+        ]),
+        TrainingBlock(name: "Net-Sideline Recovery", category: .agility, durationMinutes: 8, intensity: .high, imageName: "agility_net_sideline", focusTags: ["recovery", "defense", "endurance"], instructions: [
+            "Start at the net — backpedal to the 10-foot line, sprint forward to the net, then shuffle to the sideline.",
+            "Touch each line and reverse direction immediately.",
+            "Complete 6 continuous rounds — your cardio and agility will improve together."
+        ]),
+        TrainingBlock(name: "Box Shuffle Pattern", category: .agility, durationMinutes: 7, intensity: .medium, imageName: "agility_box_shuffle", focusTags: ["boxPattern", "changeOfDirection", "footwork"], instructions: [
+            "Set up 4 cones in a 5x5 yard box — start at cone 1, shuffle forward to cone 2.",
+            "Slide right to cone 3, backpedal to cone 4, shuffle left back to cone 1.",
+            "Complete 5 full cycles in each direction."
+        ]),
+        TrainingBlock(name: "Single-Leg Hops (Speed)", category: .agility, durationMinutes: 5, intensity: .medium, imageName: "agility_single_leg_hops", focusTags: ["singleLeg", "explosiveness", "ankleStiffness"], instructions: [
+            "Stand on one leg — hop forward 10 yards, hop backward to start.",
+            "Switch legs — minimal ground contact, like a quick rebound.",
+            "This drill builds the ankle stiffness needed for explosive blocking and landing."
+        ]),
+        TrainingBlock(name: "Ball Drop Reaction", category: .agility, durationMinutes: 6, intensity: .high, imageName: "agility_ball_drop", focusTags: ["reaction", "speed", "explosiveness"], instructions: [
+            "Hold a ball at shoulder height and drop it — catch it before it bounces twice.",
+            "Variation: partner drops the ball from behind you — you must turn and catch.",
+            "This trains the split-second reactive speed required for emergency digs."
+        ]),
+        TrainingBlock(name: "Icky Shuffle Ladder", category: .agility, durationMinutes: 6, intensity: .medium, imageName: "agility_icky_shuffle", focusTags: ["icky", "coordination", "footworkPattern"], instructions: [
+            "Face the ladder at one end — pattern: in, in, out (left foot in, right foot in, both feet out).",
+            "Repeat down the ladder, then shuffle backward to the start.",
+            "The Icky shuffle trains the complex footwork needed for multi-directional volleyball movement."
+        ]),
+        TrainingBlock(name: "Perimeter Court Sprint", category: .agility, durationMinutes: 6, intensity: .high, imageName: "agility_court_perimeter", focusTags: ["endurance", "speed", "changeOfDirection"], instructions: [
+            "Start at the center of the baseline — sprint to the right sideline, shuffle to the net.",
+            "Sprint across the net line, shuffle down the left sideline, backpedal to start.",
+            "Complete 3 full laps — this is game-level conditioning."
+        ]),
+        TrainingBlock(name: "Figure-8 Cone Drill", category: .agility, durationMinutes: 7, intensity: .medium, imageName: "agility_figure8", focusTags: ["figure8", "curvilinear", "footwork"], instructions: [
+            "Set two cones 6 yards apart — weave through them in a figure-8 pattern.",
+            "Stay low and push off the outside foot around each cone.",
+            "This drill trains curvilinear speed — moving around blockers and defenders."
+        ]),
+        TrainingBlock(name: "Hexagon Agility Test", category: .agility, durationMinutes: 6, intensity: .high, imageName: "agility_combo", focusTags: ["hexagon", "multiDirectional", "speed"], instructions: [
+            "Draw a hexagon with 24-inch sides — stand in the center facing one direction.",
+            "Hop over each side and back to center without turning your body.",
+            "Complete 3 clockwise rotations and 3 counter-clockwise — stay on the balls of your feet."
+        ]),
 
-        // ------ PLYOMETRICS ------
+        // ===== PLYOMETRICS (6 existing + 10 new = 16) =====
         TrainingBlock(name: "Box Jump Power", category: .plyometrics, durationMinutes: 8, intensity: .high, imageName: "plyo_box_jumps", focusTags: ["jump", "plyo", "explosiveness"], instructions: [
             "Use a safe box height (12-24 inches depending on ability).",
             "Step off the box, immediately jump vertically as high as possible.",
@@ -292,8 +432,58 @@ enum VolleyballTrainingLibrary {
             "Minimize ground contact — the goal is quick, reactive rebounds.",
             "3 sets of 15 seconds, rest 30 seconds."
         ]),
+        TrainingBlock(name: "Single-Leg Box Jump", category: .plyometrics, durationMinutes: 6, intensity: .high, imageName: "plyo_single_leg_forward", focusTags: ["singleLeg", "stability", "explosiveness"], instructions: [
+            "Use a lower box (6-12 inches) — stand on one leg and jump onto the box.",
+            "Land on the same leg and hold for 2 seconds before stepping down.",
+            "This is the highest-level plyometric for volleyball — it builds landing stability and single-leg power."
+        ]),
+        TrainingBlock(name: "Hurdle Hops (Lateral)", category: .plyometrics, durationMinutes: 7, intensity: .high, imageName: "plyo_hurdle_lateral", focusTags: ["hurdle", "lateral", "explosiveness"], instructions: [
+            "Set 3-4 low hurdles (6-12 inches) in a row — hop laterally over each one.",
+            "Land softly and immediately spring over the next hurdle.",
+            "Complete 3 sets of the full course in each direction."
+        ]),
+        TrainingBlock(name: "Depth Lateral Drop", category: .plyometrics, durationMinutes: 7, intensity: .high, imageName: "plyo_depth_lateral", focusTags: ["lateral", "reactive", "explosiveness"], instructions: [
+            "Stand on a low box (12 inches) sideways — step off laterally and explode sideways on landing.",
+            "This mimics the lateral reactive step needed for blocking and defensive slides.",
+            "3 sets of 5 reps each direction with 60 seconds rest."
+        ]),
+        TrainingBlock(name: "Diagonal Bounds", category: .plyometrics, durationMinutes: 6, intensity: .high, imageName: "plyo_diagonal_bounds", focusTags: ["diagonal", "explosiveness", "coordination"], instructions: [
+            "Start on one foot — bound forward and diagonally at a 45-degree angle.",
+            "Land on the opposite foot and immediately bound back diagonally.",
+            "This trains the multi-directional explosive movement required for volleyball."
+        ]),
+        TrainingBlock(name: "Standing Long Jump Triple", category: .plyometrics, durationMinutes: 6, intensity: .high, imageName: "plyo_broad_jump", focusTags: ["tripleJump", "power", "endurance"], instructions: [
+            "Perform three consecutive broad jumps from a standing start — no pause between jumps.",
+            "The third jump should still reach 80% of your first jump distance — if not, your power endurance needs work.",
+            "3 sets of 1 triple jump with full recovery."
+        ]),
+        TrainingBlock(name: "Rebound Jumps (Low Box)", category: .plyometrics, durationMinutes: 5, intensity: .high, imageName: "plyo_rebound", focusTags: ["rebound", "groundContact", "reactive"], instructions: [
+            "Stand on a 6-8 inch box — step off and rebound up as fast as possible.",
+            "Focus on 0.2 second ground contact — explosive up, no pausing on the ground.",
+            "3 sets of 8 reps — this is the gold standard for reactive jump training."
+        ]),
+        TrainingBlock(name: "Tuck Jumps", category: .plyometrics, durationMinutes: 5, intensity: .high, imageName: "plyo_tuck_jumps", focusTags: ["tuckJump", "verticalPower", "explosiveness"], instructions: [
+            "Stand with feet shoulder-width — jump as high as possible and drive both knees to your chest.",
+            "Extend fully before landing — this trains the hip flexor explosion needed for vertical reach.",
+            "3 sets of 6 reps with 45 seconds rest."
+        ]),
+        TrainingBlock(name: "Lateral Box Push-Off", category: .plyometrics, durationMinutes: 6, intensity: .high, imageName: "plyo_box_lateral", focusTags: ["lateralBox", "pushOff", "explosiveness"], instructions: [
+            "Stand next to a low box (12 inches) — step up laterally, push off the box, and land on the other side.",
+            "Immediately explode into a lateral jump back over the box.",
+            "This builds the lateral push-off power needed for blocking and shuffling."
+        ]),
+        TrainingBlock(name: "Jump Matrix Pattern", category: .plyometrics, durationMinutes: 8, intensity: .high, imageName: "plyo_jump_matrix", focusTags: ["matrix", "multiDirectional", "endurance"], instructions: [
+            "Stand in the center of a 4-cone matrix (front, back, left, right cones spaced 3 yards).",
+            "Jump to the front cone, back to center, right cone, back to center — complete all 4 directions.",
+            "Each direction counts as one rep — complete 10 total reps with no pausing."
+        ]),
+        TrainingBlock(name: "Ankle Stiffness Hops", category: .plyometrics, durationMinutes: 5, intensity: .medium, imageName: "plyo_ankle_stiffness", focusTags: ["ankleStiffness", "rhythm", "groundContact"], instructions: [
+            "Keep your knees as straight as possible — hop forward and backward using only ankle movement.",
+            "The goal is 50 hops in 30 seconds — stiff ankles = faster rebounds = higher blocks.",
+            "3 sets of 30 seconds with 30 seconds rest."
+        ]),
 
-        // ------ STRENGTH ------
+        // ===== STRENGTH (3 existing + 10 new = 13) =====
         TrainingBlock(name: "Core Stability Holds", category: .strength, durationMinutes: 7, intensity: .medium, imageName: "core_stability", focusTags: ["core", "stability", "powerTransfer"], instructions: [
             "Front plank: 30 seconds — keep a straight line from head to heels.",
             "Side plank: 20 seconds each side — stack your feet and lift hips.",
@@ -308,6 +498,128 @@ enum VolleyballTrainingLibrary {
             "External rotation with band: 12 reps per arm.",
             "Y-T-W-L raises: 8 reps each letter — slow and controlled.",
             "Finish with scapular push-ups: 10 reps."
+        ]),
+        TrainingBlock(name: "Bulgarian Split Squats", category: .strength, durationMinutes: 8, intensity: .medium, imageName: "core_stability", focusTags: ["singleLeg", "strength", "balance"], instructions: [
+            "Place your back foot on a bench or box — lower into a lunge with your front leg.",
+            "Drive through your front heel to return to standing — this builds unilateral leg power for jumping.",
+            "3 sets of 8 reps per leg with 60 seconds rest."
+        ]),
+        TrainingBlock(name: "Hip Thrusters", category: .strength, durationMinutes: 6, intensity: .medium, imageName: "core_stability", focusTags: ["glute", "hipExtension", "power"], instructions: [
+            "Sit on the floor with your upper back against a bench — place a barbell or plate across your hips.",
+            "Drive through your heels to lift your hips as high as possible — squeeze glutes at the top.",
+            "This is the most important strength exercise for vertical jump development."
+        ]),
+        TrainingBlock(name: "Medicine Ball Rotational Toss", category: .strength, durationMinutes: 6, intensity: .medium, imageName: "core_stability", focusTags: ["rotation", "powerTransfer", "core"], instructions: [
+            "Stand sideways to a wall — hold a medicine ball at hip height and rotate your torso away from the wall.",
+            "Explosively rotate back and throw the ball against the wall — catch and repeat.",
+            "This builds the rotational power needed for arm swing velocity."
+        ]),
+        TrainingBlock(name: "Single-Leg Calf Raises", category: .strength, durationMinutes: 5, intensity: .low, imageName: "core_stability", focusTags: ["calf", "ankleStrength", "stability"], instructions: [
+            "Stand on one leg on a step — lower your heel below the step level, then press up as high as possible.",
+            "This directly strengthens the ankle and calf for explosive jumping and safe landing.",
+            "3 sets of 15 reps per leg with minimal rest."
+        ]),
+        TrainingBlock(name: "Pull-Ups / Lat Pulldowns", category: .strength, durationMinutes: 7, intensity: .medium, imageName: "core_stability", focusTags: ["back", "lat", "armSwing"], instructions: [
+            "Perform pull-ups or lat pulldowns with a wide grip — focus on driving your elbows down.",
+            "The lats (latissimus dorsi) are the primary muscle for arm swing power in a volleyball spike.",
+            "3 sets of as many reps as possible with 90 seconds rest."
+        ]),
+        TrainingBlock(name: "Overhead Medicine Ball Slam", category: .strength, durationMinutes: 5, intensity: .high, imageName: "core_stability", focusTags: ["slam", "explosiveness", "totalBody"], instructions: [
+            "Hold a medicine ball overhead — slam it into the ground as hard as possible.",
+            "Sit down into the slam to engage your legs and core — not just your arms.",
+            "This full-body explosive movement translates directly to attack power."
+        ]),
+        TrainingBlock(name: "Kettlebell Swing", category: .strength, durationMinutes: 7, intensity: .medium, imageName: "stretch_leg_prep", focusTags: ["kettlebell", "hipHinge", "power"], instructions: [
+            "Stand with feet shoulder-width apart — hinge at your hips, not your knees.",
+            "Drive your hips forward to swing the kettlebell to chest height — the power comes from your glutes, not your arms.",
+            "3 sets of 15 reps — this builds the explosive hip extension needed for jumping."
+        ]),
+        TrainingBlock(name: "Pistol Squat Progression", category: .strength, durationMinutes: 6, intensity: .medium, imageName: "stretch_hamstring_dynamic", focusTags: ["pistolSquat", "singleLeg", "balance"], instructions: [
+            "Stand on one leg with the other leg extended forward — lower as far as you can control.",
+            "Use a bench or TRX strap for assistance if needed — the goal is full range of motion.",
+            "Single-leg strength is the #1 predictor of landing injury prevention in volleyball."
+        ]),
+        TrainingBlock(name: "Farmer's Carry", category: .strength, durationMinutes: 5, intensity: .medium, imageName: "stretch_full_body", focusTags: ["grip", "stability", "endurance"], instructions: [
+            "Hold a dumbbell (or kettlebell) in each hand — walk 30 yards with perfect posture.",
+            "Keep your shoulders back, chest up, and core braced — do not lean to one side.",
+            "This builds the shoulder stability needed for repetitive arm swing motion."
+        ]),
+        TrainingBlock(name: "Resistance Band Lateral Walk", category: .strength, durationMinutes: 5, intensity: .low, imageName: "stretch_leg_prep", focusTags: ["lateral", "gluteActivation", "injuryPrevention"], instructions: [
+            "Place a resistance band around your ankles — stay in a quarter-squat position.",
+            "Take controlled lateral steps — keep tension on the band the entire time.",
+            "This activates the gluteus medius — critical for knee stability during blocking and landing."
+        ]),
+
+        // ===== WARMUP / STRETCHING ADDITIONS (4 existing warmups + 10 new = 14) =====
+        TrainingBlock(name: "Arm Circles Dynamic", category: .stretching, durationMinutes: 3, intensity: .low, imageName: "stretch_shoulder_prep", focusTags: ["shoulder", "mobility", "warmup"], instructions: [
+            "Stand with arms extended to your sides — make small, controlled circles forward for 15 seconds.",
+            "Gradually increase the circle size each set — repeat backward for 15 seconds.",
+            "This dynamic stretch improves shoulder range of motion for the arm swing."
+        ]),
+        TrainingBlock(name: "Leg Swings (Forward + Lateral)", category: .stretching, durationMinutes: 3, intensity: .low, imageName: "stretch_hamstring_dynamic", focusTags: ["hamstring", "hip", "mobility"], instructions: [
+            "Hold onto a wall or post — swing your leg forward and backward 10 times per leg.",
+            "Then face the wall and swing your leg side to side 10 times per leg.",
+            "This dynamic movement prepares the hamstrings and hips for explosive jumping."
+        ]),
+        TrainingBlock(name: "Walking Knee Hugs", category: .stretching, durationMinutes: 3, intensity: .low, imageName: "stretch_leg_prep", focusTags: ["glute", "hipMobility", "warmup"], instructions: [
+            "Walk forward — as you step, pull your knee into your chest and hold for 2 seconds.",
+            "Alternate legs each step — this stretches the glutes and opens the hips.",
+            "Perform 10 reps per leg — this is a standard college volleyball warmup movement."
+        ]),
+        TrainingBlock(name: "Inchworm to Cobra", category: .stretching, durationMinutes: 3, intensity: .low, imageName: "stretch_full_body", focusTags: ["fullBody", "mobility", "core"], instructions: [
+            "Stand tall — fold forward and walk your hands out to a push-up position.",
+            "Lower your hips into a cobra stretch (chest up, hips down), then walk your hands back to your feet.",
+            "This single movement stretches the hamstrings, lower back, and hip flexors."
+        ]),
+        TrainingBlock(name: "Deep Lunge with Rotation", category: .stretching, durationMinutes: 4, intensity: .low, imageName: "stretch_tspine", focusTags: ["lunge", "tspine", "mobility"], instructions: [
+            "Step into a deep lunge with your right foot forward — place your left hand on the floor inside your foot.",
+            "Rotate your chest open toward your right knee — reach your right hand to the ceiling.",
+            "This is the gold standard volleyball warmup stretch — it opens the hips and thoracic spine."
+        ]),
+        TrainingBlock(name: "Cat-Cow Spinal Mobility", category: .stretching, durationMinutes: 3, intensity: .low, imageName: "stretch_leg_prep", focusTags: ["spine", "mobility", "core"], instructions: [
+            "Start on your hands and knees — alternate between arching your back (cow) and rounding your back (cat).",
+            "Move slowly with your breath — 5 seconds per position.",
+            "This prepares the spine for the extreme arch position required in a volleyball spike."
+        ]),
+        TrainingBlock(name: "Frog Stretch", category: .stretching, durationMinutes: 3, intensity: .low, imageName: "stretch_hip_mobility", focusTags: ["hip", "groin", "mobility"], instructions: [
+            "Start on all fours — widen your knees as far as comfortable with your feet together.",
+            "Slowly sit back toward your heels — hold for 20 seconds, then release.",
+            "This deep hip stretch is essential for the low defensive stance and split-step."
+        ]),
+        TrainingBlock(name: "Standing Quad Stretch with Balance", category: .stretching, durationMinutes: 3, intensity: .low, imageName: "stretch_balance", focusTags: ["quad", "balance", "stability"], instructions: [
+            "Stand on one leg — pull your opposite heel toward your glute — hold for 15 seconds.",
+            "Challenge your balance by closing your eyes — this prepares the landing stabilizers.",
+            "Repeat on each leg twice — this is both a stretch and a balance exercise."
+        ]),
+        TrainingBlock(name: "Hamstring Sweep", category: .stretching, durationMinutes: 3, intensity: .low, imageName: "stretch_hamstring_dynamic", focusTags: ["hamstring", "dynamic", "mobility"], instructions: [
+            "Stand with feet together — sweep your right leg across your body and up to the left.",
+            "Alternate legs in a controlled rhythm — this is a dynamic hamstring stretch.",
+            "The hamstring sweep mimics the leg action of a volleyball approach jump."
+        ]),
+        TrainingBlock(name: "90-90 Hip Stretch", category: .stretching, durationMinutes: 4, intensity: .low, imageName: "stretch_hip_mobility", focusTags: ["hip", "externalRotation", "mobility"], instructions: [
+            "Sit with one leg bent 90 degrees in front of you and the other bent 90 degrees behind you.",
+            "Sit up tall and lean slightly forward — hold for 30 seconds, then switch sides.",
+            "This external hip rotation stretch is critical for maintaining hip health in volleyball."
+        ]),
+        TrainingBlock(name: "Open-Book Thoracic Rotation", category: .stretching, durationMinutes: 3, intensity: .low, imageName: "stretch_tspine", focusTags: ["tspine", "rotation", "shoulderMobility"], instructions: [
+            "Lie on your side with both arms extended in front of you, knees bent at 90 degrees.",
+            "Slowly open your top arm to the opposite side — follow your hand with your eyes.",
+            "This thoracic spine mobility directly improves your arm swing reach and power."
+        ]),
+        TrainingBlock(name: "Full-Body Stretch Flow", category: .stretching, durationMinutes: 5, intensity: .low, imageName: "stretch_full_body", focusTags: ["fullBody", "recovery", "flexibility"], instructions: [
+            "Move through a continuous flow: standing forward fold → half-lift → plank → downward dog → forward fold.",
+            "Flow through each movement with your breath — hold each position for 3 breaths.",
+            "This yoga-inspired flow improves overall flexibility and reduces injury risk."
+        ]),
+        TrainingBlock(name: "Pre-Hop Leg Activation", category: .warmup, durationMinutes: 3, intensity: .low, imageName: "stretch_prejump", focusTags: ["legActivation", "plyo", "warmup"], instructions: [
+            "Stand on one leg — perform 10 mini-hops (1 inch off the ground) as quickly as possible.",
+            "Switch legs — this activates the fast-twitch fibers in your calves and ankles.",
+            "Follow with 5 max-effort vertical jumps — this primes your nervous system for competition."
+        ]),
+        TrainingBlock(name: "Dynamic Leg Prep Circuit", category: .warmup, durationMinutes: 5, intensity: .low, imageName: "stretch_vb_flow", focusTags: ["dynamicPrep", "warmup", "mobility"], instructions: [
+            "Perform each movement for 15 yards: butt kicks, high knees, karaoke (carioca), walking lunges.",
+            "Rest 30 seconds and repeat the circuit — this raises core temperature and activates every leg muscle.",
+            "This is the exact warmup used by NCAA Division I volleyball teams before every practice."
         ])
     ]
 
@@ -526,10 +838,11 @@ struct TrainingHubView: View {
     private var modePicker: some View {
         Picker("Mode", selection: $mode) {
             ForEach(TrainingGenerationMode.allCases) { m in
-                Text(m.rawValue).foregroundColor(.pink).tag(m)
+                Text(m.rawValue).tag(m)
             }
         }
         .pickerStyle(.segmented)
+        .tint(.pink)
         .padding()
         .frame(maxWidth: .infinity)
         .background(Color.black.opacity(0.5))
