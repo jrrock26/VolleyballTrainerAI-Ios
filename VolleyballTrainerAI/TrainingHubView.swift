@@ -395,6 +395,7 @@ struct TrainingHubView: View {
                                 }.buttonStyle(PlainButtonStyle()); Spacer()
                             }.padding(.top, 16)
                             header
+                            Spacer(minLength: 220)
                             PinkSegmentedPicker(selection: $mode, options: TrainingGenerationMode.allCases)
                             durationControl
                             modeContent
