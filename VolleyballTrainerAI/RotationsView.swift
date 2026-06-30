@@ -385,7 +385,7 @@ struct RotationsView: View {
                                 let jersey = jerseys[label] ?? ""
                                 
                                 PlayerBubbleView(
-                                    position: CGPoint(x: pos.x, y: pos.y * 1.05),
+                                    position: CGPoint(x: pos.x, y: pos.y * 1.10),
                                     label: label,
                                     isMe: isMe,
                                     jersey: jersey,
@@ -447,40 +447,42 @@ struct RotationsView: View {
                         }
                         .frame(height: geo.size.height * 0.5)
                         
-                        // Controls above return balls
-                        HStack(spacing: 6) {
+                        Spacer()
+                        
+                        // Controls at bottom
+                        HStack(spacing: 8) {
                             Button(action: runReceive) {
                                 Text("Run")
-                                    .font(.system(size: 12, weight: .bold))
+                                    .font(.system(size: 13, weight: .bold))
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
+                                    .padding(.vertical, 10)
                                     .background(Color(hex: "#2b6cb0"))
-                                    .cornerRadius(6)
+                                    .cornerRadius(8)
                             }
                             
                             Button(action: rotate) {
                                 Text("Rot(R\(rotation))")
-                                    .font(.system(size: 12, weight: .bold))
+                                    .font(.system(size: 13, weight: .bold))
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
+                                    .padding(.vertical, 10)
                                     .background(Color(hex: "#2b6cb0"))
-                                    .cornerRadius(6)
+                                    .cornerRadius(8)
                             }
                             
                             Button(action: { formation = formation == "6-2" ? "5-1" : "6-2" }) {
                                 Text(formation)
-                                    .font(.system(size: 12, weight: .bold))
+                                    .font(.system(size: 13, weight: .bold))
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
+                                    .padding(.vertical, 10)
                                     .background(Color(hex: "#2b6cb0"))
-                                    .cornerRadius(6)
+                                    .cornerRadius(8)
                             }
                         }
-                        .padding(.horizontal, 10)
-                        .padding(.bottom, 8)
+                        .padding(.horizontal, 12)
+                        .padding(.bottom, 12)
                     }
                 }
             }
