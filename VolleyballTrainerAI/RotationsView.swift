@@ -385,7 +385,7 @@ struct RotationsView: View {
                                 let jersey = jerseys[label] ?? ""
                                 
                                 PlayerBubbleView(
-                                    position: CGPoint(x: pos.x, y: pos.y * 0.65),
+                                    position: CGPoint(x: pos.x, y: pos.y * 0.95),
                                     label: label,
                                     isMe: isMe,
                                     jersey: jersey,
@@ -403,28 +403,28 @@ struct RotationsView: View {
                                 .font(.system(size: 11, weight: .bold))
                                 .foregroundColor(.white)
                                 .shadow(color: .black, radius: 3)
-                                .position(x: geo.size.width / 2, y: geo.size.height * 0.07)
+                                .position(x: geo.size.width / 2, y: geo.size.height * 0.08)
                             
                             // Return ball buttons
                             Circle()
                                 .fill(Color(hex: "#ff69b4").opacity(selectedBall == "left" ? 1 : 0.8))
                                 .frame(width: 32, height: 32)
                                 .shadow(color: selectedBall == "left" ? Color(hex: "#ff69b4") : .clear, radius: 5)
-                                .position(x: geo.size.width * 0.2, y: geo.size.height * 0.09)
+                                .position(x: geo.size.width * 0.2, y: geo.size.height * 0.12)
                                 .onTapGesture { selectBall("left") }
                             
                             Circle()
                                 .fill(Color(hex: "#ff69b4").opacity(selectedBall == "middle" ? 1 : 0.8))
                                 .frame(width: 32, height: 32)
                                 .shadow(color: selectedBall == "middle" ? Color(hex: "#ff69b4") : .clear, radius: 5)
-                                .position(x: geo.size.width * 0.5, y: geo.size.height * 0.09)
+                                .position(x: geo.size.width * 0.5, y: geo.size.height * 0.12)
                                 .onTapGesture { selectBall("middle") }
                             
                             Circle()
                                 .fill(Color(hex: "#ff69b4").opacity(selectedBall == "right" ? 1 : 0.8))
                                 .frame(width: 32, height: 32)
                                 .shadow(color: selectedBall == "right" ? Color(hex: "#ff69b4") : .clear, radius: 5)
-                                .position(x: geo.size.width * 0.8, y: geo.size.height * 0.09)
+                                .position(x: geo.size.width * 0.8, y: geo.size.height * 0.12)
                                 .onTapGesture { selectBall("right") }
                             
                             // Animated serve ball
@@ -450,39 +450,39 @@ struct RotationsView: View {
                         Spacer()
                         
                         // Controls at bottom
-                        HStack(spacing: 8) {
+                        HStack(spacing: 6) {
                             Button(action: runReceive) {
                                 Text("Run")
-                                    .font(.system(size: 13, weight: .bold))
+                                    .font(.system(size: 12, weight: .bold))
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 10)
+                                    .padding(.vertical, 8)
                                     .background(Color(hex: "#2b6cb0"))
-                                    .cornerRadius(8)
+                                    .cornerRadius(6)
                             }
                             
                             Button(action: rotate) {
-                                Text("Rotate (R\(rotation))")
-                                    .font(.system(size: 13, weight: .bold))
+                                Text("Rot(R\(rotation))")
+                                    .font(.system(size: 12, weight: .bold))
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 10)
+                                    .padding(.vertical, 8)
                                     .background(Color(hex: "#2b6cb0"))
-                                    .cornerRadius(8)
+                                    .cornerRadius(6)
                             }
                             
                             Button(action: { formation = formation == "6-2" ? "5-1" : "6-2" }) {
                                 Text(formation)
-                                    .font(.system(size: 13, weight: .bold))
+                                    .font(.system(size: 12, weight: .bold))
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 10)
+                                    .padding(.vertical, 8)
                                     .background(Color(hex: "#2b6cb0"))
-                                    .cornerRadius(8)
+                                    .cornerRadius(6)
                             }
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.bottom, 12)
+                        .padding(.horizontal, 10)
+                        .padding(.bottom, 8)
                     }
                 }
             }
