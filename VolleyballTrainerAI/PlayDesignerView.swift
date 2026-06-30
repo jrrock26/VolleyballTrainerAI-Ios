@@ -162,7 +162,7 @@ struct PlayDesignerView: View {
                             let isLibero = role == "L"
                             
                             PlayDesignerPlayerView(
-                                position: CGPoint(x: pos.x, y: pos.y * 1.25),
+                                position: CGPoint(x: pos.x * 1.02, y: pos.y * 1.15),
                                 role: role,
                                 label: label,
                                 isLibero: isLibero,
@@ -208,7 +208,7 @@ struct PlayDesignerView: View {
                     }
                     .frame(maxHeight: .infinity)
                     
-                    Spacer().frame(height: geo.size.height * 0.05)
+                    Spacer().frame(height: geo.size.height * 0.02)
                     
                     // Bottom controls - compact
                     HStack(spacing: 6) {
