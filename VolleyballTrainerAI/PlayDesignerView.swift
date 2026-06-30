@@ -162,7 +162,7 @@ struct PlayDesignerView: View {
                             let isLibero = role == "L"
                             
                             PlayDesignerPlayerView(
-                                position: CGPoint(x: pos.x, y: pos.y * 1.45),
+                                position: CGPoint(x: pos.x, y: pos.y * 1.25),
                                 role: role,
                                 label: label,
                                 isLibero: isLibero,
