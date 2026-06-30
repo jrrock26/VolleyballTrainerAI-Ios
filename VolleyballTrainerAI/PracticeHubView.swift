@@ -93,7 +93,7 @@ struct PracticePlan: Identifiable, Hashable, Codable {
 // MARK: - Practice Library
 enum VolleyballPracticeLibrary {
     static let warmups: [PracticeBlock] = [
-        PracticeBlock(name: "Dynamic Full-Body Warm-Up", category: .warmup, durationMinutes: 5, type: "both", difficulty: "beginner", instructions: [
+        PracticeBlock(name: "Dynamic Full-Body Warm-Up", category: .warmup, durationMinutes: 5, type: "both", difficulty: "beginner", imageName: "warmup", instructions: [
             "Use continuous movement to gradually elevate heart rate.",
             "Focus on smooth, controlled motions rather than speed.",
             "Keep posture tall with core engaged throughout the sequence.",
@@ -105,7 +105,7 @@ enum VolleyballPracticeLibrary {
             "Add butt kicks down and back once.",
             "Finish with lateral shuffles and backpedal to center."
         ]),
-        PracticeBlock(name: "Ball-Handling Warm-Up Toss", category: .warmup, durationMinutes: 4, type: "individual", difficulty: "beginner", instructions: [
+        PracticeBlock(name: "Ball-Handling Warm-Up Toss", category: .warmup, durationMinutes: 4, type: "individual", difficulty: "beginner", imageName: "warmup", instructions: [
             "Use a single ball to activate hands and coordination.",
             "Keep eyes on the ball and maintain athletic posture.",
             "Focus on clean, controlled contacts rather than power.",
@@ -116,7 +116,7 @@ enum VolleyballPracticeLibrary {
             "Toss and catch with left hand only 10 times.",
             "Add light footwork while continuing the toss pattern."
         ]),
-        PracticeBlock(name: "Shadow Footwork Warm-Up", category: .warmup, durationMinutes: 4, type: "both", difficulty: "beginner", instructions: [
+        PracticeBlock(name: "Shadow Footwork Warm-Up", category: .warmup, durationMinutes: 4, type: "both", difficulty: "beginner", imageName: "warmup", instructions: [
             "Rehearse volleyball-specific footwork patterns without the ball.",
             "Emphasize balance, posture, and rhythm over speed.",
             "Keep hips low and chest up during all movements.",
@@ -127,7 +127,7 @@ enum VolleyballPracticeLibrary {
             "Add short sprints forward and backpedals.",
             "Repeat sequence 2-3 times with increasing intensity."
         ]),
-        PracticeBlock(name: "Partner Mirror Movement", category: .warmup, durationMinutes: 5, type: "team", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Partner Mirror Movement", category: .warmup, durationMinutes: 5, type: "team", difficulty: "intermediate", imageName: "warmup", instructions: [
             "Work in pairs to mirror each other's movements.",
             "Focus on quick reactions and controlled footwork.",
             "Maintain low, athletic posture throughout the drill.",
@@ -138,7 +138,7 @@ enum VolleyballPracticeLibrary {
             "The other partner mirrors the movement exactly.",
             "Switch leader and repeat for multiple rounds."
         ]),
-        PracticeBlock(name: "Triangle Movement Warm-Up", category: .warmup, durationMinutes: 5, type: "both", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Triangle Movement Warm-Up", category: .warmup, durationMinutes: 5, type: "both", difficulty: "intermediate", imageName: "warmup", instructions: [
             "Use three cones or markers to form a triangle.",
             "Emphasize quick changes of direction and body control.",
             "Stay low and push off the outside foot when cutting.",
@@ -149,7 +149,7 @@ enum VolleyballPracticeLibrary {
             "Shuffle to the third cone, then backpedal to the first.",
             "Repeat pattern clockwise, then counterclockwise."
         ]),
-        PracticeBlock(name: "Ball Control Warm-Up Line", category: .warmup, durationMinutes: 5, type: "team", difficulty: "beginner", instructions: [
+        PracticeBlock(name: "Ball Control Warm-Up Line", category: .warmup, durationMinutes: 5, type: "team", difficulty: "beginner", imageName: "ballcontrol", instructions: [
             "Use simple passing to warm up arms and platforms.",
             "Focus on clean contact and accurate ball flight.",
             "Keep knees bent and shoulders forward.",
@@ -160,7 +160,7 @@ enum VolleyballPracticeLibrary {
             "After each pass, players take a small shuffle step.",
             "Rotate players down the line after a set number of reps."
         ]),
-        PracticeBlock(name: "Serve Receive Shuffle Warm-Up", category: .warmup, durationMinutes: 5, type: "both", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Serve Receive Shuffle Warm-Up", category: .warmup, durationMinutes: 5, type: "both", difficulty: "intermediate", imageName: "serveReceive", instructions: [
             "Simulate serve-receive movement without full-speed serves.",
             "Focus on reading the toss and moving early.",
             "Stay low and balanced while shuffling to the ball.",
@@ -171,7 +171,7 @@ enum VolleyballPracticeLibrary {
             "Catch or lightly pass the ball back to the tosser.",
             "Repeat from multiple starting positions across the back row."
         ]),
-        PracticeBlock(name: "Core Activation Circuit", category: .warmup, durationMinutes: 4, type: "individual", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Core Activation Circuit", category: .warmup, durationMinutes: 4, type: "individual", difficulty: "intermediate", imageName: "warmup", instructions: [
             "Activate core muscles to support explosive movements.",
             "Focus on quality of movement over speed.",
             "Maintain controlled breathing throughout the circuit.",
@@ -182,7 +182,7 @@ enum VolleyballPracticeLibrary {
             "Perform 20 seconds of dead bug or hollow hold.",
             "Rest briefly and repeat the circuit 2-3 times."
         ]),
-        PracticeBlock(name: "Shoulder Prep with Band", category: .warmup, durationMinutes: 4, type: "individual", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Shoulder Prep with Band", category: .warmup, durationMinutes: 4, type: "individual", difficulty: "intermediate", imageName: "warmup", instructions: [
             "Use light resistance to warm up the shoulders safely.",
             "Focus on controlled range of motion and posture.",
             "Keep movements smooth and avoid jerking the band.",
@@ -193,7 +193,7 @@ enum VolleyballPracticeLibrary {
             "Perform overhead band presses for 10-12 reps.",
             "Repeat sequence 2-3 times with light resistance."
         ]),
-        PracticeBlock(name: "Jump Prep and Landing Mechanics", category: .warmup, durationMinutes: 5, type: "both", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Jump Prep and Landing Mechanics", category: .warmup, durationMinutes: 5, type: "both", difficulty: "intermediate", imageName: "warmup", instructions: [
             "Prepare lower body for repeated jumping.",
             "Emphasize soft, controlled landings.",
             "Keep knees tracking over toes during takeoff and landing.",
@@ -207,7 +207,7 @@ enum VolleyballPracticeLibrary {
     ]
     
     static let ballControlDrills: [PracticeBlock] = [
-        PracticeBlock(name: "Triangle Pepper", category: .ballControl, durationMinutes: 5, type: "team", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Triangle Pepper", category: .ballControl, durationMinutes: 5, type: "team", difficulty: "intermediate", imageName: "ballcontrol", instructions: [
             "Three players form a triangle and keep the ball in play.",
             "Use controlled touches: pass, set, or controlled hit.",
             "Maintain spacing and communicate each contact.",
@@ -218,7 +218,7 @@ enum VolleyballPracticeLibrary {
             "Rotate roles every 60 seconds.",
             "Increase tempo as control improves."
         ]),
-        PracticeBlock(name: "Chaos Pepper", category: .ballControl, durationMinutes: 5, type: "team", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Chaos Pepper", category: .ballControl, durationMinutes: 5, type: "team", difficulty: "advanced", imageName: "ballcontrol", instructions: [
             "Players pepper while constantly moving to new spots.",
             "Forces communication and quick adjustments.",
             "Emphasize reading ball flight and reacting early.",
@@ -229,7 +229,7 @@ enum VolleyballPracticeLibrary {
             "Add random directional calls from coach.",
             "Finish with full-speed movement pepper."
         ]),
-        PracticeBlock(name: "Over-the-Net Pepper", category: .ballControl, durationMinutes: 5, type: "team", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Over-the-Net Pepper", category: .ballControl, durationMinutes: 5, type: "team", difficulty: "intermediate", imageName: "ballcontrol", instructions: [
             "Pepper across the net using pass-set-hit rhythm.",
             "Focus on controlled roll shots and high sets.",
             "Maintain consistent tempo and communication.",
@@ -240,7 +240,7 @@ enum VolleyballPracticeLibrary {
             "Increase tempo as control improves.",
             "Finish with controlled swings if appropriate."
         ]),
-        PracticeBlock(name: "3-Touch Pepper", category: .ballControl, durationMinutes: 4, type: "team", difficulty: "beginner", instructions: [
+        PracticeBlock(name: "3-Touch Pepper", category: .ballControl, durationMinutes: 4, type: "team", difficulty: "beginner", imageName: "ballcontrol", instructions: [
             "Players must use all three touches before sending the ball back.",
             "Encourages controlled passing and setting.",
             "Focus on predictable ball flight and clean contact."
@@ -250,7 +250,7 @@ enum VolleyballPracticeLibrary {
             "Keep the ball in play as long as possible.",
             "Increase tempo gradually."
         ]),
-        PracticeBlock(name: "Continuous Pepper to Target", category: .ballControl, durationMinutes: 5, type: "team", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Continuous Pepper to Target", category: .ballControl, durationMinutes: 5, type: "team", difficulty: "intermediate", imageName: "ballcontrol", instructions: [
             "Players pepper while aiming for a designated target zone.",
             "Improves directional control and accuracy.",
             "Focus on platform angle and body alignment."
@@ -260,7 +260,7 @@ enum VolleyballPracticeLibrary {
             "Rotate players after each successful sequence.",
             "Increase distance or difficulty as needed."
         ]),
-        PracticeBlock(name: "Movement Pepper", category: .ballControl, durationMinutes: 5, type: "team", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Movement Pepper", category: .ballControl, durationMinutes: 5, type: "team", difficulty: "intermediate", imageName: "ballcontrol", instructions: [
             "Players pepper while moving laterally or forward/backward.",
             "Simulates game-speed adjustments.",
             "Focus on staying balanced while moving."
@@ -270,7 +270,7 @@ enum VolleyballPracticeLibrary {
             "Add coach-called direction changes.",
             "Finish with full-speed movement pepper."
         ]),
-        PracticeBlock(name: "Wall Passing Series", category: .ballControl, durationMinutes: 4, type: "individual", difficulty: "beginner", instructions: [
+        PracticeBlock(name: "Wall Passing Series", category: .ballControl, durationMinutes: 4, type: "individual", difficulty: "beginner", imageName: "ballcontrol", instructions: [
             "Use a wall to develop consistent passing technique.",
             "Focus on platform angle and clean contact.",
             "Keep feet active and posture stable."
@@ -280,7 +280,7 @@ enum VolleyballPracticeLibrary {
             "Add movement between reps.",
             "Finish with rapid-fire passing for 30 seconds."
         ]),
-        PracticeBlock(name: "Partner Short/Deep Pepper", category: .ballControl, durationMinutes: 5, type: "team", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Partner Short/Deep Pepper", category: .ballControl, durationMinutes: 5, type: "team", difficulty: "intermediate", imageName: "ballcontrol", instructions: [
             "Partners alternate between short and deep contacts.",
             "Improves reading and footwork adjustments.",
             "Focus on early movement and stable platform."
@@ -290,7 +290,7 @@ enum VolleyballPracticeLibrary {
             "Continue alternating short/deep.",
             "Increase tempo as control improves."
         ]),
-        PracticeBlock(name: "Two-Ball Pepper", category: .ballControl, durationMinutes: 4, type: "team", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Two-Ball Pepper", category: .ballControl, durationMinutes: 4, type: "team", difficulty: "advanced", imageName: "ballcontrol", instructions: [
             "Two balls are in play simultaneously.",
             "Forces fast decision-making and communication.",
             "Players must stay calm under pressure."
@@ -300,7 +300,7 @@ enum VolleyballPracticeLibrary {
             "Keep both balls alive as long as possible.",
             "Reset and repeat multiple rounds."
         ]),
-        PracticeBlock(name: "Target Passing Competition", category: .ballControl, durationMinutes: 5, type: "team", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Target Passing Competition", category: .ballControl, durationMinutes: 5, type: "team", difficulty: "intermediate", imageName: "ballcontrol", instructions: [
             "Players pass to a designated target zone.",
             "Encourages accuracy and consistency.",
             "Add scoring to increase competitiveness."
@@ -313,7 +313,7 @@ enum VolleyballPracticeLibrary {
     ]
     
     static let settingDrills: [PracticeBlock] = [
-        PracticeBlock(name: "Setter Triangle Footwork", category: .setting, durationMinutes: 5, type: "individual", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Setter Triangle Footwork", category: .setting, durationMinutes: 5, type: "individual", difficulty: "intermediate", imageName: "setting", instructions: [
             "Setter moves between three points forming a triangle.",
             "Emphasizes quick, efficient footwork to get under the ball.",
             "Focus on staying square to the target before setting.",
@@ -324,7 +324,7 @@ enum VolleyballPracticeLibrary {
             "Square to an imaginary target at each stop.",
             "Repeat clockwise and counterclockwise."
         ]),
-        PracticeBlock(name: "Wall Setting Series", category: .setting, durationMinutes: 4, type: "individual", difficulty: "beginner", instructions: [
+        PracticeBlock(name: "Wall Setting Series", category: .setting, durationMinutes: 4, type: "individual", difficulty: "beginner", imageName: "setting", instructions: [
             "Use a wall to develop consistent hand contact.",
             "Focus on soft touch and minimal spin.",
             "Keep elbows out and hands shaped early."
@@ -334,7 +334,7 @@ enum VolleyballPracticeLibrary {
             "Add movement left and right between reps.",
             "Finish with rapid-fire setting for 20 seconds."
         ]),
-        PracticeBlock(name: "Jump Setting Rhythm Drill", category: .setting, durationMinutes: 5, type: "individual", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Jump Setting Rhythm Drill", category: .setting, durationMinutes: 5, type: "individual", difficulty: "advanced", imageName: "setting", instructions: [
             "Develop timing and rhythm for jump setting.",
             "Focus on consistent takeoff and landing mechanics.",
             "Keep hands high and ready before leaving the ground."
@@ -344,7 +344,7 @@ enum VolleyballPracticeLibrary {
             "Add movement to the left and right.",
             "Finish with full-speed jump setting reps."
         ]),
-        PracticeBlock(name: "Out-of-System Chase Drill", category: .setting, durationMinutes: 5, type: "team", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Out-of-System Chase Drill", category: .setting, durationMinutes: 5, type: "team", difficulty: "advanced", imageName: "setting", instructions: [
             "Setter chases down off-target passes.",
             "Focus on footwork efficiency and balance.",
             "Deliver a hittable ball even from poor positions."
@@ -354,7 +354,7 @@ enum VolleyballPracticeLibrary {
             "Deliver a high, controlled set.",
             "Repeat from multiple court zones."
         ]),
-        PracticeBlock(name: "Setter Decision-Making Drill", category: .setting, durationMinutes: 5, type: "team", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Setter Decision-Making Drill", category: .setting, durationMinutes: 5, type: "team", difficulty: "advanced", imageName: "setting", instructions: [
             "Setter reads blockers and chooses best attacking option.",
             "Emphasizes quick decisions under pressure.",
             "Focus on deception and tempo control."
@@ -367,7 +367,7 @@ enum VolleyballPracticeLibrary {
     ]
     
     static let hittingDrills: [PracticeBlock] = [
-        PracticeBlock(name: "Hitting Arm Swing Mechanics", category: .hitting, durationMinutes: 10, type: "individual", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Hitting Arm Swing Mechanics", category: .hitting, durationMinutes: 10, type: "individual", difficulty: "intermediate", imageName: "hitting_arm_swing", instructions: [
             "Load your hitting elbow behind your ear at takeoff.",
             "Contact the ball in front of your body at full reach.",
             "Freeze the finish position and check shoulder-to-wrist alignment."
@@ -377,7 +377,7 @@ enum VolleyballPracticeLibrary {
             "Add jump and swing without ball contact.",
             "Finish with full-speed swings into target."
         ]),
-        PracticeBlock(name: "Approach Angle Reps", category: .hitting, durationMinutes: 9, type: "individual", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Approach Angle Reps", category: .hitting, durationMinutes: 9, type: "individual", difficulty: "intermediate", imageName: "hitting_approach_angle", instructions: [
             "Mark your start position and target contact zone.",
             "Use a controlled 3-step approach with explosive arm drive.",
             "Plant your hips open and attack through the ball into the target."
@@ -387,7 +387,7 @@ enum VolleyballPracticeLibrary {
             "Add jump and reach for target.",
             "Complete 15-20 reps with full rest between sets."
         ]),
-        PracticeBlock(name: "Max Jump Touches", category: .hitting, durationMinutes: 8, type: "individual", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Max Jump Touches", category: .hitting, durationMinutes: 8, type: "individual", difficulty: "advanced", imageName: "hitting_max_jump", instructions: [
             "Take a 3-step approach and jump as high as possible.",
             "Swing arms aggressively into takeoff and reach with both hands.",
             "Land softly and reset fully before next rep."
@@ -397,7 +397,7 @@ enum VolleyballPracticeLibrary {
             "Contact target at peak height.",
             "Complete 8-10 reps with 2 minutes rest between sets."
         ]),
-        PracticeBlock(name: "Hitting High Ball", category: .hitting, durationMinutes: 8, type: "individual", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Hitting High Ball", category: .hitting, durationMinutes: 8, type: "individual", difficulty: "intermediate", imageName: "hitting_high_ball", instructions: [
             "Have a partner toss a high ball or use a ball machine.",
             "Delay start of approach until ball begins to descend.",
             "Contact the ball above forehead with full wrist snap."
@@ -407,7 +407,7 @@ enum VolleyballPracticeLibrary {
             "Attack ball at highest contact point.",
             "Complete 12-15 reps."
         ]),
-        PracticeBlock(name: "Cross Court Target Hits", category: .hitting, durationMinutes: 10, type: "individual", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Cross Court Target Hits", category: .hitting, durationMinutes: 10, type: "individual", difficulty: "intermediate", imageName: "hitting_cross_court", instructions: [
             "Set up target in cross-court zone 1-2 feet inside line.",
             "Open shoulders, contact high, finish with thumb down.",
             "Track makes vs misses and adjust approach angle."
@@ -417,7 +417,7 @@ enum VolleyballPracticeLibrary {
             "Count successful hits.",
             "Adjust approach angle based on results."
         ]),
-        PracticeBlock(name: "Line Shot Accuracy", category: .hitting, durationMinutes: 8, type: "individual", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Line Shot Accuracy", category: .hitting, durationMinutes: 8, type: "individual", difficulty: "intermediate", imageName: "hitting_line_shot", instructions: [
             "Aim ball down the line 1-2 feet inside sideline.",
             "Keep ball in front and reach for top of ball.",
             "Land balanced and reset to same starting spot."
@@ -427,7 +427,7 @@ enum VolleyballPracticeLibrary {
             "Focus on clean contact and angle.",
             "Track accuracy percentage."
         ]),
-        PracticeBlock(name: "Tool the Block Drill", category: .hitting, durationMinutes: 8, type: "individual", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Tool the Block Drill", category: .hitting, durationMinutes: 8, type: "individual", difficulty: "advanced", imageName: "hitting_tool_block", instructions: [
             "Set up blocker or block target (pads/cones).",
             "Attack aggressively aiming for top of blocker's hands.",
             "Use block to deflect ball out of bounds."
@@ -437,7 +437,7 @@ enum VolleyballPracticeLibrary {
             "Aim to contact top of hands/pad.",
             "Complete 10-12 reps."
         ]),
-        PracticeBlock(name: "Transition Hitting", category: .hitting, durationMinutes: 10, type: "team", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Transition Hitting", category: .hitting, durationMinutes: 10, type: "team", difficulty: "advanced", imageName: "hitting_transition", instructions: [
             "Simulate defensive-to-offensive transition.",
             "React to cue then transition into attack approach.",
             "Make split-second decision on shot location."
@@ -450,7 +450,7 @@ enum VolleyballPracticeLibrary {
     ]
     
     static let blockingDrills: [PracticeBlock] = [
-        PracticeBlock(name: "Block Footwork + Seal", category: .blocking, durationMinutes: 8, type: "individual", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Block Footwork + Seal", category: .blocking, durationMinutes: 8, type: "individual", difficulty: "intermediate", imageName: "blocking", instructions: [
             "Start at net in ready blocking position.",
             "Shuffle step to contact point, keep hands up.",
             "Penetrate over net with hands, sealing seam."
@@ -460,7 +460,7 @@ enum VolleyballPracticeLibrary {
             "Jump and press hands over net.",
             "Repeat 10 times each direction."
         ]),
-        PracticeBlock(name: "Read Block vs Outside Hitter", category: .blocking, durationMinutes: 8, type: "team", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Read Block vs Outside Hitter", category: .blocking, durationMinutes: 8, type: "team", difficulty: "advanced", imageName: "blocking", instructions: [
             "Face outside hitter, read approach angle.",
             "Close block with partner, no seam.",
             "Time jump with hitter's approach."
@@ -470,7 +470,7 @@ enum VolleyballPracticeLibrary {
             "Close block with partner.",
             "Complete 15-20 reps."
         ]),
-        PracticeBlock(name: "Adjustable Block", category: .blocking, durationMinutes: 8, type: "individual", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Adjustable Block", category: .blocking, durationMinutes: 8, type: "individual", difficulty: "advanced", imageName: "blocking", instructions: [
             "Start in middle block position.",
             "Shuffle to pin based on coach signal.",
             "Press and read hitter's shoulder for direction."
@@ -480,7 +480,7 @@ enum VolleyballPracticeLibrary {
             "Jump and press at net.",
             "Complete 12 reps each direction."
         ]),
-        PracticeBlock(name: "Block + Recover to Defense", category: .blocking, durationMinutes: 8, type: "team", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Block + Recover to Defense", category: .blocking, durationMinutes: 8, type: "team", difficulty: "advanced", imageName: "blocking", instructions: [
             "Jump block at net then land into defensive stance.",
             "Coach attacks after block.",
             "Dig ball to setter."
@@ -490,7 +490,7 @@ enum VolleyballPracticeLibrary {
             "React to coach's attack.",
             "Complete 10-12 transition reps."
         ]),
-        PracticeBlock(name: "Double-Block Timing", category: .blocking, durationMinutes: 8, type: "team", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Double-Block Timing", category: .blocking, durationMinutes: 8, type: "team", difficulty: "advanced", imageName: "blocking", instructions: [
             "Set up with blocking partner and outside hitter.",
             "Block call before set arrives.",
             "Both blockers jump at same time."
@@ -503,7 +503,7 @@ enum VolleyballPracticeLibrary {
     ]
     
     static let defenseDrills: [PracticeBlock] = [
-        PracticeBlock(name: "Defensive Platform Basics", category: .defense, durationMinutes: 6, type: "individual", difficulty: "beginner", instructions: [
+        PracticeBlock(name: "Defensive Platform Basics", category: .defense, durationMinutes: 6, type: "individual", difficulty: "beginner", imageName: "defense", instructions: [
             "Get in low defensive stance, feet shoulder-width.",
             "Present platform at 45 degrees.",
             "Absorb the ball, do not swing."
@@ -513,7 +513,7 @@ enum VolleyballPracticeLibrary {
             "Pass to target 10 feet in front.",
             "Complete 20 reps."
         ]),
-        PracticeBlock(name: "Defensive Digging Reads", category: .defense, durationMinutes: 8, type: "team", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Defensive Digging Reads", category: .defense, durationMinutes: 8, type: "team", difficulty: "advanced", imageName: "defense", instructions: [
             "Start in base defense.",
             "Read attacker's shoulder line and arm speed.",
             "Dig ball up to target zone."
@@ -523,7 +523,7 @@ enum VolleyballPracticeLibrary {
             "Dig to designated target.",
             "Complete 4 sets of 6 attacks."
         ]),
-        PracticeBlock(name: "Roll and Pancake Saves", category: .defense, durationMinutes: 6, type: "individual", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Roll and Pancake Saves", category: .defense, durationMinutes: 6, type: "individual", difficulty: "advanced", imageName: "defense", instructions: [
             "Coach tosses balls just out of reach.",
             "Execute controlled roll to save.",
             "Practice pancake: dive flat and slide hand under ball."
@@ -533,7 +533,7 @@ enum VolleyballPracticeLibrary {
             "Execute roll dive to save ball.",
             "Practice pancake on hard-driven balls."
         ]),
-        PracticeBlock(name: "Defense from Deep Court", category: .defense, durationMinutes: 8, type: "individual", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Defense from Deep Court", category: .defense, durationMinutes: 8, type: "individual", difficulty: "advanced", imageName: "defense", instructions: [
             "Start on baseline.",
             "Read trajectory early, take drop step.",
             "Dig ball high to center court."
@@ -543,7 +543,7 @@ enum VolleyballPracticeLibrary {
             "Read and pursue ball.",
             "Complete 8-10 reps."
         ]),
-        PracticeBlock(name: "Tip Defense Read", category: .defense, durationMinutes: 6, type: "individual", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Tip Defense Read", category: .defense, durationMinutes: 6, type: "individual", difficulty: "intermediate", imageName: "defense", instructions: [
             "Partner approaches but tips ball over net.",
             "Read open palm signal, step in immediately.",
             "Dig tip high to setter."
@@ -553,7 +553,7 @@ enum VolleyballPracticeLibrary {
             "Step in and play ball.",
             "Complete 15-20 reps."
         ]),
-        PracticeBlock(name: "Pepper Progression", category: .defense, durationMinutes: 10, type: "team", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Pepper Progression", category: .defense, durationMinutes: 10, type: "team", difficulty: "intermediate", imageName: "defense", instructions: [
             "Standard pepper: dig, set, hit in continuous loop.",
             "Add movement between contacts.",
             "Focus on quality over quantity."
@@ -566,7 +566,7 @@ enum VolleyballPracticeLibrary {
     ]
     
     static let serveReceiveDrills: [PracticeBlock] = [
-        PracticeBlock(name: "Serve Receive Platform", category: .serveReceive, durationMinutes: 8, type: "team", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Serve Receive Platform", category: .serveReceive, durationMinutes: 8, type: "team", difficulty: "intermediate", imageName: "serveReceive", instructions: [
             "Start in ready position, present flat angled platform.",
             "Move through ball, do not reach.",
             "Complete 30 quality passes."
@@ -576,7 +576,7 @@ enum VolleyballPracticeLibrary {
             "Pass to target at setter position.",
             "Rotate through all back-row positions."
         ]),
-        PracticeBlock(name: "Serve Receive Under Pressure", category: .serveReceive, durationMinutes: 8, type: "team", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Serve Receive Under Pressure", category: .serveReceive, durationMinutes: 8, type: "team", difficulty: "advanced", imageName: "serveReceive", instructions: [
             "Partner serves to random zones, must read and move.",
             "Focus on low athletic stance and split-step.",
             "Target: 8/10 passes within 3 feet of setter target."
@@ -586,7 +586,7 @@ enum VolleyballPracticeLibrary {
             "Pass to designated target.",
             "Track accuracy over 10 serves."
         ]),
-        PracticeBlock(name: "Short Serve Recovery", category: .serveReceive, durationMinutes: 6, type: "team", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Short Serve Recovery", category: .serveReceive, durationMinutes: 6, type: "team", difficulty: "advanced", imageName: "serveReceive", instructions: [
             "Partner serves short (drop) balls over net into Zones 2 or 3.",
             "Explode forward from base position.",
             "Pass high to setter."
@@ -596,7 +596,7 @@ enum VolleyballPracticeLibrary {
             "Explode forward and play ball.",
             "Complete 15-20 short serve reps."
         ]),
-        PracticeBlock(name: "Serve Receive + Attack Transition", category: .serveReceive, durationMinutes: 10, type: "team", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Serve Receive + Attack Transition", category: .serveReceive, durationMinutes: 10, type: "team", difficulty: "advanced", imageName: "serveReceive", instructions: [
             "Receive serve, pass to setter, then transition to attack.",
             "Sequence must be seamless: pass to setter to hit.",
             "Complete 8-10 repetitions."
@@ -606,7 +606,7 @@ enum VolleyballPracticeLibrary {
             "Transition into attack approach.",
             "Complete 8-10 full sequences."
         ]),
-        PracticeBlock(name: "Two-Person Passing Triangle", category: .serveReceive, durationMinutes: 6, type: "team", difficulty: "beginner", instructions: [
+        PracticeBlock(name: "Two-Person Passing Triangle", category: .serveReceive, durationMinutes: 6, type: "team", difficulty: "beginner", imageName: "serveReceive", instructions: [
             "Two passers in base positions.",
             "Coach tosses to alternating zones.",
             "Move before ball crosses net."
@@ -619,7 +619,7 @@ enum VolleyballPracticeLibrary {
     ]
     
     static let servingDrills: [PracticeBlock] = [
-        PracticeBlock(name: "Serve Float + Topspin Mix", category: .serving, durationMinutes: 8, type: "individual", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Serve Float + Topspin Mix", category: .serving, durationMinutes: 8, type: "individual", difficulty: "intermediate", imageName: "serving", instructions: [
             "Alternate between float serves and topspin serves.",
             "Float: contact with flat rigid hand, no follow-through spin.",
             "Topspin: snap wrist at contact, follow through low."
@@ -629,7 +629,7 @@ enum VolleyballPracticeLibrary {
             "Alternate pattern for 20 total serves.",
             "Track success rate."
         ]),
-        PracticeBlock(name: "Jump Serve Approach", category: .serving, durationMinutes: 8, type: "individual", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Jump Serve Approach", category: .serving, durationMinutes: 8, type: "individual", difficulty: "advanced", imageName: "serving", instructions: [
             "Start 10-12 feet behind baseline.",
             "Toss high and 3 feet in front.",
             "3-step approach, jump and contact at peak."
@@ -639,7 +639,7 @@ enum VolleyballPracticeLibrary {
             "Add approach without contact.",
             "Complete 15-20 jump serves."
         ]),
-        PracticeBlock(name: "Serve Accuracy Zones", category: .serving, durationMinutes: 8, type: "individual", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Serve Accuracy Zones", category: .serving, durationMinutes: 8, type: "individual", difficulty: "intermediate", imageName: "serving", instructions: [
             "Aim for designated zones on court.",
             "Focus on consistent toss and contact point.",
             "Track accuracy percentage."
@@ -649,7 +649,7 @@ enum VolleyballPracticeLibrary {
             "Track successful serves.",
             "Increase difficulty by adding movement."
         ]),
-        PracticeBlock(name: "Pressure Serving Game", category: .serving, durationMinutes: 8, type: "team", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Pressure Serving Game", category: .serving, durationMinutes: 8, type: "team", difficulty: "intermediate", imageName: "serving", instructions: [
             "Teams compete in serving pressure situations.",
             "Simulates match scoring pressure.",
             "Track serving percentage under pressure."
@@ -662,7 +662,7 @@ enum VolleyballPracticeLibrary {
     ]
     
     static let teamSystemDrills: [PracticeBlock] = [
-        PracticeBlock(name: "6v6 System Scrimmage", category: .teamSystems, durationMinutes: 15, type: "team", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "6v6 System Scrimmage", category: .teamSystems, durationMinutes: 15, type: "team", difficulty: "intermediate", imageName: "teamSystems", instructions: [
             "Full 6v6 scrimmage focusing on system execution.",
             "Emphasize serve-receive, transition, and side-out.",
             "Encourage communication on every play."
@@ -672,7 +672,7 @@ enum VolleyballPracticeLibrary {
             "Stop play to correct system errors.",
             "Play continuous rally scoring."
         ]),
-        PracticeBlock(name: "Serve Receive System", category: .teamSystems, durationMinutes: 10, type: "team", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Serve Receive System", category: .teamSystems, durationMinutes: 10, type: "team", difficulty: "intermediate", imageName: "teamSystems", instructions: [
             "Practice serve-receive formations and responsibilities.",
             "Focus on communication and coverage.",
             "Simulate game-speed serves."
@@ -682,7 +682,7 @@ enum VolleyballPracticeLibrary {
             "Pass to target and transition.",
             "Rotate through all formations."
         ]),
-        PracticeBlock(name: "Transition Offense Drill", category: .teamSystems, durationMinutes: 10, type: "team", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Transition Offense Drill", category: .teamSystems, durationMinutes: 10, type: "team", difficulty: "advanced", imageName: "teamSystems", instructions: [
             "Practice transition from defense to offense.",
             "Emphasize quick setters and hitter coverage.",
             "Focus on out-of-system play."
@@ -692,7 +692,7 @@ enum VolleyballPracticeLibrary {
             "Hitters run approaches.",
             "Complete 12-15 transitions."
         ]),
-        PracticeBlock(name: "Coverage System Drill", category: .teamSystems, durationMinutes: 8, type: "team", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Coverage System Drill", category: .teamSystems, durationMinutes: 8, type: "team", difficulty: "advanced", imageName: "teamSystems", instructions: [
             "Train hitters and defenders to cover attacks.",
             "Focus on positioning around hitter.",
             "Develop coverage responsibility awareness."
@@ -702,7 +702,7 @@ enum VolleyballPracticeLibrary {
             "React to blocked or deflected balls.",
             "Rotate hitters and coverage roles."
         ]),
-        PracticeBlock(name: "Offense vs Defense System", category: .teamSystems, durationMinutes: 10, type: "team", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Offense vs Defense System", category: .teamSystems, durationMinutes: 10, type: "team", difficulty: "advanced", imageName: "teamSystems", instructions: [
             "One side runs structured offense, other runs defense.",
             "Focus on reading, communication, and discipline.",
             "Simulates real match tactical execution."
@@ -715,7 +715,7 @@ enum VolleyballPracticeLibrary {
     ]
     
     static let gameDrills: [PracticeBlock] = [
-        PracticeBlock(name: "Queen of the Court", category: .games, durationMinutes: 10, type: "team", difficulty: "beginner", instructions: [
+        PracticeBlock(name: "Queen of the Court", category: .games, durationMinutes: 10, type: "team", difficulty: "beginner", imageName: "games", instructions: [
             "Fast-paced competitive mini-game.",
             "Winning team moves up, losing team rotates down.",
             "Encourages aggressive but controlled play."
@@ -725,7 +725,7 @@ enum VolleyballPracticeLibrary {
             "Winners move to queen court.",
             "Rotate continuously for 10 minutes."
         ]),
-        PracticeBlock(name: "Speedball Rally Game", category: .games, durationMinutes: 10, type: "team", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Speedball Rally Game", category: .games, durationMinutes: 10, type: "team", difficulty: "intermediate", imageName: "games", instructions: [
             "Continuous rallies with rapid restarts.",
             "Forces quick transitions and communication.",
             "Improves conditioning and focus."
@@ -735,7 +735,7 @@ enum VolleyballPracticeLibrary {
             "Teams must reset instantly.",
             "Play for timed intervals."
         ]),
-        PracticeBlock(name: "Serve-to-Score Game", category: .games, durationMinutes: 8, type: "team", difficulty: "beginner", instructions: [
+        PracticeBlock(name: "Serve-to-Score Game", category: .games, durationMinutes: 8, type: "team", difficulty: "beginner", imageName: "games", instructions: [
             "Teams can only score points on their serve.",
             "Encourages aggressive but consistent serving.",
             "Simulates real match pressure."
@@ -745,7 +745,7 @@ enum VolleyballPracticeLibrary {
             "If not, serve switches.",
             "Play to 15 or timed limit."
         ]),
-        PracticeBlock(name: "Bonus Ball Game", category: .games, durationMinutes: 10, type: "team", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Bonus Ball Game", category: .games, durationMinutes: 10, type: "team", difficulty: "intermediate", imageName: "games", instructions: [
             "Certain balls are worth extra points.",
             "Forces teams to strategize and communicate.",
             "Adds fun competitive pressure."
@@ -755,7 +755,7 @@ enum VolleyballPracticeLibrary {
             "Normal rally = 1 point.",
             "Play to set score."
         ]),
-        PracticeBlock(name: "Chaos Ball Game", category: .games, durationMinutes: 10, type: "team", difficulty: "advanced", instructions: [
+        PracticeBlock(name: "Chaos Ball Game", category: .games, durationMinutes: 10, type: "team", difficulty: "advanced", imageName: "games", instructions: [
             "Coach introduces random balls mid-rally.",
             "Forces players to react and communicate.",
             "Simulates unpredictable match situations."
@@ -765,7 +765,7 @@ enum VolleyballPracticeLibrary {
             "Teams must decide which ball to play.",
             "Play continues until one ball is dead."
         ]),
-        PracticeBlock(name: "Mini-Court 2v2", category: .games, durationMinutes: 8, type: "team", difficulty: "beginner", instructions: [
+        PracticeBlock(name: "Mini-Court 2v2", category: .games, durationMinutes: 8, type: "team", difficulty: "beginner", imageName: "games", instructions: [
             "Small-court game emphasizing ball control.",
             "Players must cover more space.",
             "Encourages creativity and smart shots."
@@ -775,7 +775,7 @@ enum VolleyballPracticeLibrary {
             "Rotate teams every few minutes.",
             "Increase pace as players adjust."
         ]),
-        PracticeBlock(name: "4v4 Transition Game", category: .games, durationMinutes: 10, type: "team", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "4v4 Transition Game", category: .games, durationMinutes: 10, type: "team", difficulty: "intermediate", imageName: "games", instructions: [
             "Smaller teams force more touches per player.",
             "Emphasizes transition offense and defense.",
             "Improves communication and spacing."
@@ -785,7 +785,7 @@ enum VolleyballPracticeLibrary {
             "Rotate players frequently.",
             "Play timed rounds."
         ]),
-        PracticeBlock(name: "Serve-Receive Battle", category: .games, durationMinutes: 10, type: "team", difficulty: "intermediate", instructions: [
+        PracticeBlock(name: "Serve-Receive Battle", category: .games, durationMinutes: 10, type: "team", difficulty: "intermediate", imageName: "games", instructions: [
             "Teams compete to win serve-receive rallies.",
             "Focus on passing accuracy and first-ball contact.",
             "Simulates real match serve pressure."
@@ -820,12 +820,10 @@ enum VolleyballPracticeLibrary {
         let categorySet = Set(categories)
         var planBlocks: [PracticeBlock] = []
         
-        // Always start with warmup
-        if !categories.isEmpty {
-            let warmupCount = min(2, warmups.count)
-            planBlocks += Array(warmups.shuffled().prefix(warmupCount))
-        } else {
-            planBlocks += Array(warmups.shuffled().prefix(2))
+        // Always start with at least 1 warmup and 1 stretch if available
+        let warmupDrills = warmups.filter { $0.category == .warmup }
+        if !warmupDrills.isEmpty {
+            planBlocks.append(warmupDrills.randomElement()!)
         }
         
         // Add drills from selected categories
@@ -884,17 +882,15 @@ enum VolleyballPracticeLibrary {
         for (index, block) in blocks.enumerated() {
             result.append(block)
             minutesSinceBreak += block.durationMinutes
-            
-            // Insert water break if needed (every 15 minutes)
-            if minutesSinceBreak >= 15,
-               let lastIndex = result.indices.last,
-               index < blocks.count - 1 {
+            let hasWorkoutRemaining = index < blocks.count - 1
+            if hasWorkoutRemaining && minutesSinceBreak >= 15 {
                 let waterBreak = PracticeBlock(
                     name: "Water Break",
                     category: .warmup,
                     durationMinutes: 2,
                     type: "both",
                     difficulty: "beginner",
+                    imageName: "warmup",
                     instructions: [
                         "Drink water or electrolytes.",
                         "Walk slowly and control your breathing.",
@@ -912,7 +908,6 @@ enum VolleyballPracticeLibrary {
             }
         }
         
-        // Remove trailing water break if present
         if result.last?.name == "Water Break" {
             result.removeLast()
         }
@@ -1011,14 +1006,9 @@ struct PracticeHubView: View {
                                 Spacer()
                             }.padding(.top, 16)
                             
-                            Text("Practice Builder")
-                                .font(.title2.bold())
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            
-                            Text("Build team practices by selecting categories or hand-picking drills from the library.")
+                            Text("Generate workouts from AI coach feedback, category focus, or build your own custom routine.")
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.white)
                             
                             Spacer(minLength: 20)
                             
@@ -1070,7 +1060,7 @@ struct PracticeHubView: View {
             Text("Select Categories").font(.headline).foregroundColor(.pink)
             
             Button(action: {
-                if selectedCategories.count == PracticeCategory.allCases.count {
+                if selectedCategories.count == PracticeCategory.allCases.filter({ $0 != .games }).count {
                     selectedCategories.removeAll()
                 } else {
                     selectedCategories = Set(PracticeCategory.allCases.filter { $0 != .games })
@@ -1163,6 +1153,9 @@ struct PracticeRunView: View {
     let practice: PracticePlan
     let onSave: (PracticePlan) -> Void
     @State private var selectedBlock: PracticeBlock?
+    @State private var saveName = ""
+    @State private var lastSavedName: String?
+    @State private var showSaveConfirm = false
     @State private var timers: [UUID: Int] = [:]
     @State private var running: Set<UUID> = []
     @State private var currentBlockIndex: Int = 0
@@ -1177,59 +1170,62 @@ struct PracticeRunView: View {
                 ScrollView {
                     LazyVStack(spacing: 10) {
                         ForEach(Array(practice.blocks.enumerated()), id: \.element.id) { index, block in
-                            PracticeBlockRow(block: block, seconds: timers[block.id] ?? block.durationMinutes * 60, isRunning: running.contains(block.id), isCurrent: index == currentBlockIndex)
-                                .onTapGesture { currentBlockIndex = index }
+                            if block.name == "Water Break" {
+                                waterBreakRow(block)
+                            } else {
+                                PracticeScheduleRow(block: block, seconds: timers[block.id] ?? block.durationMinutes * 60, isRunning: running.contains(block.id),
+                                    onTap: { selectedBlock = block },
+                                    onPlay: { running.insert(block.id) },
+                                    onPause: { running.remove(block.id) },
+                                    onReset: {
+                                        timers[block.id] = block.durationMinutes * 60
+                                        running.remove(block.id)
+                                    })
+                            }
                         }
                     }.padding(.horizontal)
                 }
                 
                 HStack {
-                    Button("Previous") { 
-                        if currentBlockIndex > 0 { 
-                            currentBlockIndex -= 1 
-                            running.removeAll()
-                        }
-                    }.buttonStyle(PracticeButtonStyle(color: .gray, foreground: .white))
-                    Spacer()
-                    Button(running.contains(practice.blocks[currentBlockIndex].id) ? "Pause" : "Play") {
-                        toggleCurrentTimer()
-                    }.buttonStyle(PracticeButtonStyle(color: .green, foreground: .black))
-                    Spacer()
-                    Button("Next") { 
-                        if currentBlockIndex < practice.blocks.count - 1 { 
-                            currentBlockIndex += 1 
-                            running.removeAll()
-                        }
-                    }.buttonStyle(PracticeButtonStyle(color: .gray, foreground: .white))
-                }.padding(.horizontal)
+                    Button("Save") { showSaveSheet() }.buttonStyle(PracticeButtonStyle(color: .cyan, foreground: .black))
+                }.padding(.horizontal).padding(.bottom, 8)
             }
         }
         .navigationTitle("Practice Session").navigationBarTitleDisplayMode(.inline)
         .onAppear { resetTimers() }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in tickTimers() }
         .sheet(item: $selectedBlock) { block in PracticeBlockDetailView(block: block) }
+        .overlay(Group {
+            if showSaveConfirm, let name = lastSavedName {
+                VStack { Spacer(); Text("✓ Saved: \(name)").font(.caption.bold()).foregroundColor(.green).padding().background(.black.opacity(0.8)).cornerRadius(12).padding(.bottom, 60) }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .animation(.easeInOut, value: showSaveConfirm)
+            }
+        })
     }
     
     private var summary: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(practice.name).font(.title3.bold()).foregroundColor(.white)
-            Text("\(practice.blocks.count) drills • \(practice.totalMinutes) min • Focus: \(practice.focus.capitalized)").font(.caption).foregroundColor(.gray)
+            Text("\(practice.blocks.count) blocks • \(practice.totalMinutes) min • Focus: \(practice.focus.capitalized)").font(.caption).foregroundColor(.gray)
         }.frame(maxWidth: .infinity, alignment: .leading).padding().background(Color.blue.opacity(0.16)).cornerRadius(14).padding(.horizontal)
+    }
+    
+    private func waterBreakRow(_ block: PracticeBlock) -> some View {
+        Text("WATER BREAK - \(block.durationMinutes) MIN")
+            .font(.headline)
+            .foregroundColor(Color(red: 1.0, green: 0.08, blue: 0.58))
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(Color(red: 1.0, green: 0.08, blue: 0.58).opacity(0.16))
+            .cornerRadius(12)
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(red: 1.0, green: 0.08, blue: 0.58), lineWidth: 1))
     }
     
     private func resetTimers() {
         timers.removeAll()
-        for block in practice.blocks {
+        for block in practice.blocks where block.name != "Water Break" {
             timers[block.id] = block.durationMinutes * 60
-        }
-    }
-    
-    private func toggleCurrentTimer() {
-        let currentBlock = practice.blocks[currentBlockIndex]
-        if running.contains(currentBlock.id) {
-            running.remove(currentBlock.id)
-        } else {
-            running.insert(currentBlock.id)
         }
     }
     
@@ -1237,10 +1233,9 @@ struct PracticeRunView: View {
         for id in running {
             guard let value = timers[id], value > 0 else { continue }
             timers[id] = value - 1
-            if value - 1 == 0 { 
+            if value - 1 == 0 {
                 running.remove(id)
                 AudioServicesPlaySystemSound(1519)
-                // Auto-advance to next block
                 if let currentIndex = practice.blocks.firstIndex(where: { $0.id == id }),
                    currentIndex < practice.blocks.count - 1 {
                     currentBlockIndex = currentIndex + 1
@@ -1248,32 +1243,46 @@ struct PracticeRunView: View {
             }
         }
     }
+    
+    private func showSaveSheet() {
+        saveName = practice.name
+        lastSavedName = nil
+        showSaveConfirm = false
+        let plan = PracticePlan(id: UUID(), name: saveName, focus: practice.focus, createdAt: Date(), blocks: practice.blocks)
+        onSave(plan)
+        lastSavedName = saveName
+        showSaveConfirm = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { showSaveConfirm = false }
+    }
+}
+
+struct PracticeScheduleRow: View {
+    let block: PracticeBlock; let seconds: Int; let isRunning: Bool
+    let onTap: () -> Void; let onPlay: () -> Void; let onPause: () -> Void; let onReset: () -> Void
+    var body: some View {
+        HStack(spacing: 10) {
+            Button(action: onTap) { PracticeBlockRow(block: block, compact: false) }.buttonStyle(.plain)
+            VStack(spacing: 4) {
+                Text(format(seconds)).font(.headline.monospacedDigit()).foregroundColor(Color(red: 1.0, green: 0.08, blue: 0.58))
+                HStack(spacing: 8) { Button("Play", action: onPlay); Button("Pause", action: onPause); Button("Reset", action: onReset) }
+                    .font(.caption.bold()).foregroundColor(.white)
+            }
+        }.padding(10).background(Color.white.opacity(0.08)).cornerRadius(12)
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(block.category.color.opacity(isRunning ? 1 : 0.45), lineWidth: 1))
+    }
+    private func format(_ seconds: Int) -> String { "\(seconds / 60):\(String(format: "%02d", seconds % 60))" }
 }
 
 struct PracticeBlockRow: View {
-    let block: PracticeBlock
-    let seconds: Int
-    let isRunning: Bool
-    let isCurrent: Bool
-    
+    let block: PracticeBlock; let compact: Bool
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: block.category.icon).foregroundColor(block.category.color).font(.title2)
+            Image(block.imageName).resizable().scaledToFit().frame(width: compact ? 44 : 56, height: compact ? 44 : 56).cornerRadius(8)
             VStack(alignment: .leading, spacing: 3) {
-                Text(block.name).font(isCurrent ? .headline.bold() : .headline).foregroundColor(isCurrent ? .yellow : .white)
+                Text(block.name).font(compact ? .subheadline.bold() : .headline).foregroundColor(.white)
                 Text("\(block.durationMinutes) min • \(block.category.rawValue) • \(block.difficulty.capitalized)").font(.caption).foregroundColor(.gray)
-            }
-            Spacer()
-            Text(format(seconds)).font(.headline.monospacedDigit()).foregroundColor(isRunning ? .green : (isCurrent ? .yellow : .gray))
+            }; Spacer()
         }
-        .padding(10)
-        .background(Color.white.opacity(isCurrent ? 0.15 : 0.08))
-        .cornerRadius(12)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(block.category.color.opacity(isCurrent ? 1 : 0.45), lineWidth: isCurrent ? 2 : 1))
-    }
-    
-    private func format(_ seconds: Int) -> String {
-        "\(seconds / 60):\(String(format: "%02d", seconds % 60))"
     }
 }
 
@@ -1284,7 +1293,7 @@ struct PracticeBlockDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                Image(systemName: block.category.icon).font(.system(size: 60)).foregroundColor(block.category.color).frame(maxWidth: .infinity)
+                Image(block.imageName).resizable().scaledToFit().frame(maxWidth: .infinity).frame(height: 240).background(Color.black.opacity(0.08)).cornerRadius(16)
                 Text(block.name).font(.title2.bold())
                 HStack(spacing: 12) {
                     Text("\(block.durationMinutes) min").foregroundColor(.cyan)
@@ -1352,7 +1361,7 @@ struct DrillLibraryView: View {
                                     .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.cyan.opacity(0.6), lineWidth: 1.5))
                             }.buttonStyle(PlainButtonStyle())
                             
-                            ForEach(PracticeCategory.allCases) { cat in
+                            ForEach(PracticeCategory.allCases.filter { $0 != .games }) { cat in
                                 let isSelected = selectedCategory == cat
                                 Button(action: { selectedCategory = isSelected ? nil : cat }) {
                                     HStack(spacing: 6) {
