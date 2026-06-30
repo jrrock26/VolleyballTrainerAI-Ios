@@ -72,7 +72,7 @@ struct PracticeBlock: Identifiable, Codable, Hashable, Equatable {
     }
 }
 
-struct PracticePlan: Identifiable, Hashable {
+struct PracticePlan: Identifiable, Hashable, Codable {
     let id: UUID
     var name: String
     var focus: String
@@ -1191,7 +1191,7 @@ struct PracticeRunView: View {
                         }
                     }.buttonStyle(PracticeButtonStyle(color: .gray, foreground: .white))
                     Spacer()
-                    Button(running.contains(practice.blocks[currentBlockIndex]?.id ?? UUID()) ? "Pause" : "Play") {
+                    Button(running.contains(practice.blocks[currentBlockIndex].id) ? "Pause" : "Play") {
                         toggleCurrentTimer()
                     }.buttonStyle(PracticeButtonStyle(color: .green, foreground: .black))
                     Spacer()
@@ -1225,7 +1225,7 @@ struct PracticeRunView: View {
     }
     
     private func toggleCurrentTimer() {
-        guard let currentBlock = practice.blocks[currentBlockIndex] else { return }
+        let currentBlock = practice.blocks[currentBlockIndex]
         if running.contains(currentBlock.id) {
             running.remove(currentBlock.id)
         } else {
