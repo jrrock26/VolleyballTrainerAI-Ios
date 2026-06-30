@@ -385,7 +385,7 @@ struct RotationsView: View {
                                 let jersey = jerseys[label] ?? ""
                                 
                                 PlayerBubbleView(
-                                    position: CGPoint(x: pos.x, y: pos.y * 0.95),
+                                    position: CGPoint(x: pos.x, y: pos.y * 1.05),
                                     label: label,
                                     isMe: isMe,
                                     jersey: jersey,
@@ -447,9 +447,7 @@ struct RotationsView: View {
                         }
                         .frame(height: geo.size.height * 0.5)
                         
-                        Spacer()
-                        
-                        // Controls at bottom
+                        // Controls above return balls
                         HStack(spacing: 6) {
                             Button(action: runReceive) {
                                 Text("Run")

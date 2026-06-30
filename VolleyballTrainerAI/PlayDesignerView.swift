@@ -162,17 +162,24 @@ struct PlayDesignerView: View {
                             let isLibero = role == "L"
                             
                             PlayDesignerPlayerView(
-                                position: CGPoint(x: pos.x * 1.02, y: pos.y * 1.15),
+                                position: CGPoint(x: pos.x * 1.04, y: pos.y * 1.35),
                                 role: role,
                                 label: label,
                                 isLibero: isLibero,
-                                isServer: i == 5
+                                isServer: i == 5,
+                                onEdit: {
+                                    selectedPlayerIndex = i
+                                    tempLabel = label ?? ""
+                                    roleModalVisible = true
+                                }
                             )
                             .gesture(
                                 DragGesture(minimumDistance: 0)
                                     .onChanged { value in
-                                        let newX = max(0, min(1, value.location.x / geo.size.width))
-                                        let newY = max(0, min(1, value.location.y / geo.size.height))
+                                        let scaledX = pos.x * 1.04 * geo.size.width
+                                        let scaledY = pos.y * 1.35 * geo.size.height
+                                        let newX = max(0, min(1, (value.location.x + scaledX) / geo.size.width))
+                                        let newY = max(0, min(1, (value.location.y + scaledY) / courtHeight))
                                         updatePosition(at: i, to: CGPoint(x: newX, y: newY))
                                     }
                             )
@@ -208,9 +215,7 @@ struct PlayDesignerView: View {
                     }
                     .frame(maxHeight: .infinity)
                     
-                    Spacer().frame(height: geo.size.height * 0.02)
-                    
-                    // Bottom controls - compact
+                    // Bottom controls - compact, visible above bottom edge
                     HStack(spacing: 6) {
                         Button(action: { showRecordPrompt = true }) {
                             Text("Run")
@@ -253,7 +258,8 @@ struct PlayDesignerView: View {
                         }
                     }
                     .padding(.horizontal, 12)
-                    .padding(.bottom, 12)
+                    .padding(.top, 8)
+                    .padding(.bottom, 6)
                 }
             }
             .navigationBarHidden(true)
@@ -516,6 +522,7 @@ struct PlayDesignerPlayerView: View {
     let label: String?
     let isLibero: Bool
     let isServer: Bool
+    let onEdit: () -> Void
     
     var body: some View {
         ZStack {
@@ -566,6 +573,21 @@ struct PlayDesignerPlayerView: View {
                 }
                 .frame(width: 40, height: 40)
             }
+            
+            // Gear icon for editing
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    Button(action: onEdit) {
+                        Text("⚙️")
+                            .font(.system(size: 14))
+                    }
+                    .padding(.trailing, -4)
+                    .padding(.bottom, -4)
+                }
+            }
+            .frame(width: 40, height: 40)
         }
         .position(x: position.x * UIScreen.main.bounds.width, y: position.y * (UIScreen.main.bounds.width * 1.1))
     }
