@@ -2,6 +2,8 @@ import SwiftUI
 
 struct PlayHubView: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var showPlayDesigner = false
+    @State private var showRotations = false
 
     var body: some View {
         NavigationStack {
@@ -41,8 +43,23 @@ struct PlayHubView: View {
                         }
                         .padding(.top, geo.size.height * 0.38)
 
-                        CourtPushButton(title: "Design Plays", icon: "pencil.circle") { }
-                        CourtPushButton(title: "Rotations", icon: "arrow.3.trianglepath") { }
+                        NavigationLink(destination: PlayDesignerView(), isActive: $showPlayDesigner) {
+                            EmptyView()
+                        }
+                        .navigationBarHidden(true)
+
+                        NavigationLink(destination: RotationsView(), isActive: $showRotations) {
+                            EmptyView()
+                        }
+                        .navigationBarHidden(true)
+
+                        CourtPushButton(title: "Design Plays", icon: "pencil.circle") {
+                            showPlayDesigner = true
+                        }
+
+                        CourtPushButton(title: "Rotations", icon: "arrow.3.trianglepath") {
+                            showRotations = true
+                        }
 
                         Spacer()
                     }
@@ -50,7 +67,7 @@ struct PlayHubView: View {
                     .padding(.horizontal, 24)
                 }
             }
+            .navigationBarHidden(true)
         }
-        .navigationBarHidden(true)
     }
 }

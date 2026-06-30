@@ -45,32 +45,35 @@ struct HomeScreen: View {
                     .frame(maxHeight: .infinity, alignment: .top)
                     .padding(.horizontal, 12)
                 }
-
-                .navigationDestination(isPresented: Binding(
-                    get: { navigateTo == "PlayHub" },
-                    set: { if !$0 { navigateTo = nil } }
-                )) {
-                    PlayHubView()
-                }
-                .navigationDestination(isPresented: Binding(
-                    get: { navigateTo == "PracticeHub" },
-                    set: { if !$0 { navigateTo = nil } }
-                )) {
-                    PracticeHubView()
-                }
-                .navigationDestination(isPresented: Binding(
-                    get: { navigateTo == "TrainingHub" },
-                    set: { if !$0 { navigateTo = nil } }
-                )) {
-                    TrainingHubView()
-                }
-                .navigationDestination(isPresented: Binding(
-                    get: { navigateTo == "PerformanceHub" },
-                    set: { if !$0 { navigateTo = nil } }
-                )) {
-                    PerformanceHubView()
-                }
+            }
+            .navigationDestination(isPresented: Binding(
+                get: { navigateTo == "PlayHub" },
+                set: { if !$0 { navigateTo = nil } }
+            )) {
+                PlayHubView()
+            }
+            .navigationDestination(isPresented: Binding(
+                get: { navigateTo == "PracticeHub" },
+                set: { if !$0 { navigateTo = nil } }
+            )) {
+                PracticeHubView()
+            }
+            .navigationDestination(isPresented: Binding(
+                get: { navigateTo == "TrainingHub" },
+                set: { if !$0 { navigateTo = nil } }
+            )) {
+                TrainingHubView()
+            }
+            .navigationDestination(isPresented: Binding(
+                get: { navigateTo == "PerformanceHub" },
+                set: { if !$0 { navigateTo = nil } }
+            )) {
+                PerformanceHubView()
             }
         }
     }
+}
+
+#Preview {
+    HomeScreen()
 }
