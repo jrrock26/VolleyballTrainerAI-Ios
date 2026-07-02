@@ -1,0 +1,265 @@
+import SwiftUI
+import SwiftData
+
+struct PracticeBuilderView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \SavedTrainingPlan.createdAt, order: .reverse) private var savedPlans: [SavedTrainingPlan]
+
+    @State private var selectedCategories: Set<TrainingCategory> = []
+    @State private var selectedDrills: [TrainingBlock] = []
+    @State private var planName: String = ""
+    @State private var showingSave = false
+
+    private var allCategories: [TrainingCategory] {
+        TrainingCategory.allCases.filter { $0 != .waterBreak }
+    }
+
+    private var availableDrills: [TrainingBlock] {
+        let categories = selectedCategories.isEmpty ? allCategories : Array(selectedCategories)
+        let categorySet = Set(categories)
+        return VolleyballTrainingLibrary.drills.filter { categorySet.contains($0.category) }
+    }
+
+    private func addDrill(_ drill: TrainingBlock) {
+        selectedDrills.append(drill)
+    }
+
+    private func removeDrill(at offsets: IndexSet) {
+        selectedDrills.remove(atOffsets: offsets)
+    }
+
+    private func savePractice() {
+        guard !selectedDrills.isEmpty else { return }
+        let blocks = VolleyballTrainingLibrary.insertWaterBreaks(in: selectedDrills)
+        let name = planName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Custom Practice" : planName
+        let plan = TrainingPlan(
+            id: UUID(),
+            name: name,
+            focus: selectedCategories.map { $0.rawValue }.joined(separator: ", "),
+            createdAt: Date(),
+            blocks: blocks
+        )
+        modelContext.insert(SavedTrainingPlan(name: plan.name, focus: plan.focus, blocks: plan.blocks))
+        try? modelContext.save()
+        dismiss()
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color(red: 0.07, green: 0.07, blue: 0.09).ignoresSafeArea()
+
+                VStack(spacing: 12) {
+                    summary
+                    categoryFilter
+                    drillGrid
+                    selectedList
+                    saveButton
+                }
+                .padding()
+            }
+            .navigationTitle("Custom Practice Builder")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private var summary: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Build Your Own Practice")
+                .font(.title3.bold())
+                .foregroundColor(.white)
+            Text("\(selectedDrills.count) drills selected • \(selectedDrills.reduce(0) { $0 + $1.durationMinutes }) min")
+                .font(.caption)
+                .foregroundColor(.gray)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Color.blue.opacity(0.16))
+        .cornerRadius(14)
+    }
+
+    private var categoryFilter: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                Button(action: { selectedCategories.removeAll() }) {
+                    Text("All")
+                        .font(.caption.bold())
+                        .foregroundColor(selectedCategories.isEmpty ? .black : .white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(selectedCategories.isEmpty ? Color.cyan : Color.clear)
+                        .cornerRadius(20)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color.cyan.opacity(0.6), lineWidth: 1.5)
+                        )
+                }
+                .buttonStyle(PlainButtonStyle())
+
+                ForEach(allCategories) { cat in
+                    let isSelected = selectedCategories.contains(cat)
+                    Button(action: {
+                        if isSelected {
+                            selectedCategories.remove(cat)
+                        } else {
+                            selectedCategories.insert(cat)
+                        }
+                    }) {
+                        Text(cat.rawValue)
+                            .font(.caption.bold())
+                            .foregroundColor(isSelected ? .black : cat.color)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(isSelected ? cat.color : Color.clear)
+                            .cornerRadius(20)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(cat.color.opacity(0.6), lineWidth: 1.5)
+                            )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+        }
+    }
+
+    private var drillGrid: some View {
+        let drills = availableDrills
+
+        return Group {
+            if drills.isEmpty {
+                Text("No drills match the selected categories.")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 20)
+            } else {
+                ScrollView {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                        ForEach(drills) { drill in
+                            DrillCard(drill: drill) {
+                                addDrill(drill)
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+                .frame(maxHeight: 300)
+            }
+        }
+    }
+
+    private var selectedList: some View {
+        Group {
+            if selectedDrills.isEmpty {
+                Text("No drills selected yet.")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+            } else {
+                List {
+                    ForEach(selectedDrills) { drill in
+                        HStack {
+                            TrainingBlockRow(block: drill, compact: true)
+                            Spacer()
+                        }
+                        .listRowBackground(Color(red: 0.14, green: 0.14, blue: 0.16))
+                    }
+                    .onDelete(perform: removeDrill)
+                }
+                .frame(height: 180)
+                .scrollContentBackground(.hidden)
+            }
+        }
+    }
+
+    private var saveButton: some View {
+        Button("Save Custom Practice") {
+            savePractice()
+        }
+        .buttonStyle(TrainingButtonStyle(color: .cyan, foreground: .black))
+        .disabled(selectedDrills.isEmpty)
+    }
+}
+
+struct DrillCard: View {
+    let drill: TrainingBlock
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(drill.imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 60)
+                    .cornerRadius(8)
+
+                Text(drill.name)
+                    .font(.caption.bold())
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+
+                Text("\(drill.durationMinutes) min • \(drill.intensity.rawValue.uppercased())")
+                    .font(.caption2)
+                    .foregroundColor(.gray)
+            }
+            .padding()
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(red: 0.14, green: 0.14, blue: 0.16))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(drill.category.color.opacity(0.4), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+struct TrainingBlockRow: View {
+    let block: TrainingBlock
+    let compact: Bool
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(block.imageName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: compact ? 44 : 56, height: compact ? 44 : 56)
+                .cornerRadius(8)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(block.name)
+                    .font(compact ? .subheadline.bold() : .headline)
+                    .foregroundColor(.white)
+                Text("\(block.category.rawValue) • \(block.intensity.rawValue.uppercased())")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            Spacer()
+        }
+    }
+}
+
+struct TrainingButtonStyle: ButtonStyle {
+    let color: Color
+    let foreground: Color
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.caption.bold())
+            .foregroundColor(foreground)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(color.opacity(configuration.isPressed ? 0.75 : 1.0))
+            .cornerRadius(10)
+    }
+}
