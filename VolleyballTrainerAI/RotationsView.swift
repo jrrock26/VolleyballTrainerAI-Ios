@@ -489,8 +489,9 @@ struct RotationsView: View {
                         .frame(width: geo.size.width - 24)
                         .padding(.horizontal, 12)
                         .padding(.top, 6)
-                        .padding(.bottom, max(10, geo.safeAreaInsets.bottom))
+                        .padding(.bottom, max(2, geo.safeAreaInsets.bottom - 8))
                         .background(Color.black.opacity(0.8))
+                        .offset(y: -8)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                     .zIndex(30)

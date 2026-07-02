@@ -2,6 +2,8 @@ import SwiftUI
 
 struct PlayDesignerView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
+    
     @State private var rotation = 1
     @State private var preServePositions: [CGPoint] = Array(repeating: .zero, count: 6)
     @State private var activeServePositions: [CGPoint] = Array(repeating: .zero, count: 6)
@@ -34,6 +36,7 @@ struct PlayDesignerView: View {
     // Play animation state
     @State private var isPlaying = false
     @State private var animationStep = 0
+    @State private var playbackPositions: [CGPoint] = Array(repeating: .zero, count: 6)
     @State private var savedPlayerPositions: [[CGPoint]] = [] // 5 sets of 6 positions
     @State private var savedRoles: [String] = []
     @State private var savedLabels: [String?] = []
@@ -42,6 +45,7 @@ struct PlayDesignerView: View {
     private let courtHeight: CGFloat = UIScreen.main.bounds.width * 1.1
     
     private let roleOptions = ["OH", "MB", "OPP", "S", "L"]
+    private let serverIndex = 5
     
     enum FormationMode: String, CaseIterable {
         case preServe = "preServe"
@@ -230,7 +234,7 @@ struct PlayDesignerView: View {
                         ZStack {
                             // Players
                             ForEach(Array(0..<6), id: \.self) { i in
-                                let positions: [CGPoint] = isPlaying ? (savedPlayerPositions.indices.contains(animationStep) ? savedPlayerPositions[animationStep] : currentPositions) : currentPositions
+                                let positions: [CGPoint] = isPlaying ? playbackPositions : currentPositions
                                 let fracPos = positions.indices.contains(i) ? positions[i] : .zero
                                 let screenPos = convertToScreen(fracPos, in: courtSize)
                                 let role = isPlaying ? savedRoles[i] : playerRoles[i]
@@ -348,9 +352,10 @@ struct PlayDesignerView: View {
                     }
                     .frame(width: geo.size.width - 24)
                     .padding(.horizontal, 12)
-                    .padding(.top, 6)
-                    .padding(.bottom, max(10, geo.safeAreaInsets.bottom))
+                    .padding(.top, 2)
+                    .padding(.bottom, max(2, geo.safeAreaInsets.bottom - 8))
                     .background(Color.black.opacity(0.8))
+                    .offset(y: -10)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 .zIndex(30)
@@ -497,6 +502,44 @@ struct PlayDesignerView: View {
             return
         }
         rotation += 1
+        
+        let liberoIndex = playerRoles.firstIndex(of: "L")
+        var liberoLabel: String? = nil
+        if let idx = liberoIndex {
+            liberoLabel = playerLabels[idx]
+        }
+        
+        var roles = playerRoles
+        var labels = playerLabels
+        
+        if let idx = liberoIndex {
+            roles.remove(at: idx)
+            labels.remove(at: idx)
+        }
+        
+        let clockwiseOrder = [5, 4, 3, 0, 1, 2]
+        var orderedRoles = clockwiseOrder.map { roles[$0] }
+        var orderedLabels = clockwiseOrder.map { labels[$0] }
+        
+        let lastRole = orderedRoles.removeLast()
+        let lastLabel = orderedLabels.removeLast()
+        orderedRoles.insert(lastRole, at: 0)
+        orderedLabels.insert(lastLabel, at: 0)
+        
+        clockwiseOrder.forEach { pos in
+            let idx = clockwiseOrder.firstIndex(of: pos) ?? 0
+            roles[pos] = orderedRoles[idx]
+            labels[pos] = orderedLabels[idx]
+        }
+        
+        if let libIdx = liberoIndex {
+            let safeIdx = max(3, min(5, libIdx))
+            roles[safeIdx] = "L"
+            labels[safeIdx] = liberoLabel
+        }
+        
+        playerRoles = roles
+        playerLabels = labels
     }
     
     private func goToNextStep() {
@@ -557,44 +600,87 @@ struct PlayDesignerView: View {
         
         isPlaying = true
         animationStep = 0
+        playbackPositions = currentPositions
         ballVisible = false
         
-        // Animate through all 5 steps then finish
+        let base = sixTwoBase[rotation]!
+        withAnimation(.easeInOut(duration: 0.3)) {
+            for i in 0..<6 {
+                playbackPositions[i] = base[i]
+            }
+        }
+        
         animatePlayStep()
     }
     
     private func animatePlayStep() {
         guard animationStep < savedPlayerPositions.count else {
-            // Animation complete
             isPlaying = false
             animationStep = 0
             ballVisible = false
             return
         }
-        
-        // Copy positions to make them animate
-        let positions = savedPlayerPositions[animationStep]
-        updateDisplayPositions(positions)
-        
-        // Show ball animation on serve steps
-        if animationStep == 1 {
-            ballVisible = true
-            ballPosition = CGPoint(x: width * 0.5, y: 50)
-            withAnimation(.easeInOut(duration: 1.5)) {
-                ballPosition = CGPoint(x: width * 0.5, y: courtHeight * 0.3)
-            }
-        } else if animationStep == 2 || animationStep == 3 || animationStep == 4 {
-            // Defense return animations
-            ballVisible = true
-            ballPosition = CGPoint(x: width * 0.5, y: 50)
-            let targetX: CGFloat = animationStep == 2 ? width * 0.2 : (animationStep == 3 ? width * 0.5 : width * 0.8)
-            withAnimation(.easeInOut(duration: 1.5)) {
-                ballPosition = CGPoint(x: targetX, y: courtHeight * 0.3)
+
+        let targetPositions = savedPlayerPositions[animationStep]
+        withAnimation(.easeInOut(duration: 0.85)) {
+            for i in 0..<min(6, targetPositions.count) {
+                playbackPositions[i] = targetPositions[i]
             }
         }
-        
-        // Advance to next step after delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [self] in
+
+        let serverPos = savedPlayerPositions[0][serverIndex]
+        let middleReturn = CGPoint(x: 0.5, y: 50 / courtHeight)
+        let leftNet = CGPoint(x: 0.2, y: courtHeight * 0.48 / courtHeight)
+        let middleNet = CGPoint(x: 0.5, y: courtHeight * 0.48 / courtHeight)
+        let rightNet = CGPoint(x: 0.8, y: courtHeight * 0.48 / courtHeight)
+
+        var ballStart: CGPoint
+        var ballEnd: CGPoint
+        var duration: Double
+        var nextDelay: Double
+        var showEndMessage = false
+
+        switch animationStep {
+        case 0:
+            ballStart = serverPos
+            ballEnd = middleReturn
+            duration = 1.1
+            nextDelay = 1.5
+        case 1:
+            ballStart = middleReturn
+            ballEnd = leftNet
+            duration = 1.0
+            nextDelay = 1.3
+        case 2:
+            ballStart = leftNet
+            ballEnd = middleReturn
+            duration = 0.9
+            nextDelay = 1.2
+        case 3:
+            ballStart = middleReturn
+            ballEnd = middleNet
+            duration = 0.9
+            nextDelay = 1.2
+        case 4:
+            ballStart = middleNet
+            ballEnd = middleReturn
+            duration = 0.9
+            nextDelay = 1.2
+        default:
+            ballStart = middleReturn
+            ballEnd = rightNet
+            duration = 1.1
+            nextDelay = 1.4
+            showEndMessage = true
+        }
+
+        ballVisible = true
+        ballPosition = ballStart
+        withAnimation(.easeInOut(duration: duration)) {
+            ballPosition = ballEnd
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + nextDelay) { [self] in
             withAnimation {
                 ballVisible = false
             }
@@ -608,24 +694,10 @@ struct PlayDesignerView: View {
         }
     }
     
-    private func updateDisplayPositions(_ positions: [CGPoint]) {
-        withAnimation(.easeInOut(duration: 0.6)) {
-            // Update all 5 sets so the display shows them
-            for i in 0..<min(6, positions.count) {
-                preServePositions[i] = positions[i]
-                activeServePositions[i] = positions[i]
-                defendLeftPositions[i] = positions[i]
-                defendMiddlePositions[i] = positions[i]
-                defendRightPositions[i] = positions[i]
-            }
-        }
-    }
-    
     private func stopPlay() {
         isPlaying = false
         animationStep = 0
         ballVisible = false
-        // Restore to pre-serve positions
         let base = sixTwoBase[rotation]!
         withAnimation(.easeInOut(duration: 0.4)) {
             for i in 0..<6 {
@@ -634,12 +706,14 @@ struct PlayDesignerView: View {
                 defendLeftPositions[i] = savedPlayerPositions.indices.contains(2) ? savedPlayerPositions[2][i] : base[i]
                 defendMiddlePositions[i] = savedPlayerPositions.indices.contains(3) ? savedPlayerPositions[3][i] : base[i]
                 defendRightPositions[i] = savedPlayerPositions.indices.contains(4) ? savedPlayerPositions[4][i] : base[i]
+                playbackPositions[i] = savedPlayerPositions.indices.contains(0) ? savedPlayerPositions[0][i] : base[i]
             }
         }
     }
     
     private func goToLibrary() {
-        // Placeholder for library functionality
+        // TODO: Navigate to Play Library to load saved plays
+        // For now, show a message that this feature will load from library
     }
     
     private func resetPlay() {
