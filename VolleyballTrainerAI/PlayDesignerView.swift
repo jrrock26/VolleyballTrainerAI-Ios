@@ -26,6 +26,7 @@ struct PlayDesignerView: View {
     @State private var saveModalVisible = false
     @State private var playName = ""
     @State private var validationVisible = false
+    @State private var showLibrary = false
     
     @State private var ballPosition: CGPoint = .zero
     @State private var ballVisible = false
@@ -43,6 +44,7 @@ struct PlayDesignerView: View {
     
     private let width = UIScreen.main.bounds.width
     private let courtHeight: CGFloat = UIScreen.main.bounds.width * 1.1
+    private let savedPlaysKey = "SavedVolleyballPlays"
     
     private let roleOptions = ["OH", "MB", "OPP", "S", "L"]
     private let serverIndex = 5
@@ -398,6 +400,11 @@ struct PlayDesignerView: View {
             .sheet(isPresented: $saveModalVisible) {
                 saveModalView
             }
+            .sheet(isPresented: $showLibrary) {
+                PlayLibraryView { play in
+                    loadPlayData(play)
+                }
+            }
             .alert("Incomplete Play", isPresented: $validationVisible) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -591,7 +598,18 @@ struct PlayDesignerView: View {
         savedRoles = playerRoles
         savedLabels = playerLabels
         
+        // Create SavedPlay and persist to UserDefaults
+        let newPlay = SavedPlay(
+            name: rawName,
+            positions: savedPlayerPositions,
+            roles: savedRoles,
+            labels: savedLabels
+        )
+        
+        persistSavedPlay(newPlay)
+        
         saveModalVisible = false
+        playName = ""
     }
     
     private func runSavedPlay() {
@@ -712,8 +730,7 @@ struct PlayDesignerView: View {
     }
     
     private func goToLibrary() {
-        // TODO: Navigate to Play Library to load saved plays
-        // For now, show a message that this feature will load from library
+        showLibrary = true
     }
     
     private func resetPlay() {
@@ -795,6 +812,53 @@ struct PlayDesignerPlayerView: View {
         }
         .frame(width: 40, height: 40)
         .position(x: position.x, y: position.y)
+    }
+}
+
+// MARK: - Play Persistence
+extension PlayDesignerView {
+    private func persistSavedPlay(_ play: SavedPlay) {
+        var savedPlays = loadAllSavedPlays()
+        savedPlays.append(play)
+        
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        
+        if let data = try? encoder.encode(savedPlays) {
+            UserDefaults.standard.set(data, forKey: savedPlaysKey)
+        }
+    }
+    
+    private func loadAllSavedPlays() -> [SavedPlay] {
+        guard let data = UserDefaults.standard.data(forKey: savedPlaysKey) else {
+            return []
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        
+        if let plays = try? decoder.decode([SavedPlay].self, from: data) {
+            return plays
+        } else {
+            return []
+        }
+    }
+    
+    private func loadPlayData(_ play: SavedPlay) {
+        guard play.positions.count >= 5 else { return }
+        
+        preServePositions = play.positions[0]
+        activeServePositions = play.positions[1]
+        defendLeftPositions = play.positions[2]
+        defendMiddlePositions = play.positions[3]
+        defendRightPositions = play.positions[4]
+        
+        playerRoles = play.roles
+        playerLabels = play.labels
+        
+        savedPlayerPositions = play.positions
+        savedRoles = play.roles
+        savedLabels = play.labels
     }
 }
 
