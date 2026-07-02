@@ -675,9 +675,9 @@ struct PlayDesignerView: View {
         }
 
         ballVisible = true
-        ballPosition = ballStart
+        ballPosition = CGPoint(x: ballStart.x * width, y: ballStart.y * courtHeight)
         withAnimation(.easeInOut(duration: duration)) {
-            ballPosition = ballEnd
+            ballPosition = CGPoint(x: ballEnd.x * width, y: ballEnd.y * courtHeight)
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + nextDelay) { [self] in
