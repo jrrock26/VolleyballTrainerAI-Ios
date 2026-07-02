@@ -301,52 +301,59 @@ struct PlayDesignerView: View {
                     }
                 }
             }
-            .safeAreaInset(edge: .bottom) {
-                HStack(spacing: 6) {
-                    Button(action: runSavedPlay) {
-                        Text("Run")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 9)
-                            .background(savedPlayerPositions.isEmpty ? Color.gray : Color(hex: "#2b6cb0"))
-                            .cornerRadius(8)
+            .overlay(alignment: .bottom) {
+                VStack {
+                    Spacer()
+                    HStack(spacing: 6) {
+                        Button(action: runSavedPlay) {
+                            Text("Run")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 9)
+                                .background(savedPlayerPositions.isEmpty ? Color.gray : Color(hex: "#2b6cb0"))
+                                .cornerRadius(8)
+                        }
+                        .disabled(savedPlayerPositions.isEmpty)
+                        
+                        Button(action: goToLibrary) {
+                            Text("Load")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 9)
+                                .background(Color(hex: "#2b6cb0"))
+                                .cornerRadius(8)
+                        }
+                        
+                        Button(action: resetPlay) {
+                            Text("Reset")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 9)
+                                .background(Color(hex: "#2b6cb0"))
+                                .cornerRadius(8)
+                        }
+                        
+                        Button(action: handleRotate) {
+                            Text("Rot\(rotation)")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 9)
+                                .background(Color(hex: "#2b6cb0"))
+                                .cornerRadius(8)
+                        }
                     }
-                    .disabled(savedPlayerPositions.isEmpty)
-                    
-                    Button(action: goToLibrary) {
-                        Text("Load")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 9)
-                            .background(Color(hex: "#2b6cb0"))
-                            .cornerRadius(8)
-                    }
-                    
-                    Button(action: resetPlay) {
-                        Text("Reset")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 9)
-                            .background(Color(hex: "#2b6cb0"))
-                            .cornerRadius(8)
-                    }
-                    
-                    Button(action: handleRotate) {
-                        Text("Rot\(rotation)")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 9)
-                            .background(Color(hex: "#2b6cb0"))
-                            .cornerRadius(8)
-                    }
+                    .frame(width: geo.size.width - 24)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 6)
+                    .padding(.bottom, max(10, geo.safeAreaInsets.bottom))
+                    .background(Color.black.opacity(0.8))
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color.black.opacity(0.7))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .zIndex(30)
             }
             .navigationBarHidden(true)
             .onAppear {

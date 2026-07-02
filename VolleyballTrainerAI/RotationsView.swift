@@ -452,41 +452,48 @@ struct RotationsView: View {
                     }
                     
                 }
-                .safeAreaInset(edge: .bottom) {
-                    HStack(spacing: 8) {
-                        Button(action: runReceive) {
-                            Text("Run")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                                .background(Color(hex: "#2b6cb0"))
-                                .cornerRadius(8)
+                .overlay(alignment: .bottom) {
+                    VStack {
+                        Spacer()
+                        HStack(spacing: 8) {
+                            Button(action: runReceive) {
+                                Text("Run")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                                    .background(Color(hex: "#2b6cb0"))
+                                    .cornerRadius(8)
+                            }
+                            
+                            Button(action: rotate) {
+                                Text("Rot(R\(rotation))")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                                    .background(Color(hex: "#2b6cb0"))
+                                    .cornerRadius(8)
+                            }
+                            
+                            Button(action: { formation = formation == "6-2" ? "5-1" : "6-2" }) {
+                                Text(formation)
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                                    .background(Color(hex: "#2b6cb0"))
+                                    .cornerRadius(8)
+                            }
                         }
-                        
-                        Button(action: rotate) {
-                            Text("Rot(R\(rotation))")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                                .background(Color(hex: "#2b6cb0"))
-                                .cornerRadius(8)
-                        }
-                        
-                        Button(action: { formation = formation == "6-2" ? "5-1" : "6-2" }) {
-                            Text(formation)
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                                .background(Color(hex: "#2b6cb0"))
-                                .cornerRadius(8)
-                        }
+                        .frame(width: geo.size.width - 24)
+                        .padding(.horizontal, 12)
+                        .padding(.top, 6)
+                        .padding(.bottom, max(10, geo.safeAreaInsets.bottom))
+                        .background(Color.black.opacity(0.8))
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color.black.opacity(0.7))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                    .zIndex(30)
                 }
             }
             .navigationBarHidden(true)
