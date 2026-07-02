@@ -33,7 +33,7 @@ struct PlayDesignerView: View {
     private let width = UIScreen.main.bounds.width
     private let courtHeight: CGFloat = UIScreen.main.bounds.width * 1.1
     
-    enum FormationMode: String {
+    enum FormationMode: String, CaseIterable {
         case preServe = "preServe"
         case activeServe = "activeServe"
         case defendLeft = "defendLeft"
@@ -49,32 +49,49 @@ struct PlayDesignerView: View {
         "Step 5/5 — Right Return",
     ]
     
+    // Base positions as fractional values (0-1) relative to court area
     let sixTwoBase: [Int: [CGPoint]] = [
         1: [
-            CGPoint(x: 0.2, y: 0.55), CGPoint(x: 0.45, y: 0.55), CGPoint(x: 0.68, y: 0.55),
-            CGPoint(x: 0.2, y: 0.8), CGPoint(x: 0.45, y: 0.8), CGPoint(x: 0.68, y: 0.8)
+            CGPoint(x: 0.25, y: 0.45), CGPoint(x: 0.50, y: 0.45), CGPoint(x: 0.72, y: 0.45),
+            CGPoint(x: 0.25, y: 0.65), CGPoint(x: 0.50, y: 0.65), CGPoint(x: 0.72, y: 0.65)
         ],
         2: [
-            CGPoint(x: 0.2, y: 0.55), CGPoint(x: 0.45, y: 0.55), CGPoint(x: 0.68, y: 0.55),
-            CGPoint(x: 0.2, y: 0.8), CGPoint(x: 0.45, y: 0.8), CGPoint(x: 0.68, y: 0.8)
+            CGPoint(x: 0.25, y: 0.45), CGPoint(x: 0.50, y: 0.45), CGPoint(x: 0.72, y: 0.45),
+            CGPoint(x: 0.25, y: 0.65), CGPoint(x: 0.50, y: 0.65), CGPoint(x: 0.72, y: 0.65)
         ],
         3: [
-            CGPoint(x: 0.2, y: 0.55), CGPoint(x: 0.45, y: 0.55), CGPoint(x: 0.68, y: 0.55),
-            CGPoint(x: 0.2, y: 0.8), CGPoint(x: 0.45, y: 0.8), CGPoint(x: 0.68, y: 0.8)
+            CGPoint(x: 0.25, y: 0.45), CGPoint(x: 0.50, y: 0.45), CGPoint(x: 0.72, y: 0.45),
+            CGPoint(x: 0.25, y: 0.65), CGPoint(x: 0.50, y: 0.65), CGPoint(x: 0.72, y: 0.65)
         ],
         4: [
-            CGPoint(x: 0.2, y: 0.55), CGPoint(x: 0.45, y: 0.55), CGPoint(x: 0.68, y: 0.55),
-            CGPoint(x: 0.2, y: 0.8), CGPoint(x: 0.45, y: 0.8), CGPoint(x: 0.68, y: 0.8)
+            CGPoint(x: 0.25, y: 0.45), CGPoint(x: 0.50, y: 0.45), CGPoint(x: 0.72, y: 0.45),
+            CGPoint(x: 0.25, y: 0.65), CGPoint(x: 0.50, y: 0.65), CGPoint(x: 0.72, y: 0.65)
         ],
         5: [
-            CGPoint(x: 0.2, y: 0.55), CGPoint(x: 0.45, y: 0.55), CGPoint(x: 0.68, y: 0.55),
-            CGPoint(x: 0.2, y: 0.8), CGPoint(x: 0.45, y: 0.8), CGPoint(x: 0.68, y: 0.8)
+            CGPoint(x: 0.25, y: 0.45), CGPoint(x: 0.50, y: 0.45), CGPoint(x: 0.72, y: 0.45),
+            CGPoint(x: 0.25, y: 0.65), CGPoint(x: 0.50, y: 0.65), CGPoint(x: 0.72, y: 0.65)
         ],
         6: [
-            CGPoint(x: 0.2, y: 0.55), CGPoint(x: 0.45, y: 0.55), CGPoint(x: 0.68, y: 0.55),
-            CGPoint(x: 0.2, y: 0.8), CGPoint(x: 0.45, y: 0.8), CGPoint(x: 0.68, y: 0.8)
+            CGPoint(x: 0.25, y: 0.45), CGPoint(x: 0.50, y: 0.45), CGPoint(x: 0.72, y: 0.45),
+            CGPoint(x: 0.25, y: 0.65), CGPoint(x: 0.50, y: 0.65), CGPoint(x: 0.72, y: 0.65)
         ]
     ]
+    
+    // Convert fractional positions to actual CGPoints within the given court frame
+    private func convertToScreen(_ fracPos: CGPoint, in courtSize: CGSize) -> CGPoint {
+        CGPoint(
+            x: fracPos.x * courtSize.width,
+            y: fracPos.y * courtSize.height
+        )
+    }
+    
+    // Convert screen coordinates to fractional positions
+    private func convertToFractional(_ screenPos: CGPoint, in courtSize: CGSize) -> CGPoint {
+        CGPoint(
+            x: max(0, min(1, screenPos.x / max(1, courtSize.width))),
+            y: max(0, min(1, screenPos.y / max(1, courtSize.height)))
+        )
+    }
     
     var currentPositions: [CGPoint] {
         switch mode {
@@ -107,7 +124,7 @@ struct PlayDesignerView: View {
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Back button
+                    // Back button + instructions toggle
                     HStack {
                         Button(action: { dismiss() }) {
                             HStack(spacing: 6) {
@@ -129,9 +146,33 @@ struct PlayDesignerView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
                         Spacer()
+                        
+                        if showInstructions {
+                            Button("Hide") {
+                                showInstructions = false
+                            }
+                            .foregroundColor(Color(hex: "#888"))
+                            .font(.system(size: 13, weight: .semibold))
+                        } else {
+                            Button(action: { showInstructions = true }) {
+                                Text("📘 Instructions")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(Color(hex: "#2b6cb0"))
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(Color(hex: "#f4f6f8").opacity(0.95))
+                                    .cornerRadius(8)
+                            }
+                        }
                     }
                     .padding(.horizontal, 12)
                     .padding(.top, 6)
+                    
+                    if showInstructions {
+                        instructionsView
+                            .padding(.horizontal, 12)
+                            .padding(.top, 2)
+                    }
                     
                     // Step label
                     Text(stepLabels[stepIndex])
@@ -153,68 +194,69 @@ struct PlayDesignerView: View {
                     .padding(.top, 4)
                     
                     // Player area fills remaining space
-                    ZStack {
-                        // Players
-                        ForEach(Array(0..<6), id: \.self) { i in
-                            let pos = currentPositions[i]
-                            let role = playerRoles[i]
-                            let label = playerLabels[i]
-                            let isLibero = role == "L"
-                            
-                            PlayDesignerPlayerView(
-                                position: CGPoint(x: pos.x * 1.04, y: pos.y * 1.35),
-                                role: role,
-                                label: label,
-                                isLibero: isLibero,
-                                isServer: i == 5
-                            )
-                            .highPriorityGesture(
-                                DragGesture(minimumDistance: 0)
-                                    .onChanged { value in
-                                        let courtH = geo.size.width * 1.1
-                                        let newX = max(0, min(1, value.location.x / geo.size.width))
-                                        let newY = max(0, min(1, value.location.y / courtH))
-                                        updatePosition(at: i, to: CGPoint(x: newX, y: newY))
+                    GeometryReader { courtGeo in
+                        let courtSize = courtGeo.size
+                        ZStack {
+                            // Players
+                            ForEach(Array(0..<6), id: \.self) { i in
+                                let fracPos = currentPositions[i]
+                                let screenPos = convertToScreen(fracPos, in: courtSize)
+                                let role = playerRoles[i]
+                                let label = playerLabels[i]
+                                let isLibero = role == "L"
+                                
+                                PlayDesignerPlayerView(
+                                    position: screenPos,
+                                    role: role,
+                                    label: label,
+                                    isLibero: isLibero,
+                                    isServer: i == 5,
+                                    onEdit: {
+                                        selectedPlayerIndex = i
+                                        tempLabel = label ?? ""
+                                        roleModalVisible = true
                                     }
-                            )
-                            .onLongPressGesture(minimumDuration: 0.5) {
-                                selectedPlayerIndex = i
-                                tempLabel = label ?? ""
-                                roleModalVisible = true
+                                )
+                                .gesture(
+                                    DragGesture(minimumDistance: 0)
+                                        .onChanged { value in
+                                            let newFrac = convertToFractional(value.location, in: courtSize)
+                                            updatePosition(at: i, to: newFrac)
+                                        }
+                                )
+                            }
+                            
+                            // Return ball indicators
+                            Circle()
+                                .fill(Color(hex: "#ff69b4").opacity(mode == .defendLeft ? 1 : 0.3))
+                                .frame(width: 32, height: 32)
+                                .shadow(color: Color(hex: "#ff69b4"), radius: mode == .defendLeft ? 6 : 0)
+                                .position(x: courtSize.width * 0.2, y: courtSize.height * 0.10)
+                            
+                            Circle()
+                                .fill(Color(hex: "#ff69b4").opacity(mode == .defendMiddle ? 1 : 0.3))
+                                .frame(width: 32, height: 32)
+                                .shadow(color: Color(hex: "#ff69b4"), radius: mode == .defendMiddle ? 6 : 0)
+                                .position(x: courtSize.width * 0.5, y: courtSize.height * 0.10)
+                            
+                            Circle()
+                                .fill(Color(hex: "#ff69b4").opacity(mode == .defendRight ? 1 : 0.3))
+                                .frame(width: 32, height: 32)
+                                .shadow(color: Color(hex: "#ff69b4"), radius: mode == .defendRight ? 6 : 0)
+                                .position(x: courtSize.width * 0.8, y: courtSize.height * 0.10)
+                            
+                            // Animated ball
+                            if ballVisible {
+                                Image("volleyball")
+                                    .resizable()
+                                    .frame(width: 24, height: 24)
+                                    .position(x: ballPosition.x, y: ballPosition.y)
+                                    .shadow(radius: 3)
                             }
                         }
-                        
-                        // Return ball indicators
-                        Circle()
-                            .fill(Color(hex: "#ff69b4").opacity(mode == .defendLeft ? 1 : 0.3))
-                            .frame(width: 32, height: 32)
-                            .shadow(color: Color(hex: "#ff69b4"), radius: mode == .defendLeft ? 6 : 0)
-                            .position(x: geo.size.width * 0.2, y: geo.size.height * 0.10)
-                        
-                        Circle()
-                            .fill(Color(hex: "#ff69b4").opacity(mode == .defendMiddle ? 1 : 0.3))
-                            .frame(width: 32, height: 32)
-                            .shadow(color: Color(hex: "#ff69b4"), radius: mode == .defendMiddle ? 6 : 0)
-                            .position(x: geo.size.width * 0.5, y: geo.size.height * 0.10)
-                        
-                        Circle()
-                            .fill(Color(hex: "#ff69b4").opacity(mode == .defendRight ? 1 : 0.3))
-                            .frame(width: 32, height: 32)
-                            .shadow(color: Color(hex: "#ff69b4"), radius: mode == .defendRight ? 6 : 0)
-                            .position(x: geo.size.width * 0.8, y: geo.size.height * 0.10)
-                        
-                        // Animated ball
-                        if ballVisible {
-                            Image("volleyball")
-                                .resizable()
-                                .frame(width: 24, height: 24)
-                                .position(x: ballPosition.x, y: ballPosition.y)
-                                .shadow(radius: 3)
-                        }
                     }
-                    .frame(maxHeight: .infinity)
-                    
-                    // Bottom controls - compact, visible above bottom edge
+                }
+                .overlay(alignment: .bottom) {
                     HStack(spacing: 6) {
                         Button(action: { showRecordPrompt = true }) {
                             Text("Run")
@@ -257,11 +299,11 @@ struct PlayDesignerView: View {
                         }
                     }
                     .padding(.horizontal, 12)
-                    .padding(.top, 8)
-                    .padding(.bottom, 6)
+                    .padding(.bottom, 20)
                 }
             }
             .navigationBarHidden(true)
+            .ignoresSafeArea(edges: [])
             .onAppear {
                 initializePositions()
             }
@@ -286,9 +328,6 @@ struct PlayDesignerView: View {
                     roleModalVisible = false
                 }
             }
-            .alert("Player Settings", isPresented: .constant(roleModalVisible && selectedPlayerIndex == nil)) {
-                Button("OK", role: .cancel) {}
-            }
             .sheet(isPresented: $saveModalVisible) {
                 saveModalView
             }
@@ -301,36 +340,24 @@ struct PlayDesignerView: View {
     }
     
     private var instructionsView: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("📘 Instructions")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(Color(hex: "#2b6cb0"))
-                Spacer()
-                Button("Hide") {
-                    showInstructions = false
-                }
-                .foregroundColor(Color(hex: "#888"))
-                .font(.system(size: 14, weight: .semibold))
-            }
-            .padding(.bottom, 6)
+        VStack(alignment: .leading, spacing: 4) {
+            Text("📘 Instructions")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(Color(hex: "#2b6cb0"))
             
             Text("Drag and drop players to desired positions for each step.")
             Text("Step 1: Set Pre‑Serve Formation.")
             Text("Step 2: Set Active Serve Formation.")
             Text("Steps 3–5: Set Left, Middle, Right Return formations.")
-            Text("Use the gear icon to change player roles and assign initials or jersey #.")
-            Text("Use the Rotate button to rotate the formation clockwise.")
+            Text("Tap the gear icon on a player to change roles and assign initials or jersey #.")
             Text("Save stores the full play (all 5 formations) for this rotation.")
-                .font(.system(size: 14))
+                .font(.system(size: 12))
                 .foregroundColor(Color(hex: "#333"))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
+        .padding(8)
         .background(Color(hex: "#f4f6f8"))
-        .cornerRadius(12)
-        .padding(.horizontal)
-        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .cornerRadius(8)
     }
     
     private var saveModalView: some View {
@@ -398,53 +425,18 @@ struct PlayDesignerView: View {
     }
     
     private func handleRotate() {
-        let newRotation = rotation >= 6 ? 1 : rotation + 1
-        rotation = newRotation
-        
-        var roles = playerRoles
-        var labels = playerLabels
-        
-        let liberoIndex = roles.firstIndex(of: "L")
-        var liberoLabel: String? = nil
-        
-        if let idx = liberoIndex {
-            liberoLabel = labels[idx]
-            roles.remove(at: idx)
-            labels.remove(at: idx)
+        guard rotation < 6 else {
+            rotation = 1
+            return
         }
-        
-        let clockwiseOrder = [5, 4, 3, 0, 1, 2]
-        let orderedRoles = clockwiseOrder.map { roles[$0] }
-        let orderedLabels = clockwiseOrder.map { labels[$0] }
-        
-        var newRoles = orderedRoles
-        var newLabels = orderedLabels
-        newRoles.removeLast()
-        newRoles.insert(newRoles.removeFirst(), at: 0)
-        newLabels.removeLast()
-        newLabels.insert(newLabels.removeFirst(), at: 0)
-        
-        clockwiseOrder.enumerated().forEach { pos, idx in
-            roles[pos] = newRoles[idx]
-            labels[pos] = newLabels[idx]
-        }
-        
-        if let idx = liberoIndex {
-            let safeIndex = max(3, min(5, idx))
-            roles[safeIndex] = "L"
-            labels[safeIndex] = liberoLabel
-        }
-        
-        playerRoles = roles
-        playerLabels = labels
+        rotation += 1
     }
     
     private func goToNextStep() {
         if stepIndex < 4 {
             stepIndex += 1
-            mode = FormationMode(rawValue: [
-                "preServe", "activeServe", "defendLeft", "defendMiddle", "defendRight"
-            ][stepIndex])!
+            let allModes = FormationMode.allCases
+            mode = allModes[stepIndex]
         } else {
             openSaveModal()
         }
@@ -521,6 +513,7 @@ struct PlayDesignerPlayerView: View {
     let label: String?
     let isLibero: Bool
     let isServer: Bool
+    let onEdit: () -> Void
     
     var body: some View {
         ZStack {
@@ -562,8 +555,24 @@ struct PlayDesignerPlayerView: View {
                     .padding(.bottom, -4)
                 }
             }
+            
+            // Gear icon - lower left
+            VStack {
+                Spacer()
+                HStack {
+                    Button(action: onEdit) {
+                        Text("⚙️")
+                            .font(.system(size: 14))
+                    }
+                    .padding(.leading, -4)
+                    .padding(.bottom, -4)
+                    Spacer()
+                }
+            }
+            .frame(width: 40, height: 40)
         }
         .frame(width: 40, height: 40)
+        .position(x: position.x, y: position.y)
     }
 }
 

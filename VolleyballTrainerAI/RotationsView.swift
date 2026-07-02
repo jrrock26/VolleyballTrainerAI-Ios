@@ -317,6 +317,7 @@ struct RotationsView: View {
                     Color.black.opacity(0.15)
                         .ignoresSafeArea()
                     
+                    // Court content - top part that should NOT move
                     VStack(spacing: 0) {
                         // Back button + instructions at top
                         HStack {
@@ -385,7 +386,7 @@ struct RotationsView: View {
                                 let jersey = jerseys[label] ?? ""
                                 
                                 PlayerBubbleView(
-                                    position: CGPoint(x: pos.x, y: pos.y * 1.10),
+                                    position: CGPoint(x: pos.x + 8, y: pos.y * 1.10),
                                     label: label,
                                     isMe: isMe,
                                     jersey: jersey,
@@ -448,45 +449,47 @@ struct RotationsView: View {
                         .frame(height: geo.size.height * 0.5)
                         
                         Spacer()
-                        
-                        // Controls at bottom
-                        HStack(spacing: 8) {
-                            Button(action: runReceive) {
-                                Text("Run")
-                                    .font(.system(size: 13, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 10)
-                                    .background(Color(hex: "#2b6cb0"))
-                                    .cornerRadius(8)
-                            }
-                            
-                            Button(action: rotate) {
-                                Text("Rot(R\(rotation))")
-                                    .font(.system(size: 13, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 10)
-                                    .background(Color(hex: "#2b6cb0"))
-                                    .cornerRadius(8)
-                            }
-                            
-                            Button(action: { formation = formation == "6-2" ? "5-1" : "6-2" }) {
-                                Text(formation)
-                                    .font(.system(size: 13, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 10)
-                                    .background(Color(hex: "#2b6cb0"))
-                                    .cornerRadius(8)
-                            }
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.bottom, 12)
                     }
+                    
+                }
+                .overlay(alignment: .bottom) {
+                    HStack(spacing: 8) {
+                        Button(action: runReceive) {
+                            Text("Run")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(Color(hex: "#2b6cb0"))
+                                .cornerRadius(8)
+                        }
+                        
+                        Button(action: rotate) {
+                            Text("Rot(R\(rotation))")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(Color(hex: "#2b6cb0"))
+                                .cornerRadius(8)
+                        }
+                        
+                        Button(action: { formation = formation == "6-2" ? "5-1" : "6-2" }) {
+                            Text(formation)
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(Color(hex: "#2b6cb0"))
+                                .cornerRadius(8)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 20)
                 }
             }
             .navigationBarHidden(true)
+            .ignoresSafeArea(edges: [])
         }
         .onAppear {
             updatePlayerPositions(to: currentData.base.map { pos in
@@ -672,16 +675,17 @@ struct PlayerBubbleView: View {
                     .frame(width: 44, height: 44)
                 }
                 
+                // Gear icon - lower left
                 VStack {
                     Spacer()
                     HStack {
-                        Spacer()
                         Button(action: onEdit) {
                             Text("⚙️")
                                 .font(.system(size: 16))
                         }
-                        .padding(.trailing, -6)
+                        .padding(.leading, -6)
                         .padding(.bottom, -6)
+                        Spacer()
                     }
                 }
                 .frame(width: 44, height: 44)
