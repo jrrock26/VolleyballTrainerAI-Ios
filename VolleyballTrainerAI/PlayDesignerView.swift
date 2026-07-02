@@ -622,13 +622,15 @@ struct PlayDesignerView: View {
         ballVisible = false
         
         let base = sixTwoBase[rotation]!
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withAnimation(.easeInOut(duration: 1.5)) {
             for i in 0..<6 {
                 playbackPositions[i] = base[i]
             }
         }
         
-        animatePlayStep()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            self.animatePlayStep()
+        }
     }
     
     private func animatePlayStep() {
@@ -640,7 +642,9 @@ struct PlayDesignerView: View {
         }
 
         let targetPositions = savedPlayerPositions[animationStep]
-        withAnimation(.easeInOut(duration: 0.85)) {
+        let playerAnimationDuration: Double = animationStep == 0 ? 1.5 : 2.0
+        
+        withAnimation(.easeInOut(duration: playerAnimationDuration)) {
             for i in 0..<min(6, targetPositions.count) {
                 playbackPositions[i] = targetPositions[i]
             }
@@ -654,48 +658,72 @@ struct PlayDesignerView: View {
 
         var ballStart: CGPoint
         var ballEnd: CGPoint
-        var duration: Double
+        var ballDuration: Double
+        var ballTravelDelay: Double
         var nextDelay: Double
         var showEndMessage = false
 
         switch animationStep {
         case 0:
+            // Step 0: Pre-Serve → Active Serve transition
+            // Players move to activeServe while ball serves
             ballStart = serverPos
             ballEnd = middleReturn
-            duration = 1.1
-            nextDelay = 1.5
+            ballDuration = 3.0
+            ballTravelDelay = playerAnimationDuration + 0.5  // Start ball after players start moving
+            nextDelay = playerAnimationDuration + ballDuration + 2.0  // Pause to see formation
+            
         case 1:
+            // Step 1: Active Serve → Left Return transition
+            // Players move to defendLeft while ball travels
             ballStart = middleReturn
             ballEnd = leftNet
-            duration = 1.0
-            nextDelay = 1.3
+            ballDuration = 2.5
+            ballTravelDelay = playerAnimationDuration - 0.5  // Ball starts slightly before players finish
+            nextDelay = max(playerAnimationDuration, ballTravelDelay + ballDuration) + 2.0  // Pause to see formation
+            
         case 2:
+            // Step 2: Left Return → Middle Return transition
             ballStart = leftNet
             ballEnd = middleReturn
-            duration = 0.9
-            nextDelay = 1.2
+            ballDuration = 2.5
+            ballTravelDelay = 0.3
+            nextDelay = ballTravelDelay + ballDuration + 2.0  // Pause to see formation
+            
         case 3:
+            // Step 3: Middle Return → Middle Net transition
+            // Players move to defendMiddle while ball travels
             ballStart = middleReturn
             ballEnd = middleNet
-            duration = 0.9
-            nextDelay = 1.2
+            ballDuration = 2.5
+            ballTravelDelay = playerAnimationDuration - 0.5  // Ball starts slightly before players finish
+            nextDelay = max(playerAnimationDuration, ballTravelDelay + ballDuration) + 2.0  // Pause to see formation
+            
         case 4:
-            ballStart = middleNet
-            ballEnd = middleReturn
-            duration = 0.9
-            nextDelay = 1.2
-        default:
+            // Step 4: Middle Return → Right Net transition
+            // Players move to defendRight while ball travels
             ballStart = middleReturn
             ballEnd = rightNet
-            duration = 1.1
-            nextDelay = 1.4
-            showEndMessage = true
+            ballDuration = 3.0
+            ballTravelDelay = playerAnimationDuration - 0.5  // Ball starts slightly before players finish
+            nextDelay = max(playerAnimationDuration, ballTravelDelay + ballDuration) + 2.5  // Longer pause at end
+            
+        default:
+            // Default case should not execute (only 5 formations)
+            ballStart = middleReturn
+            ballEnd = rightNet
+            ballDuration = 3.0
+            ballTravelDelay = 0.3
+            nextDelay = 0
         }
 
         ballVisible = true
         ballPosition = CGPoint(x: ballStart.x * width, y: ballStart.y * courtHeight)
-        withAnimation(.easeInOut(duration: duration)) {
-            ballPosition = CGPoint(x: ballEnd.x * width, y: ballEnd.y * courtHeight)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + ballTravelDelay) { [self] in
+            withAnimation(.easeInOut(duration: ballDuration)) {
+                ballPosition = CGPoint(x: ballEnd.x * width, y: ballEnd.y * courtHeight)
+            }
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + nextDelay) { [self] in
@@ -812,6 +840,91 @@ struct PlayDesignerPlayerView: View {
         }
         .frame(width: 40, height: 40)
         .position(x: position.x, y: position.y)
+    }
+}
+
+// MARK: - SavedPlay Model
+struct SavedPlay: Codable {
+    let name: String
+    let positions: [[CGPoint]]
+    let roles: [String]
+    let labels: [String?]
+    let timestamp: Date
+    
+    init(name: String, positions: [[CGPoint]], roles: [String], labels: [String?]) {
+        self.name = name
+        self.positions = positions
+        self.roles = roles
+        self.labels = labels
+        self.timestamp = Date()
+    }
+}
+
+// MARK: - Play Library View
+struct PlayLibraryView: View {
+    let onSelect: (SavedPlay) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var savedPlays: [SavedPlay] = []
+    
+    private let savedPlaysKey = "SavedVolleyballPlays"
+    
+    private func loadAllSavedPlays() -> [SavedPlay] {
+        guard let data = UserDefaults.standard.data(forKey: savedPlaysKey) else {
+            return []
+        }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        if let plays = try? decoder.decode([SavedPlay].self, from: data) {
+            return plays
+        }
+        return []
+    }
+    
+    private func deletePlay(at offsets: IndexSet) {
+        savedPlays.remove(atOffsets: offsets)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        if let data = try? encoder.encode(savedPlays) {
+            UserDefaults.standard.set(data, forKey: savedPlaysKey)
+        }
+    }
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                if savedPlays.isEmpty {
+                    Text("No saved plays yet.")
+                        .foregroundColor(.secondary)
+                        .padding()
+                }
+                ForEach(savedPlays, id: \.name) { play in
+                    Button(action: {
+                        onSelect(play)
+                        dismiss()
+                    }) {
+                        VStack(alignment: .leading) {
+                            Text(play.name)
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                            Text("Saved \(play.timestamp.formatted(date: .abbreviated, time: .shortened))")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+                .onDelete(perform: deletePlay)
+            }
+            .navigationTitle("Saved Plays")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+        .onAppear {
+            savedPlays = loadAllSavedPlays()
+        }
     }
 }
 
