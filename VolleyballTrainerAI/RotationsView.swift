@@ -452,7 +452,7 @@ struct RotationsView: View {
                     }
                     
                 }
-                .overlay(alignment: .bottom) {
+                .safeAreaInset(edge: .bottom) {
                     HStack(spacing: 8) {
                         Button(action: runReceive) {
                             Text("Run")
@@ -485,11 +485,11 @@ struct RotationsView: View {
                         }
                     }
                     .padding(.horizontal, 12)
-                    .padding(.bottom, 20)
+                    .padding(.vertical, 8)
+                    .background(Color.black.opacity(0.7))
                 }
             }
             .navigationBarHidden(true)
-            .ignoresSafeArea(edges: [])
         }
         .onAppear {
             updatePlayerPositions(to: currentData.base.map { pos in

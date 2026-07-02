@@ -18,6 +18,7 @@ struct PlayDesignerView: View {
     @State private var roleModalVisible = false
     @State private var selectedPlayerIndex: Int?
     @State private var tempLabel = ""
+    @State private var tempRole = ""
     
     @State private var showRecordPrompt = false
     @State private var saveModalVisible = false
@@ -30,8 +31,17 @@ struct PlayDesignerView: View {
     
     @State private var showInstructions = false
     
+    // Play animation state
+    @State private var isPlaying = false
+    @State private var animationStep = 0
+    @State private var savedPlayerPositions: [[CGPoint]] = [] // 5 sets of 6 positions
+    @State private var savedRoles: [String] = []
+    @State private var savedLabels: [String?] = []
+    
     private let width = UIScreen.main.bounds.width
     private let courtHeight: CGFloat = UIScreen.main.bounds.width * 1.1
+    
+    private let roleOptions = ["OH", "MB", "OPP", "S", "L"]
     
     enum FormationMode: String, CaseIterable {
         case preServe = "preServe"
@@ -47,6 +57,14 @@ struct PlayDesignerView: View {
         "Step 3/5 — Left Return",
         "Step 4/5 — Middle Return",
         "Step 5/5 — Right Return",
+    ]
+    
+    let playStepLabels = [
+        "Pre-Serve Formation",
+        "Active Serve",
+        "Left Return Defense",
+        "Middle Return Defense",
+        "Right Return Defense"
     ]
     
     // Base positions as fractional values (0-1) relative to court area
@@ -175,23 +193,36 @@ struct PlayDesignerView: View {
                     }
                     
                     // Step label
-                    Text(stepLabels[stepIndex])
+                    Text(isPlaying ? playStepLabels[animationStep] : stepLabels[stepIndex])
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.white)
                         .shadow(color: .black, radius: 3)
                         .padding(.top, 2)
                     
-                    // Go to next step button
-                    Button(action: goToNextStep) {
-                        Text(stepIndex < 4 ? "Next Step →" : "Save Play")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: geo.size.width * 0.5)
-                            .padding(.vertical, 8)
-                            .background(Color(hex: "#2b6cb0"))
-                            .cornerRadius(8)
+                    // Go to next step button (hidden during playback)
+                    if !isPlaying {
+                        Button(action: goToNextStep) {
+                            Text(stepIndex < 4 ? "Next Step →" : "Save Play")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: geo.size.width * 0.5)
+                                .padding(.vertical, 8)
+                                .background(Color(hex: "#2b6cb0"))
+                                .cornerRadius(8)
+                        }
+                        .padding(.top, 4)
+                    } else {
+                        Button(action: stopPlay) {
+                            Text("Stop Playback")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: geo.size.width * 0.5)
+                                .padding(.vertical, 8)
+                                .background(Color.red.opacity(0.8))
+                                .cornerRadius(8)
+                        }
+                        .padding(.top, 4)
                     }
-                    .padding(.top, 4)
                     
                     // Player area fills remaining space
                     GeometryReader { courtGeo in
@@ -199,10 +230,11 @@ struct PlayDesignerView: View {
                         ZStack {
                             // Players
                             ForEach(Array(0..<6), id: \.self) { i in
-                                let fracPos = currentPositions[i]
+                                let positions: [CGPoint] = isPlaying ? (savedPlayerPositions.indices.contains(animationStep) ? savedPlayerPositions[animationStep] : currentPositions) : currentPositions
+                                let fracPos = positions.indices.contains(i) ? positions[i] : .zero
                                 let screenPos = convertToScreen(fracPos, in: courtSize)
-                                let role = playerRoles[i]
-                                let label = playerLabels[i]
+                                let role = isPlaying ? savedRoles[i] : playerRoles[i]
+                                let label = isPlaying ? savedLabels[i] : playerLabels[i]
                                 let isLibero = role == "L"
                                 
                                 PlayDesignerPlayerView(
@@ -212,14 +244,18 @@ struct PlayDesignerView: View {
                                     isLibero: isLibero,
                                     isServer: i == 5,
                                     onEdit: {
-                                        selectedPlayerIndex = i
-                                        tempLabel = label ?? ""
-                                        roleModalVisible = true
+                                        if !isPlaying {
+                                            selectedPlayerIndex = i
+                                            tempLabel = label ?? ""
+                                            tempRole = role
+                                            roleModalVisible = true
+                                        }
                                     }
                                 )
                                 .gesture(
                                     DragGesture(minimumDistance: 0)
                                         .onChanged { value in
+                                            guard !isPlaying else { return }
                                             let newFrac = convertToFractional(value.location, in: courtSize)
                                             updatePosition(at: i, to: newFrac)
                                         }
@@ -253,77 +289,96 @@ struct PlayDesignerView: View {
                                     .position(x: ballPosition.x, y: ballPosition.y)
                                     .shadow(radius: 3)
                             }
+                            
+                            if !savedPlayerPositions.isEmpty && !isPlaying {
+                                Text("Play saved! Tap Run to view animation.")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(.green)
+                                    .shadow(color: .black, radius: 2)
+                                    .position(x: courtSize.width / 2, y: courtSize.height * 0.95)
+                            }
                         }
                     }
-                }
-                .overlay(alignment: .bottom) {
-                    HStack(spacing: 6) {
-                        Button(action: { showRecordPrompt = true }) {
-                            Text("Run")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 9)
-                                .background(Color(hex: "#2b6cb0"))
-                                .cornerRadius(8)
-                        }
-                        
-                        Button(action: goToLibrary) {
-                            Text("Load")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 9)
-                                .background(Color(hex: "#2b6cb0"))
-                                .cornerRadius(8)
-                        }
-                        
-                        Button(action: resetPlay) {
-                            Text("Reset")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 9)
-                                .background(Color(hex: "#2b6cb0"))
-                                .cornerRadius(8)
-                        }
-                        
-                        Button(action: handleRotate) {
-                            Text("Rot\(rotation)")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 9)
-                                .background(Color(hex: "#2b6cb0"))
-                                .cornerRadius(8)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 20)
                 }
             }
+            .safeAreaInset(edge: .bottom) {
+                HStack(spacing: 6) {
+                    Button(action: runSavedPlay) {
+                        Text("Run")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 9)
+                            .background(savedPlayerPositions.isEmpty ? Color.gray : Color(hex: "#2b6cb0"))
+                            .cornerRadius(8)
+                    }
+                    .disabled(savedPlayerPositions.isEmpty)
+                    
+                    Button(action: goToLibrary) {
+                        Text("Load")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 9)
+                            .background(Color(hex: "#2b6cb0"))
+                            .cornerRadius(8)
+                    }
+                    
+                    Button(action: resetPlay) {
+                        Text("Reset")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 9)
+                            .background(Color(hex: "#2b6cb0"))
+                            .cornerRadius(8)
+                    }
+                    
+                    Button(action: handleRotate) {
+                        Text("Rot\(rotation)")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 9)
+                            .background(Color(hex: "#2b6cb0"))
+                            .cornerRadius(8)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.black.opacity(0.7))
+            }
             .navigationBarHidden(true)
-            .ignoresSafeArea(edges: [])
             .onAppear {
                 initializePositions()
             }
             .onChange(of: rotation) { _, _ in
                 initializePositions()
             }
-            .alert("Edit Player Label", isPresented: .constant(selectedPlayerIndex != nil && roleModalVisible)) {
-                TextField("Player Label", text: $tempLabel)
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
+            .alert("Edit Player", isPresented: $roleModalVisible) {
+                VStack {
+                    TextField("Name/Number", text: $tempLabel)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                    Picker("Role", selection: $tempRole) {
+                        ForEach(roleOptions, id: \.self) { role in
+                            Text(role).tag(role)
+                        }
+                    }
+                }
                 Button("Save") {
                     if let index = selectedPlayerIndex {
                         playerLabels[index] = tempLabel.isEmpty ? nil : tempLabel
+                        playerRoles[index] = tempRole
                     }
                     tempLabel = ""
+                    tempRole = ""
                     selectedPlayerIndex = nil
                     roleModalVisible = false
                 }
                 Button("Cancel") {
                     tempLabel = ""
+                    tempRole = ""
                     selectedPlayerIndex = nil
                     roleModalVisible = false
                 }
@@ -349,8 +404,10 @@ struct PlayDesignerView: View {
             Text("Step 1: Set Pre‑Serve Formation.")
             Text("Step 2: Set Active Serve Formation.")
             Text("Steps 3–5: Set Left, Middle, Right Return formations.")
-            Text("Tap the gear icon on a player to change roles and assign initials or jersey #.")
-            Text("Save stores the full play (all 5 formations) for this rotation.")
+            Text("Tap gear icon to edit name/number and role (OH, MB, OPP, S, L).")
+            Text("Libero (L) wears gold, restricted to back row only.")
+            Text("Save stores the full play (all 5 formations).")
+            Text("Tap Run to animate through the saved play.")
                 .font(.system(size: 12))
                 .foregroundColor(Color(hex: "#333"))
         }
@@ -407,6 +464,9 @@ struct PlayDesignerView: View {
         defendRightPositions = base
         stepIndex = 0
         mode = .preServe
+        isPlaying = false
+        animationStep = 0
+        ballVisible = false
     }
     
     private func updatePosition(at index: Int, to point: CGPoint) {
@@ -468,42 +528,123 @@ struct PlayDesignerView: View {
     private func savePlay() {
         let rawName = playName.trimmingCharacters(in: .whitespaces)
         guard !rawName.isEmpty else { return }
-        
         guard validateFormations() else { return }
+        
+        // Save all 5 formation position sets and current roles/labels
+        savedPlayerPositions = [
+            preServePositions,
+            activeServePositions,
+            defendLeftPositions,
+            defendMiddlePositions,
+            defendRightPositions
+        ]
+        savedRoles = playerRoles
+        savedLabels = playerLabels
         
         saveModalVisible = false
     }
     
+    private func runSavedPlay() {
+        guard !savedPlayerPositions.isEmpty else { return }
+        guard !isPlaying else { return }
+        
+        isPlaying = true
+        animationStep = 0
+        ballVisible = false
+        
+        // Animate through all 5 steps then finish
+        animatePlayStep()
+    }
+    
+    private func animatePlayStep() {
+        guard animationStep < savedPlayerPositions.count else {
+            // Animation complete
+            isPlaying = false
+            animationStep = 0
+            ballVisible = false
+            return
+        }
+        
+        // Copy positions to make them animate
+        let positions = savedPlayerPositions[animationStep]
+        updateDisplayPositions(positions)
+        
+        // Show ball animation on serve steps
+        if animationStep == 1 {
+            ballVisible = true
+            ballPosition = CGPoint(x: width * 0.5, y: 50)
+            withAnimation(.easeInOut(duration: 1.5)) {
+                ballPosition = CGPoint(x: width * 0.5, y: courtHeight * 0.3)
+            }
+        } else if animationStep == 2 || animationStep == 3 || animationStep == 4 {
+            // Defense return animations
+            ballVisible = true
+            ballPosition = CGPoint(x: width * 0.5, y: 50)
+            let targetX: CGFloat = animationStep == 2 ? width * 0.2 : (animationStep == 3 ? width * 0.5 : width * 0.8)
+            withAnimation(.easeInOut(duration: 1.5)) {
+                ballPosition = CGPoint(x: targetX, y: courtHeight * 0.3)
+            }
+        }
+        
+        // Advance to next step after delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [self] in
+            withAnimation {
+                ballVisible = false
+            }
+            animationStep += 1
+            if animationStep < savedPlayerPositions.count {
+                animatePlayStep()
+            } else {
+                isPlaying = false
+                animationStep = 0
+            }
+        }
+    }
+    
+    private func updateDisplayPositions(_ positions: [CGPoint]) {
+        withAnimation(.easeInOut(duration: 0.6)) {
+            // Update all 5 sets so the display shows them
+            for i in 0..<min(6, positions.count) {
+                preServePositions[i] = positions[i]
+                activeServePositions[i] = positions[i]
+                defendLeftPositions[i] = positions[i]
+                defendMiddlePositions[i] = positions[i]
+                defendRightPositions[i] = positions[i]
+            }
+        }
+    }
+    
+    private func stopPlay() {
+        isPlaying = false
+        animationStep = 0
+        ballVisible = false
+        // Restore to pre-serve positions
+        let base = sixTwoBase[rotation]!
+        withAnimation(.easeInOut(duration: 0.4)) {
+            for i in 0..<6 {
+                preServePositions[i] = savedPlayerPositions.indices.contains(0) ? savedPlayerPositions[0][i] : base[i]
+                activeServePositions[i] = savedPlayerPositions.indices.contains(1) ? savedPlayerPositions[1][i] : base[i]
+                defendLeftPositions[i] = savedPlayerPositions.indices.contains(2) ? savedPlayerPositions[2][i] : base[i]
+                defendMiddlePositions[i] = savedPlayerPositions.indices.contains(3) ? savedPlayerPositions[3][i] : base[i]
+                defendRightPositions[i] = savedPlayerPositions.indices.contains(4) ? savedPlayerPositions[4][i] : base[i]
+            }
+        }
+    }
+    
     private func goToLibrary() {
+        // Placeholder for library functionality
     }
     
     private func resetPlay() {
         initializePositions()
         playerRoles = ["OH", "MB", "OPP", "S", "MB", "OH"]
         playerLabels = [nil, nil, nil, nil, nil, nil]
-    }
-    
-    private func runPlay() {
-        let base = sixTwoBase[rotation]!
-        
-        preServePositions = base
-        activeServePositions = base
-        defendLeftPositions = base
-        defendMiddlePositions = base
-        defendRightPositions = base
-        
-        ballPosition = CGPoint(x: 0.5 * width, y: 50)
-        ballVisible = true
-        
-        withAnimation(.easeInOut(duration: 3.0)) {
-            ballPosition = CGPoint(x: width * 0.5, y: courtHeight * 0.3)
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            withAnimation(.easeInOut(duration: 2.0)) {
-                ballVisible = false
-            }
-        }
+        savedPlayerPositions = []
+        savedRoles = []
+        savedLabels = []
+        isPlaying = false
+        animationStep = 0
+        ballVisible = false
     }
 }
 
@@ -522,19 +663,19 @@ struct PlayDesignerPlayerView: View {
                 .frame(width: 40, height: 40)
                 .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
             
-            Text(role)
-                .font(.system(size: 11, weight: .bold))
-                .foregroundColor(.white)
-            
-            if let label = label, !label.isEmpty {
-                Text(label)
-                    .font(.system(size: 9, weight: .bold))
+            VStack(spacing: 1) {
+                Text(role)
+                    .font(.system(size: 10, weight: .bold))
                     .foregroundColor(.white)
-                    .padding(.horizontal, 3)
-                    .padding(.vertical, 1)
-                    .background(Color.black.opacity(0.3))
-                    .cornerRadius(8)
-                    .position(x: 0, y: 12)
+                if let label = label, !label.isEmpty {
+                    Text(label)
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(.white.opacity(0.9))
+                        .padding(.horizontal, 2)
+                        .padding(.vertical, 1)
+                        .background(Color.black.opacity(0.25))
+                        .cornerRadius(4)
+                }
             }
             
             if isServer {
