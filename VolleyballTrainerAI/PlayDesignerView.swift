@@ -291,7 +291,7 @@ struct PlayDesignerView: View {
                             if ballVisible {
                                 Image("volleyball")
                                     .resizable()
-                                    .frame(width: 24, height: 24)
+                                    .frame(width: 32, height: 32)
                                     .position(x: ballPosition.x, y: ballPosition.y)
                                     .shadow(radius: 3)
                             }
@@ -621,10 +621,10 @@ struct PlayDesignerView: View {
         playbackPositions = currentPositions
         ballVisible = false
         
-        let base = sixTwoBase[rotation]!
+        // Show preServe formation first
         withAnimation(.easeInOut(duration: 1.5)) {
             for i in 0..<6 {
-                playbackPositions[i] = base[i]
+                playbackPositions[i] = savedPlayerPositions[0][i]
             }
         }
         
@@ -634,109 +634,154 @@ struct PlayDesignerView: View {
     }
     
     private func animatePlayStep() {
-        guard animationStep < savedPlayerPositions.count else {
-            isPlaying = false
-            animationStep = 0
-            ballVisible = false
-            return
-        }
-
-        let targetPositions = savedPlayerPositions[animationStep]
-        let playerAnimationDuration: Double = animationStep == 0 ? 1.5 : 2.0
-        
-        withAnimation(.easeInOut(duration: playerAnimationDuration)) {
-            for i in 0..<min(6, targetPositions.count) {
-                playbackPositions[i] = targetPositions[i]
-            }
-        }
-
         let serverPos = savedPlayerPositions[0][serverIndex]
         let middleReturn = CGPoint(x: 0.5, y: 50 / courtHeight)
-        let leftNet = CGPoint(x: 0.2, y: courtHeight * 0.48 / courtHeight)
-        let middleNet = CGPoint(x: 0.5, y: courtHeight * 0.48 / courtHeight)
-        let rightNet = CGPoint(x: 0.8, y: courtHeight * 0.48 / courtHeight)
-
-        var ballStart: CGPoint
-        var ballEnd: CGPoint
-        var ballDuration: Double
-        var ballTravelDelay: Double
-        var nextDelay: Double
-        var showEndMessage = false
+        let leftNet = CGPoint(x: 0.2, y: 0.53)  // 5% lower
+        let middleNet = CGPoint(x: 0.5, y: 0.53)  // 5% lower
+        let rightNet = CGPoint(x: 0.8, y: 0.53)  // 5% lower
 
         switch animationStep {
         case 0:
-            // Step 0: Pre-Serve → Active Serve transition
-            // Players move to activeServe while ball serves
-            ballStart = serverPos
-            ballEnd = middleReturn
-            ballDuration = 3.0
-            ballTravelDelay = playerAnimationDuration + 0.5  // Start ball after players start moving
-            nextDelay = playerAnimationDuration + ballDuration + 2.0  // Pause to see formation
+            // Step 0: Show preServe (already set in runSavedPlay), then serve to activeServe
+            let targetPositions = savedPlayerPositions[1]  // activeServe
+            let playerAnimationDuration = 2.0
+            
+            withAnimation(.easeInOut(duration: playerAnimationDuration)) {
+                for i in 0..<min(6, targetPositions.count) {
+                    playbackPositions[i] = targetPositions[i]
+                }
+            }
+            
+            // Ball serves from serverPos to middleReturn
+            ballVisible = true
+            ballPosition = CGPoint(x: serverPos.x * width, y: serverPos.y * courtHeight)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
+                withAnimation(.easeInOut(duration: 3.0)) {
+                    ballPosition = CGPoint(x: middleReturn.x * width, y: middleReturn.y * courtHeight)
+                }
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [self] in
+                withAnimation {
+                    ballVisible = false
+                }
+                animationStep = 1
+                animatePlayStep()
+            }
             
         case 1:
-            // Step 1: Active Serve → Left Return transition
-            // Players move to defendLeft while ball travels
-            ballStart = middleReturn
-            ballEnd = leftNet
-            ballDuration = 2.5
-            ballTravelDelay = playerAnimationDuration - 0.5  // Ball starts slightly before players finish
-            nextDelay = max(playerAnimationDuration, ballTravelDelay + ballDuration) + 2.0  // Pause to see formation
+            // Step 1: Serve to Left Return
+            let targetPositions = savedPlayerPositions[2]  // defendLeft
+            let playerAnimationDuration = 2.0
+            
+            withAnimation(.easeInOut(duration: playerAnimationDuration)) {
+                for i in 0..<min(6, targetPositions.count) {
+                    playbackPositions[i] = targetPositions[i]
+                }
+            }
+            
+            // Ball travels to left net
+            ballVisible = true
+            ballPosition = CGPoint(x: middleReturn.x * width, y: middleReturn.y * courtHeight)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
+                withAnimation(.easeInOut(duration: 2.5)) {
+                    ballPosition = CGPoint(x: leftNet.x * width, y: leftNet.y * courtHeight)
+                }
+            }
+            
+            // Ball returns to middle return
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [self] in
+                withAnimation(.easeInOut(duration: 2.5)) {
+                    ballPosition = CGPoint(x: middleReturn.x * width, y: middleReturn.y * courtHeight)
+                }
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5.8) { [self] in
+                withAnimation {
+                    ballVisible = false
+                }
+                animationStep = 2
+                animatePlayStep()
+            }
             
         case 2:
-            // Step 2: Left Return → Middle Return transition
-            ballStart = leftNet
-            ballEnd = middleReturn
-            ballDuration = 2.5
-            ballTravelDelay = 0.3
-            nextDelay = ballTravelDelay + ballDuration + 2.0  // Pause to see formation
+            // Step 2: Return to Middle Net
+            let targetPositions = savedPlayerPositions[3]  // defendMiddle
+            let playerAnimationDuration = 2.0
+            
+            withAnimation(.easeInOut(duration: playerAnimationDuration)) {
+                for i in 0..<min(6, targetPositions.count) {
+                    playbackPositions[i] = targetPositions[i]
+                }
+            }
+            
+            // Ball travels to middle net
+            ballVisible = true
+            ballPosition = CGPoint(x: middleReturn.x * width, y: middleReturn.y * courtHeight)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
+                withAnimation(.easeInOut(duration: 2.5)) {
+                    ballPosition = CGPoint(x: middleNet.x * width, y: middleNet.y * courtHeight)
+                }
+            }
+            
+            // Ball returns to middle return
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [self] in
+                withAnimation(.easeInOut(duration: 2.5)) {
+                    ballPosition = CGPoint(x: middleReturn.x * width, y: middleReturn.y * courtHeight)
+                }
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5.8) { [self] in
+                withAnimation {
+                    ballVisible = false
+                }
+                animationStep = 3
+                animatePlayStep()
+            }
             
         case 3:
-            // Step 3: Middle Return → Middle Net transition
-            // Players move to defendMiddle while ball travels
-            ballStart = middleReturn
-            ballEnd = middleNet
-            ballDuration = 2.5
-            ballTravelDelay = playerAnimationDuration - 0.5  // Ball starts slightly before players finish
-            nextDelay = max(playerAnimationDuration, ballTravelDelay + ballDuration) + 2.0  // Pause to see formation
+            // Step 3: Return to Right Net
+            let targetPositions = savedPlayerPositions[4]  // defendRight
+            let playerAnimationDuration = 2.0
             
-        case 4:
-            // Step 4: Middle Return → Right Net transition
-            // Players move to defendRight while ball travels
-            ballStart = middleReturn
-            ballEnd = rightNet
-            ballDuration = 3.0
-            ballTravelDelay = playerAnimationDuration - 0.5  // Ball starts slightly before players finish
-            nextDelay = max(playerAnimationDuration, ballTravelDelay + ballDuration) + 2.5  // Longer pause at end
+            withAnimation(.easeInOut(duration: playerAnimationDuration)) {
+                for i in 0..<min(6, targetPositions.count) {
+                    playbackPositions[i] = targetPositions[i]
+                }
+            }
             
-        default:
-            // Default case should not execute (only 5 formations)
-            ballStart = middleReturn
-            ballEnd = rightNet
-            ballDuration = 3.0
-            ballTravelDelay = 0.3
-            nextDelay = 0
-        }
-
-        ballVisible = true
-        ballPosition = CGPoint(x: ballStart.x * width, y: ballStart.y * courtHeight)
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + ballTravelDelay) { [self] in
-            withAnimation(.easeInOut(duration: ballDuration)) {
-                ballPosition = CGPoint(x: ballEnd.x * width, y: ballEnd.y * courtHeight)
+            // Ball travels to right net
+            ballVisible = true
+            ballPosition = CGPoint(x: middleReturn.x * width, y: middleReturn.y * courtHeight)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
+                withAnimation(.easeInOut(duration: 3.0)) {
+                    ballPosition = CGPoint(x: rightNet.x * width, y: rightNet.y * courtHeight)
+                }
             }
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + nextDelay) { [self] in
-            withAnimation {
-                ballVisible = false
-            }
-            animationStep += 1
-            if animationStep < savedPlayerPositions.count {
-                animatePlayStep()
-            } else {
+            
+            // After ball reaches right net, return players to default and end
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { [self] in
+                withAnimation(.easeInOut(duration: 1.5)) {
+                    let base = sixTwoBase[rotation]!
+                    for i in 0..<6 {
+                        playbackPositions[i] = base[i]
+                    }
+                }
+                withAnimation {
+                    ballVisible = false
+                }
                 isPlaying = false
                 animationStep = 0
             }
+            
+        default:
+            isPlaying = false
+            animationStep = 0
+            ballVisible = false
         }
     }
     
@@ -786,7 +831,7 @@ struct PlayDesignerPlayerView: View {
         ZStack {
             Circle()
                 .fill(isLibero ? Color(hex: "#FFD700") : Color(hex: "#2b6cb0"))
-                .frame(width: 40, height: 40)
+                .frame(width: 50, height: 50)
                 .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
             
             VStack(spacing: 1) {
@@ -811,15 +856,15 @@ struct PlayDesignerPlayerView: View {
                         Spacer()
                         Circle()
                             .fill(Color(hex: "#ff69b4"))
-                            .frame(width: 16, height: 16)
+                            .frame(width: 20, height: 20)
                             .overlay(
                                 Text("S")
-                                    .font(.system(size: 9, weight: .bold))
+                                    .font(.system(size: 10, weight: .bold))
                                     .foregroundColor(.white)
                             )
                     }
-                    .padding(.trailing, -4)
-                    .padding(.bottom, -4)
+                    .padding(.trailing, -5)
+                    .padding(.bottom, -5)
                 }
             }
             
@@ -829,16 +874,16 @@ struct PlayDesignerPlayerView: View {
                 HStack {
                     Button(action: onEdit) {
                         Text("⚙️")
-                            .font(.system(size: 14))
+                            .font(.system(size: 16))
                     }
-                    .padding(.leading, -4)
-                    .padding(.bottom, -4)
+                    .padding(.leading, -5)
+                    .padding(.bottom, -5)
                     Spacer()
                 }
             }
-            .frame(width: 40, height: 40)
+            .frame(width: 50, height: 50)
         }
-        .frame(width: 40, height: 40)
+        .frame(width: 50, height: 50)
         .position(x: position.x, y: position.y)
     }
 }
