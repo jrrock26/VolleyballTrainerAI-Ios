@@ -198,8 +198,8 @@ struct PlayDesignerView: View {
                             .padding(.top, 2)
                     }
                     
-                    // Step label
-                    Text(isPlaying ? playStepLabels[animationStep] : stepLabels[stepIndex])
+                    // Step label or play name
+                    Text(isPlaying && !playName.isEmpty ? playName : (isPlaying ? "Playing..." : stepLabels[stepIndex]))
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.white)
                         .shadow(color: .black, radius: 3)
@@ -609,7 +609,7 @@ struct PlayDesignerView: View {
         persistSavedPlay(newPlay)
         
         saveModalVisible = false
-        playName = ""
+        // Keep playName for display during playback
     }
     
     private func runSavedPlay() {
@@ -636,9 +636,9 @@ struct PlayDesignerView: View {
     private func animatePlayStep() {
         let serverPos = savedPlayerPositions[0][serverIndex]
         let middleReturn = CGPoint(x: 0.5, y: 50 / courtHeight)
-        let leftNet = CGPoint(x: 0.2, y: 0.53)  // 5% lower
-        let middleNet = CGPoint(x: 0.5, y: 0.53)  // 5% lower
-        let rightNet = CGPoint(x: 0.8, y: 0.53)  // 5% lower
+        let leftNet = CGPoint(x: 0.2, y: 0.55)  // 7% lower
+        let middleNet = CGPoint(x: 0.5, y: 0.55)  // 7% lower
+        let rightNet = CGPoint(x: 0.8, y: 0.55)  // 7% lower
 
         switch animationStep {
         case 0:
@@ -763,12 +763,12 @@ struct PlayDesignerView: View {
                 }
             }
             
-            // After ball reaches right net, return players to default and end
+            // After ball reaches right net, return players to default positions
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { [self] in
+                let defaultBase = sixTwoBase[rotation]!
                 withAnimation(.easeInOut(duration: 1.5)) {
-                    let base = sixTwoBase[rotation]!
                     for i in 0..<6 {
-                        playbackPositions[i] = base[i]
+                        playbackPositions[i] = defaultBase[i]
                     }
                 }
                 withAnimation {
@@ -1013,6 +1013,7 @@ extension PlayDesignerView {
         
         playerRoles = play.roles
         playerLabels = play.labels
+        playName = play.name  // Set the play name for display
         
         savedPlayerPositions = play.positions
         savedRoles = play.roles
