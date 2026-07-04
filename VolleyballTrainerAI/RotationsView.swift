@@ -432,7 +432,7 @@ struct RotationsView: View {
                             if showServeBall {
                                 Image("volleyball")
                                     .resizable()
-                                    .frame(width: 22, height: 22)
+                                    .frame(width: 32, height: 32)
                                     .position(x: serveBallPosition.x, y: serveBallPosition.y)
                                     .shadow(radius: 3)
                             }
@@ -441,7 +441,7 @@ struct RotationsView: View {
                             if selectedBall != nil {
                                 Image("volleyball")
                                     .resizable()
-                                    .frame(width: 22, height: 22)
+                                    .frame(width: 32, height: 32)
                                     .position(x: returnBallPosition.x, y: returnBallPosition.y)
                                     .shadow(radius: 3)
                             }
@@ -491,7 +491,7 @@ struct RotationsView: View {
                         .padding(.top, 6)
                         .padding(.bottom, max(2, geo.safeAreaInsets.bottom - 8))
                         .background(Color.black.opacity(0.8))
-                        .offset(y: -8)
+                        .offset(y: -50)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                     .zIndex(30)
@@ -643,25 +643,26 @@ struct PlayerBubbleView: View {
             ZStack {
                 Circle()
                     .fill(Color(hex: "#2b6cb0"))
-                    .frame(width: 44, height: 44)
+                    .frame(width: 50, height: 50)
+                    .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
                     .overlay(
                         Circle()
                             .stroke(isMe ? Color(hex: "#ff69b4") : Color.clear, lineWidth: 3)
                     )
                 
-                VStack(spacing: 2) {
+                VStack(spacing: 1) {
                     Text(label)
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: 10, weight: .bold))
                         .foregroundColor(.white)
                     
                     if !jersey.isEmpty {
                         Text(jersey)
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundColor(Color(hex: "#2b6cb0"))
-                            .padding(.horizontal, 4)
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.white.opacity(0.9))
+                            .padding(.horizontal, 2)
                             .padding(.vertical, 1)
-                            .background(Color.white)
-                            .cornerRadius(8)
+                            .background(Color.black.opacity(0.25))
+                            .cornerRadius(4)
                     }
                 }
                 
@@ -672,15 +673,16 @@ struct PlayerBubbleView: View {
                             Spacer()
                             Circle()
                                 .fill(Color(hex: "#ff69b4"))
-                                .frame(width: 18, height: 18)
+                                .frame(width: 20, height: 20)
                                 .overlay(
                                     Text("S")
                                         .font(.system(size: 10, weight: .bold))
                                         .foregroundColor(.white)
                                 )
                         }
+                        .padding(.trailing, -5)
+                        .padding(.bottom, -5)
                     }
-                    .frame(width: 44, height: 44)
                 }
                 
                 // Gear icon - lower left
@@ -691,12 +693,12 @@ struct PlayerBubbleView: View {
                             Text("⚙️")
                                 .font(.system(size: 16))
                         }
-                        .padding(.leading, -6)
-                        .padding(.bottom, -6)
+                        .padding(.leading, -5)
+                        .padding(.bottom, -5)
                         Spacer()
                     }
                 }
-                .frame(width: 44, height: 44)
+                .frame(width: 50, height: 50)
             }
         }
         .buttonStyle(PlainButtonStyle())

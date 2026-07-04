@@ -1,4 +1,5 @@
 import SwiftUI
+import ReplayKit
 
 struct PlayDesignerView: View {
     @Environment(\.dismiss) private var dismiss
@@ -33,6 +34,7 @@ struct PlayDesignerView: View {
     @State private var spin: Angle = .zero
     
     @State private var showInstructions = false
+    @State private var isRecording = false
     
     // Play animation state
     @State private var isPlaying = false
@@ -218,13 +220,13 @@ struct PlayDesignerView: View {
                         }
                         .padding(.top, 4)
                     } else {
-                        Button(action: stopPlay) {
-                            Text("Stop Playback")
+                        Button(action: toggleRecording) {
+                            Text(isRecording ? "● Recording" : "● Record")
                                 .font(.system(size: 12, weight: .bold))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: geo.size.width * 0.5)
                                 .padding(.vertical, 8)
-                                .background(Color.red.opacity(0.8))
+                                .background(isRecording ? Color.red : Color(hex: "#2b6cb0"))
                                 .cornerRadius(8)
                         }
                         .padding(.top, 4)
@@ -357,7 +359,7 @@ struct PlayDesignerView: View {
                     .padding(.top, 2)
                     .padding(.bottom, max(2, geo.safeAreaInsets.bottom - 8))
                     .background(Color.black.opacity(0.8))
-                    .offset(y: -10)
+                    .offset(y: -50)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 .zIndex(30)
@@ -634,11 +636,11 @@ struct PlayDesignerView: View {
     }
     
     private func animatePlayStep() {
-        let serverPos = savedPlayerPositions[0][serverIndex]
+        let serverPos = playbackPositions[serverIndex]
         let middleReturn = CGPoint(x: 0.5, y: 50 / courtHeight)
-        let leftNet = CGPoint(x: 0.2, y: 0.55)  // 7% lower
-        let middleNet = CGPoint(x: 0.5, y: 0.55)  // 7% lower
-        let rightNet = CGPoint(x: 0.8, y: 0.55)  // 7% lower
+        let leftNet = CGPoint(x: 0.2, y: 0.61)  // 2% lower (closer to net)
+        let middleNet = CGPoint(x: 0.5, y: 0.61)  // 2% lower (closer to net)
+        let rightNet = CGPoint(x: 0.8, y: 0.61)  // 2% lower (closer to net)
 
         switch animationStep {
         case 0:
@@ -804,6 +806,39 @@ struct PlayDesignerView: View {
     
     private func goToLibrary() {
         showLibrary = true
+    }
+    
+    private func toggleRecording() {
+        let recorder = RPScreenRecorder.shared()
+        if isRecording {
+            recorder.stopRecording { (previewController, error) in
+                DispatchQueue.main.async {
+                    self.isRecording = false
+                    if let error = error {
+                        print("Recording error: \(error.localizedDescription)")
+                        return
+                    }
+                    if let previewController = previewController {
+                        // Save to camera roll automatically
+                        previewController.previewControllerDelegate = nil
+                    }
+                }
+            }
+        } else {
+            guard recorder.isAvailable else {
+                print("Recording not available")
+                return
+            }
+            recorder.startRecording { (error) in
+                DispatchQueue.main.async {
+                    if let error = error {
+                        print("Failed to start recording: \(error.localizedDescription)")
+                    } else {
+                        self.isRecording = true
+                    }
+                }
+            }
+        }
     }
     
     private func resetPlay() {
