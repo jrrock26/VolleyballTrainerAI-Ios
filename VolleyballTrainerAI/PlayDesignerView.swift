@@ -647,10 +647,10 @@ struct PlayDesignerView: View {
     
     private func animatePlayStep(_ courtSize: CGSize = CGSize(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.width * 0.85 * 1.1)) {
         let serverPos = playbackPositions[serverIndex]
-        let middleReturn = CGPoint(x: 0.5, y: 50 / courtHeight)
-        let leftNet = CGPoint(x: 0.2, y: 0.65)  // 10% lower (closer to net)
-        let middleNet = CGPoint(x: 0.5, y: 0.65)  // 10% lower (closer to net)
-        let rightNet = CGPoint(x: 0.8, y: 0.65)  // 10% lower (closer to net)
+        let middleReturn = CGPoint(x: 0.5, y: 0.14)  // Matches return ball indicator position
+        let leftNet = CGPoint(x: 0.2, y: 0.65)  // Net position
+        let middleNet = CGPoint(x: 0.5, y: 0.65)  // Net position
+        let rightNet = CGPoint(x: 0.8, y: 0.65)  // Net position
 
         switch animationStep {
         case 0:
@@ -807,17 +807,26 @@ struct PlayDesignerView: View {
         animationStep = 0
         ballVisible = false
         
-        // Stop recording if active
+        // Stop recording if active and show preview
         if isRecording {
             isRecording = false
-            // Present preview controller instead - recording auto-saves to camera roll
             RPScreenRecorder.shared().stopRecording { previewController, error in
                 if let error = error {
                     print("Failed to stop recording: \(error.localizedDescription)")
                     return
                 }
-                // Note: In current iOS versions, recordings auto-save to camera roll
-                // The previewController allows user to edit/share before final save
+                // Present the preview controller on iOS 15+
+                if #available(iOS 15.0, *) {
+                    DispatchQueue.main.async {
+                        if let previewVC = previewController {
+                            // Get the root view controller to present from
+                            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                               let rootViewController = windowScene.windows.first?.rootViewController {
+                                rootViewController.present(previewVC, animated: true)
+                            }
+                        }
+                    }
+                }
             }
         }
         let base = sixTwoBase[rotation]!
@@ -839,18 +848,31 @@ struct PlayDesignerView: View {
     
     private func startRecordingAndPlay() {
         let recorder = RPScreenRecorder.shared()
-        guard recorder.isAvailable else { return }
-        recorder.startRecording { error in
+        guard recorder.isAvailable else {
+            print("Screen recorder not available")
+            runSavedPlay()
+            return
+        }
+        
+        // Check if already recording
+        if recorder.isRecording {
+            print("Already recording")
+            runSavedPlay()
+            return
+        }
+        
+        recorder.startRecording { [weak self] error in
             if let error = error {
                 print("Failed to start recording: \(error.localizedDescription)")
                 DispatchQueue.main.async {
-                    self.runSavedPlay()
+                    self?.runSavedPlay()
                 }
                 return
             }
+            print("Recording started successfully")
             DispatchQueue.main.async {
-                self.isRecording = true
-                self.runSavedPlay()
+                self?.isRecording = true
+                self?.runSavedPlay()
             }
         }
     }
