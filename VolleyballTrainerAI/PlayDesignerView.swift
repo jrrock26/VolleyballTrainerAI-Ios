@@ -268,18 +268,18 @@ struct PlayDesignerView: View {
                             Circle()
                                 .fill(Color(hex: "#ff69b4").opacity(0))
                                 .frame(width: 32, height: 32)
-                                .position(x: courtSize.width * 0.2, y: courtSize.height * 0.14)
+                                .position(x: courtSize.width * 0.2, y: courtSize.height * 0.13)
                             
                             Circle()
                                 .fill(Color(hex: "#ff69b4").opacity(mode == .defendMiddle ? 1 : 0.3))
                                 .frame(width: 32, height: 32)
                                 .shadow(color: Color(hex: "#ff69b4"), radius: mode == .defendMiddle ? 6 : 0)
-                                .position(x: courtSize.width * 0.5, y: courtSize.height * 0.14)
+                                .position(x: courtSize.width * 0.5, y: courtSize.height * 0.13)
                             
                             Circle()
                                 .fill(Color(hex: "#ff69b4").opacity(0))
                                 .frame(width: 32, height: 32)
-                                .position(x: courtSize.width * 0.8, y: courtSize.height * 0.14)
+                                .position(x: courtSize.width * 0.8, y: courtSize.height * 0.13)
                             
                             // Animated ball
                             if ballVisible {
@@ -618,8 +618,9 @@ struct PlayDesignerView: View {
         
         persistSavedPlay(newPlay)
         
+        // Dismiss save modal and return to PlayDesigner
         saveModalVisible = false
-        // Keep playName for display during playback
+        // The view stays on PlayDesigner, modal just closes
     }
     
     private func runSavedPlay() {
@@ -646,7 +647,7 @@ struct PlayDesignerView: View {
     private func animatePlayStep(_ courtSize: CGSize = CGSize(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.width * 0.85 * 1.1)) {
         let serverPos = playbackPositions[serverIndex]
         let courtHeight = courtSize.height
-        let middleReturn = CGPoint(x: 0.5, y: 0.14)  // Matches return ball indicator position
+        let middleReturn = CGPoint(x: 0.5, y: 0.13)  // Lowered return ball position by ~10% from original 0.14
         let leftNet = CGPoint(x: 0.2, y: 0.65)  // Net position
         let middleNet = CGPoint(x: 0.5, y: 0.65)  // Net position
         let rightNet = CGPoint(x: 0.8, y: 0.65)  // Net position
@@ -774,25 +775,42 @@ struct PlayDesignerView: View {
                 }
             }
             
-            // After ball reaches right net, return players to default positions
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { [self] in
-                let defaultBase = sixTwoBase[rotation]!
-                withAnimation(.easeInOut(duration: 1.5)) {
-                    for i in 0..<6 {
-                        playbackPositions[i] = defaultBase[i]
+                // After ball reaches right net, return players to default positions
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { [self] in
+                    let defaultBase = sixTwoBase[rotation]!
+                    withAnimation(.easeInOut(duration: 1.5)) {
+                        for i in 0..<6 {
+                            playbackPositions[i] = defaultBase[i]
+                        }
+                    }
+                    withAnimation {
+                        ballVisible = false
+                    }
+                    isPlaying = false
+                    animationStep = 0
+                    
+                    // Stop recording without blocking UI
+                    if isRecording {
+                        isRecording = false
+                        RPScreenRecorder.shared().stopRecording { previewController, error in
+                            if let error = error {
+                                print("Failed to stop recording: \(error.localizedDescription)")
+                                return
+                            }
+                            // Present preview asynchronously
+                            if #available(iOS 15.0, *) {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                    if let previewVC = previewController {
+                                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                                           let rootViewController = windowScene.windows.first?.rootViewController {
+                                            rootViewController.present(previewVC, animated: true)
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-                withAnimation {
-                    ballVisible = false
-                }
-                isPlaying = false
-                animationStep = 0
-                
-                // Stop recording and prompt user to save
-                if isRecording {
-                    stopPlay()
-                }
-            }
             
         default:
             isPlaying = false
