@@ -264,11 +264,10 @@ struct PlayDesignerView: View {
                                 )
                             }
                             
-                            // Return ball indicators
+                            // Return ball indicators (left and right hidden - only middle visible for reference)
                             Circle()
-                                .fill(Color(hex: "#ff69b4").opacity(mode == .defendLeft ? 1 : 0.3))
+                                .fill(Color(hex: "#ff69b4").opacity(0))
                                 .frame(width: 32, height: 32)
-                                .shadow(color: Color(hex: "#ff69b4"), radius: mode == .defendLeft ? 6 : 0)
                                 .position(x: courtSize.width * 0.2, y: courtSize.height * 0.14)
                             
                             Circle()
@@ -278,9 +277,8 @@ struct PlayDesignerView: View {
                                 .position(x: courtSize.width * 0.5, y: courtSize.height * 0.14)
                             
                             Circle()
-                                .fill(Color(hex: "#ff69b4").opacity(mode == .defendRight ? 1 : 0.3))
+                                .fill(Color(hex: "#ff69b4").opacity(0))
                                 .frame(width: 32, height: 32)
-                                .shadow(color: Color(hex: "#ff69b4"), radius: mode == .defendRight ? 6 : 0)
                                 .position(x: courtSize.width * 0.8, y: courtSize.height * 0.14)
                             
                             // Animated ball
@@ -647,6 +645,7 @@ struct PlayDesignerView: View {
     
     private func animatePlayStep(_ courtSize: CGSize = CGSize(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.width * 0.85 * 1.1)) {
         let serverPos = playbackPositions[serverIndex]
+        let courtHeight = courtSize.height
         let middleReturn = CGPoint(x: 0.5, y: 0.14)  // Matches return ball indicator position
         let leftNet = CGPoint(x: 0.2, y: 0.65)  // Net position
         let middleNet = CGPoint(x: 0.5, y: 0.65)  // Net position
@@ -666,11 +665,11 @@ struct PlayDesignerView: View {
             
             // Ball serves from serverPos to middleReturn
             ballVisible = true
-            ballPosition = CGPoint(x: serverPos.x * width, y: serverPos.y * courtHeight)
+            ballPosition = CGPoint(x: serverPos.x * courtSize.width, y: serverPos.y * courtHeight)
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
                 withAnimation(.easeInOut(duration: 3.0)) {
-                    ballPosition = CGPoint(x: middleReturn.x * width, y: middleReturn.y * courtHeight)
+                    ballPosition = CGPoint(x: middleReturn.x * courtSize.width, y: middleReturn.y * courtHeight)
                 }
             }
             
@@ -695,18 +694,18 @@ struct PlayDesignerView: View {
             
             // Ball travels to left net
             ballVisible = true
-            ballPosition = CGPoint(x: middleReturn.x * width, y: middleReturn.y * courtHeight)
+            ballPosition = CGPoint(x: middleReturn.x * courtSize.width, y: middleReturn.y * courtHeight)
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
                 withAnimation(.easeInOut(duration: 2.5)) {
-                    ballPosition = CGPoint(x: leftNet.x * width, y: leftNet.y * courtHeight)
+                    ballPosition = CGPoint(x: leftNet.x * courtSize.width, y: leftNet.y * courtHeight)
                 }
             }
             
             // Ball returns to middle return
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [self] in
                 withAnimation(.easeInOut(duration: 2.5)) {
-                    ballPosition = CGPoint(x: middleReturn.x * width, y: middleReturn.y * courtHeight)
+                    ballPosition = CGPoint(x: middleReturn.x * courtSize.width, y: middleReturn.y * courtHeight)
                 }
             }
             
@@ -731,18 +730,18 @@ struct PlayDesignerView: View {
             
             // Ball travels to middle net
             ballVisible = true
-            ballPosition = CGPoint(x: middleReturn.x * width, y: middleReturn.y * courtHeight)
+            ballPosition = CGPoint(x: middleReturn.x * courtSize.width, y: middleReturn.y * courtHeight)
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
                 withAnimation(.easeInOut(duration: 2.5)) {
-                    ballPosition = CGPoint(x: middleNet.x * width, y: middleNet.y * courtHeight)
+                    ballPosition = CGPoint(x: middleNet.x * courtSize.width, y: middleNet.y * courtHeight)
                 }
             }
             
             // Ball returns to middle return
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [self] in
                 withAnimation(.easeInOut(duration: 2.5)) {
-                    ballPosition = CGPoint(x: middleReturn.x * width, y: middleReturn.y * courtHeight)
+                    ballPosition = CGPoint(x: middleReturn.x * courtSize.width, y: middleReturn.y * courtHeight)
                 }
             }
             
@@ -767,11 +766,11 @@ struct PlayDesignerView: View {
             
             // Ball travels to right net
             ballVisible = true
-            ballPosition = CGPoint(x: middleReturn.x * width, y: middleReturn.y * courtHeight)
+            ballPosition = CGPoint(x: middleReturn.x * courtSize.width, y: middleReturn.y * courtHeight)
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
                 withAnimation(.easeInOut(duration: 3.0)) {
-                    ballPosition = CGPoint(x: rightNet.x * width, y: rightNet.y * courtHeight)
+                    ballPosition = CGPoint(x: rightNet.x * courtSize.width, y: rightNet.y * courtHeight)
                 }
             }
             
@@ -803,32 +802,11 @@ struct PlayDesignerView: View {
     }
     
     private func stopPlay() {
+        // Reset animation state first
         isPlaying = false
         animationStep = 0
         ballVisible = false
         
-        // Stop recording if active and show preview
-        if isRecording {
-            isRecording = false
-            RPScreenRecorder.shared().stopRecording { previewController, error in
-                if let error = error {
-                    print("Failed to stop recording: \(error.localizedDescription)")
-                    return
-                }
-                // Present the preview controller on iOS 15+
-                if #available(iOS 15.0, *) {
-                    DispatchQueue.main.async {
-                        if let previewVC = previewController {
-                            // Get the root view controller to present from
-                            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                               let rootViewController = windowScene.windows.first?.rootViewController {
-                                rootViewController.present(previewVC, animated: true)
-                            }
-                        }
-                    }
-                }
-            }
-        }
         let base = sixTwoBase[rotation]!
         withAnimation(.easeInOut(duration: 0.4)) {
             for i in 0..<6 {
@@ -838,6 +816,32 @@ struct PlayDesignerView: View {
                 defendMiddlePositions[i] = savedPlayerPositions.indices.contains(3) ? savedPlayerPositions[3][i] : base[i]
                 defendRightPositions[i] = savedPlayerPositions.indices.contains(4) ? savedPlayerPositions[4][i] : base[i]
                 playbackPositions[i] = savedPlayerPositions.indices.contains(0) ? savedPlayerPositions[0][i] : base[i]
+            }
+        }
+        
+        // Stop recording if active - defer preview presentation to avoid freezing
+        if isRecording {
+            let wasRecording = isRecording
+            isRecording = false
+            
+            if wasRecording {
+                RPScreenRecorder.shared().stopRecording { previewController, error in
+                    if let error = error {
+                        print("Failed to stop recording: \(error.localizedDescription)")
+                        return
+                    }
+                    // Present the preview controller asynchronously to avoid UI freeze
+                    if #available(iOS 15.0, *) {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            if let previewVC = previewController {
+                                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                                   let rootViewController = windowScene.windows.first?.rootViewController {
+                                    rootViewController.present(previewVC, animated: true)
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
