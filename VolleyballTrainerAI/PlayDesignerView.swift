@@ -36,6 +36,7 @@ struct PlayDesignerView: View {
     @State private var showInstructions = false
     @State private var isRecording = false
     @State private var showRecordAlert = false
+    @State private var courtSize: CGSize = .zero
     
     // Play animation state
     @State private var isPlaying = false
@@ -636,12 +637,12 @@ struct PlayDesignerView: View {
         }
     }
     
-    private func animatePlayStep() {
-        let serverPos = savedPlayerPositions[0][serverIndex]
+    private func animatePlayStep(_ courtSize: CGSize = CGSize(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.width * 0.85 * 1.1)) {
+        let serverPos = playbackPositions[serverIndex]
         let middleReturn = CGPoint(x: 0.5, y: 50 / courtHeight)
-        let leftNet = CGPoint(x: 0.2, y: 0.61)  // 2% lower (closer to net)
-        let middleNet = CGPoint(x: 0.5, y: 0.61)  // 2% lower (closer to net)
-        let rightNet = CGPoint(x: 0.8, y: 0.61)  // 2% lower (closer to net)
+        let leftNet = CGPoint(x: 0.2, y: 0.55)  // matches RotationsView net position
+        let middleNet = CGPoint(x: 0.5, y: 0.55)  // matches RotationsView net position
+        let rightNet = CGPoint(x: 0.8, y: 0.55)  // matches RotationsView net position
 
         switch animationStep {
         case 0:
@@ -792,6 +793,19 @@ struct PlayDesignerView: View {
         isPlaying = false
         animationStep = 0
         ballVisible = false
+        
+        // Stop recording if active
+        if isRecording {
+            isRecording = false
+            RPScreenRecorder.shared().stopRecording { previewController, error in
+                if let error = error {
+                    print("Failed to stop recording: \(error.localizedDescription)")
+                    return
+                }
+                // ReplayKit automatically saves recording to Photos library
+                print("Recording saved by ReplayKit")
+            }
+        }
         let base = sixTwoBase[rotation]!
         withAnimation(.easeInOut(duration: 0.4)) {
             for i in 0..<6 {
@@ -813,13 +827,16 @@ struct PlayDesignerView: View {
         let recorder = RPScreenRecorder.shared()
         guard recorder.isAvailable else { return }
         recorder.startRecording { error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    print("Failed to start recording: \(error.localizedDescription)")
-                } else {
-                    self.isRecording = true
+            if let error = error {
+                print("Failed to start recording: \(error.localizedDescription)")
+                DispatchQueue.main.async {
                     self.runSavedPlay()
                 }
+                return
+            }
+            DispatchQueue.main.async {
+                self.isRecording = true
+                self.runSavedPlay()
             }
         }
     }
