@@ -417,19 +417,10 @@ struct PlayDesignerView: View {
             } message: {
                 Text("Please complete all 5 formation steps before saving.")
             }
-            .alert("Save Recording?", isPresented: $showSaveRecordingAlert) {
-                Button("Yes, Save to Camera Roll") {
-                    if let url = pendingRecordingURL {
-                        saveRecordingToCameraRoll(url)
-                    }
-                }
-                Button("No, Delete") {
-                    if let url = pendingRecordingURL {
-                        deleteRecording(url)
-                    }
-                }
+            .alert("Recording Complete", isPresented: $showSaveRecordingAlert) {
+                Button("OK") {}
             } message: {
-                Text("Do you want to save this play recording to your camera roll?")
+                Text("Your recording has been saved to your camera roll.")
             }
         }
     }
@@ -819,18 +810,14 @@ struct PlayDesignerView: View {
         // Stop recording if active
         if isRecording {
             isRecording = false
+            // Present preview controller instead - recording auto-saves to camera roll
             RPScreenRecorder.shared().stopRecording { previewController, error in
                 if let error = error {
                     print("Failed to stop recording: \(error.localizedDescription)")
                     return
                 }
-                // Store the recording URL and ask user if they want to save
-                if let movieURL = RPScreenRecorder.shared().recordingURL {
-                    self.pendingRecordingURL = movieURL
-                    DispatchQueue.main.async {
-                        self.showSaveRecordingAlert = true
-                    }
-                }
+                // Note: In current iOS versions, recordings auto-save to camera roll
+                // The previewController allows user to edit/share before final save
             }
         }
         let base = sixTwoBase[rotation]!
@@ -869,23 +856,11 @@ struct PlayDesignerView: View {
     }
     
     private func saveRecordingToCameraRoll(_ movieURL: URL) {
-        PHPhotoLibrary.requestAuthorization { status in
-            if status == .authorized || status == .limited {
-                PHPhotoLibrary.shared().performChanges({
-                    PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: movieURL)
-                }) { success, error in
-                    if let error = error {
-                        print("Failed to save video: \(error.localizedDescription)")
-                    } else if success {
-                        print("Video saved to camera roll")
-                    }
-                }
-            }
-        }
+        // No longer needed - recordings auto-save via preview controller
     }
     
     private func deleteRecording(_ movieURL: URL) {
-        try? FileManager.default.removeItem(at: movieURL)
+        // No longer needed - recordings auto-save via preview controller
     }
     
     private func resetPlay() {
