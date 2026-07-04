@@ -35,6 +35,7 @@ struct PlayDesignerView: View {
     
     @State private var showInstructions = false
     @State private var isRecording = false
+    @State private var showRecordAlert = false
     
     // Play animation state
     @State private var isPlaying = false
@@ -219,17 +220,6 @@ struct PlayDesignerView: View {
                                 .cornerRadius(8)
                         }
                         .padding(.top, 4)
-                    } else {
-                        Button(action: toggleRecording) {
-                            Text(isRecording ? "● Recording" : "● Record")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: geo.size.width * 0.5)
-                                .padding(.vertical, 8)
-                                .background(isRecording ? Color.red : Color(hex: "#2b6cb0"))
-                                .cornerRadius(8)
-                        }
-                        .padding(.top, 4)
                     }
                     
                     // Player area fills remaining space
@@ -313,7 +303,7 @@ struct PlayDesignerView: View {
                 VStack {
                     Spacer()
                     HStack(spacing: 6) {
-                        Button(action: runSavedPlay) {
+                        Button(action: { showRecordAlert = true }) {
                             Text("Run")
                                 .font(.system(size: 12, weight: .bold))
                                 .foregroundColor(.white)
@@ -406,6 +396,17 @@ struct PlayDesignerView: View {
                 PlayLibraryView { play in
                     loadPlayData(play)
                 }
+            }
+            .alert("Record Play?", isPresented: $showRecordAlert) {
+                Button("Yes, Record") {
+                    startRecordingAndPlay()
+                }
+                Button("No, Just Run") {
+                    runSavedPlay()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Do you want to screen record this play? The recording will save to your camera roll when the play finishes.")
             }
             .alert("Incomplete Play", isPresented: $validationVisible) {
                 Button("OK", role: .cancel) {}
@@ -636,7 +637,7 @@ struct PlayDesignerView: View {
     }
     
     private func animatePlayStep() {
-        let serverPos = playbackPositions[serverIndex]
+        let serverPos = savedPlayerPositions[0][serverIndex]
         let middleReturn = CGPoint(x: 0.5, y: 50 / courtHeight)
         let leftNet = CGPoint(x: 0.2, y: 0.61)  // 2% lower (closer to net)
         let middleNet = CGPoint(x: 0.5, y: 0.61)  // 2% lower (closer to net)
@@ -808,34 +809,16 @@ struct PlayDesignerView: View {
         showLibrary = true
     }
     
-    private func toggleRecording() {
+    private func startRecordingAndPlay() {
         let recorder = RPScreenRecorder.shared()
-        if isRecording {
-            recorder.stopRecording { (previewController, error) in
-                DispatchQueue.main.async {
-                    self.isRecording = false
-                    if let error = error {
-                        print("Recording error: \(error.localizedDescription)")
-                        return
-                    }
-                    if let previewController = previewController {
-                        // Save to camera roll automatically
-                        previewController.previewControllerDelegate = nil
-                    }
-                }
-            }
-        } else {
-            guard recorder.isAvailable else {
-                print("Recording not available")
-                return
-            }
-            recorder.startRecording { (error) in
-                DispatchQueue.main.async {
-                    if let error = error {
-                        print("Failed to start recording: \(error.localizedDescription)")
-                    } else {
-                        self.isRecording = true
-                    }
+        guard recorder.isAvailable else { return }
+        recorder.startRecording { error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    print("Failed to start recording: \(error.localizedDescription)")
+                } else {
+                    self.isRecording = true
+                    self.runSavedPlay()
                 }
             }
         }

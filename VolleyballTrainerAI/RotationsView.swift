@@ -680,9 +680,8 @@ struct PlayerBubbleView: View {
                                         .foregroundColor(.white)
                                 )
                         }
-                        .padding(.trailing, -5)
-                        .padding(.bottom, -5)
                     }
+                    .frame(width: 50, height: 50)
                 }
                 
                 // Gear icon - lower left
