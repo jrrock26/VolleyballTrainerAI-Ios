@@ -1,5 +1,6 @@
 import SwiftUI
 import ReplayKit
+import Photos
 
 struct PlayDesignerView: View {
     @Environment(\.dismiss) private var dismiss
@@ -640,9 +641,9 @@ struct PlayDesignerView: View {
     private func animatePlayStep(_ courtSize: CGSize = CGSize(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.width * 0.85 * 1.1)) {
         let serverPos = playbackPositions[serverIndex]
         let middleReturn = CGPoint(x: 0.5, y: 50 / courtHeight)
-        let leftNet = CGPoint(x: 0.2, y: 0.55)  // matches RotationsView net position
-        let middleNet = CGPoint(x: 0.5, y: 0.55)  // matches RotationsView net position
-        let rightNet = CGPoint(x: 0.8, y: 0.55)  // matches RotationsView net position
+        let leftNet = CGPoint(x: 0.2, y: 0.61)  // 6% lower (closer to net)
+        let middleNet = CGPoint(x: 0.5, y: 0.61)  // 6% lower (closer to net)
+        let rightNet = CGPoint(x: 0.8, y: 0.61)  // 6% lower (closer to net)
 
         switch animationStep {
         case 0:
