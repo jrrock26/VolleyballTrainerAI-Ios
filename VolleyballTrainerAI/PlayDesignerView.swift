@@ -37,7 +37,9 @@ struct PlayDesignerView: View {
     @State private var showInstructions = false
     @State private var isRecording = false
     @State private var showRecordAlert = false
+    @State private var showSaveRecordingAlert = false
     @State private var courtSize: CGSize = .zero
+    @State private var pendingRecordingURL: URL?
     
     // Play animation state
     @State private var isPlaying = false
@@ -267,19 +269,19 @@ struct PlayDesignerView: View {
                                 .fill(Color(hex: "#ff69b4").opacity(mode == .defendLeft ? 1 : 0.3))
                                 .frame(width: 32, height: 32)
                                 .shadow(color: Color(hex: "#ff69b4"), radius: mode == .defendLeft ? 6 : 0)
-                                .position(x: courtSize.width * 0.2, y: courtSize.height * 0.10)
+                                .position(x: courtSize.width * 0.2, y: courtSize.height * 0.14)
                             
                             Circle()
                                 .fill(Color(hex: "#ff69b4").opacity(mode == .defendMiddle ? 1 : 0.3))
                                 .frame(width: 32, height: 32)
                                 .shadow(color: Color(hex: "#ff69b4"), radius: mode == .defendMiddle ? 6 : 0)
-                                .position(x: courtSize.width * 0.5, y: courtSize.height * 0.10)
+                                .position(x: courtSize.width * 0.5, y: courtSize.height * 0.14)
                             
                             Circle()
                                 .fill(Color(hex: "#ff69b4").opacity(mode == .defendRight ? 1 : 0.3))
                                 .frame(width: 32, height: 32)
                                 .shadow(color: Color(hex: "#ff69b4"), radius: mode == .defendRight ? 6 : 0)
-                                .position(x: courtSize.width * 0.8, y: courtSize.height * 0.10)
+                                .position(x: courtSize.width * 0.8, y: courtSize.height * 0.14)
                             
                             // Animated ball
                             if ballVisible {
@@ -414,6 +416,20 @@ struct PlayDesignerView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text("Please complete all 5 formation steps before saving.")
+            }
+            .alert("Save Recording?", isPresented: $showSaveRecordingAlert) {
+                Button("Yes, Save to Camera Roll") {
+                    if let url = pendingRecordingURL {
+                        saveRecordingToCameraRoll(url)
+                    }
+                }
+                Button("No, Delete") {
+                    if let url = pendingRecordingURL {
+                        deleteRecording(url)
+                    }
+                }
+            } message: {
+                Text("Do you want to save this play recording to your camera roll?")
             }
         }
     }
@@ -641,9 +657,9 @@ struct PlayDesignerView: View {
     private func animatePlayStep(_ courtSize: CGSize = CGSize(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.width * 0.85 * 1.1)) {
         let serverPos = playbackPositions[serverIndex]
         let middleReturn = CGPoint(x: 0.5, y: 50 / courtHeight)
-        let leftNet = CGPoint(x: 0.2, y: 0.61)  // 6% lower (closer to net)
-        let middleNet = CGPoint(x: 0.5, y: 0.61)  // 6% lower (closer to net)
-        let rightNet = CGPoint(x: 0.8, y: 0.61)  // 6% lower (closer to net)
+        let leftNet = CGPoint(x: 0.2, y: 0.65)  // 10% lower (closer to net)
+        let middleNet = CGPoint(x: 0.5, y: 0.65)  // 10% lower (closer to net)
+        let rightNet = CGPoint(x: 0.8, y: 0.65)  // 10% lower (closer to net)
 
         switch animationStep {
         case 0:
@@ -781,6 +797,11 @@ struct PlayDesignerView: View {
                 }
                 isPlaying = false
                 animationStep = 0
+                
+                // Stop recording and prompt user to save
+                if isRecording {
+                    stopPlay()
+                }
             }
             
         default:
@@ -803,8 +824,13 @@ struct PlayDesignerView: View {
                     print("Failed to stop recording: \(error.localizedDescription)")
                     return
                 }
-                // ReplayKit automatically saves recording to Photos library
-                print("Recording saved by ReplayKit")
+                // Store the recording URL and ask user if they want to save
+                if let movieURL = previewController?.movieURL {
+                    self.pendingRecordingURL = movieURL
+                    DispatchQueue.main.async {
+                        self.showSaveRecordingAlert = true
+                    }
+                }
             }
         }
         let base = sixTwoBase[rotation]!
@@ -840,6 +866,26 @@ struct PlayDesignerView: View {
                 self.runSavedPlay()
             }
         }
+    }
+    
+    private func saveRecordingToCameraRoll(_ movieURL: URL) {
+        PHPhotoLibrary.requestAuthorization { status in
+            if status == .authorized || status == .limited {
+                PHPhotoLibrary.shared().performChanges({
+                    PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: movieURL)
+                }) { success, error in
+                    if let error = error {
+                        print("Failed to save video: \(error.localizedDescription)")
+                    } else if success {
+                        print("Video saved to camera roll")
+                    }
+                }
+            }
+        }
+    }
+    
+    private func deleteRecording(_ movieURL: URL) {
+        try? FileManager.default.removeItem(at: movieURL)
     }
     
     private func resetPlay() {
