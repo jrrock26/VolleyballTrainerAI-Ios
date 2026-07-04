@@ -825,7 +825,7 @@ struct PlayDesignerView: View {
                     return
                 }
                 // Store the recording URL and ask user if they want to save
-                if let movieURL = previewController?.movieURL {
+                if let movieURL = RPScreenRecorder.shared().recordingURL {
                     self.pendingRecordingURL = movieURL
                     DispatchQueue.main.async {
                         self.showSaveRecordingAlert = true
