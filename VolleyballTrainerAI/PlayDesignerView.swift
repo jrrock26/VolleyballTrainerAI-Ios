@@ -861,18 +861,18 @@ struct PlayDesignerView: View {
             return
         }
         
-        recorder.startRecording { [weak self] error in
+        recorder.startRecording { error in
             if let error = error {
                 print("Failed to start recording: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    self?.runSavedPlay()
+                DispatchQueue.main.async { [self] in
+                    runSavedPlay()
                 }
                 return
             }
             print("Recording started successfully")
-            DispatchQueue.main.async {
-                self?.isRecording = true
-                self?.runSavedPlay()
+            DispatchQueue.main.async { [self] in
+                isRecording = true
+                runSavedPlay()
             }
         }
     }
