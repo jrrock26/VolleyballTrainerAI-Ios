@@ -150,6 +150,18 @@ class ScreenCaptureManager: NSObject, ObservableObject {
         
         guard width > 0, height > 0 else { return nil }
         
+        // Capture the screen as a UIImage using UIGraphicsImageRenderer
+        // This handles UIKit coordinate system correctly
+        let renderer = UIGraphicsImageRenderer(size: screenSize)
+        let capturedImage = renderer.image { ctx in
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
+                window.drawHierarchy(in: window.bounds, afterScreenUpdates: false)
+            }
+        }
+        
+        guard let cgImage = capturedImage.cgImage else { return nil }
+        
         // Create pixel buffer
         let attrs: [String: Any] = [
             kCVPixelBufferCGImageCompatibilityKey as String: true,
@@ -173,7 +185,7 @@ class ScreenCaptureManager: NSObject, ObservableObject {
         
         let pixelData = CVPixelBufferGetBaseAddress(buffer)
         let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
-        // BGRA pixel format: Blue, Green, Red, Alpha with alpha in the last byte
+        // BGRA pixel format: Blue, Green, Red, Alpha
         let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue)
         
         guard let bitmapContext = CGContext(
@@ -186,19 +198,11 @@ class ScreenCaptureManager: NSObject, ObservableObject {
             bitmapInfo: bitmapInfo.rawValue
         ) else { return nil }
         
-        // Draw the main window's layer hierarchy directly into the pixel buffer context
-        // No flip needed - drawHierarchy renders in screen orientation
-        bitmapContext.saveGState()
-        // UIKit/Quartz2D coordinate system is flipped relative to CoreGraphics
+        // Draw the captured CGImage into the pixel buffer context
+        // CGImage has origin at bottom-left, so we flip vertically
         bitmapContext.translateBy(x: 0, y: CGFloat(height))
         bitmapContext.scaleBy(x: 1, y: -1)
-        
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
-            window.drawHierarchy(in: CGRect(x: 0, y: 0, width: screenSize.width, height: screenSize.height), afterScreenUpdates: false)
-        }
-        
-        bitmapContext.restoreGState()
+        bitmapContext.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
         
         return buffer
     }
