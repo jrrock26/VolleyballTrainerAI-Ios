@@ -564,48 +564,58 @@ struct PlayDesignerView: View {
         }
         rotation += 1
         
-        let liberoIndex = playerRoles.firstIndex(of: "L")
-        var liberoLabel: String? = nil
-        var liberoOrigRole: String? = nil
-        if let idx = liberoIndex {
-            liberoLabel = playerLabels[idx]
-            // The original role for the Libero (what they were before becoming L)
-            liberoOrigRole = originalRoles[idx]
-        }
-        
         var roles = playerRoles
         var labels = playerLabels
         
-        // Remove Libero from rotation entirely
-        if let idx = liberoIndex {
-            roles.remove(at: idx)
-            labels.remove(at: idx)
-        }
+        // Volleyball Libero rotation rules:
+        // - Libero stays fixed in position 3 (middle back)
+        // - Other 5 players rotate around the Libero
+        // - Position order: [OH, MB, OPP, S, MB, OH] - front court
+        // - Positions 3-5 are back court
         
-        // Rotate the remaining 5 players clockwise
-        let clockwiseOrder = [5, 4, 3, 0, 1, 2]
-        var orderedRoles = clockwiseOrder.map { roles[$0] }
-        var orderedLabels = clockwiseOrder.map { labels[$0] }
+        let hasLibero = roles.contains("L")
         
-        let lastRole = orderedRoles.removeLast()
-        let lastLabel = orderedLabels.removeLast()
-        orderedRoles.insert(lastRole, at: 0)
-        orderedLabels.insert(lastLabel, at: 0)
-        
-        clockwiseOrder.forEach { pos in
-            let idx = clockwiseOrder.firstIndex(of: pos) ?? 0
-            roles[pos] = orderedRoles[idx]
-            labels[pos] = orderedLabels[idx]
-        }
-        
-        // Place Libero back in back row (indices 3-5)
-        if let libIdx = liberoIndex, let origRole = liberoOrigRole {
-            // Keep the Libero in a back row position (3, 4, or 5)
-            // If they were in position 0-2 (front row), move them to a back row slot
-            let backRowSlot = libIdx >= 3 ? libIdx : 3
-            roles[backRowSlot] = "L"
-            labels[backRowSlot] = liberoLabel
-            // The original role stays recorded in originalRoles for when L is removed
+        if hasLibero {
+            // Get Libero data before rotation
+            let liberoLabel = labels[3]
+            
+            // Get the 5 rotating players (positions: 4,5,0,1,2 - skip position 3)
+            // These correspond to: back left, server, front left, middle, right
+            let rotatingOrder = [4, 5, 0, 1, 2]
+            var rotatingRoles: [String] = []
+            var rotatingLabels: [String?] = []
+            
+            for pos in rotatingOrder {
+                rotatingRoles.append(roles[pos])
+            }
+            for pos in rotatingOrder {
+                rotatingLabels.append(labels[pos])
+            }
+            
+            // Rotate these 5 players clockwise (shift right by 1)
+            // Position 4 <- Position 5 <- Position 0 <- Position 1 <- Position 2 <- Position 4
+            let rotatedRoles = [rotatingRoles[4]] + Array(rotatingRoles[0..<4])
+            let rotatedLabels = [rotatingLabels[4]] + Array(rotatingLabels[0..<4])
+            
+            // Put them back
+            for (i, pos) in rotatingOrder.enumerated() {
+                roles[pos] = rotatedRoles[i]
+                labels[pos] = rotatedLabels[i]
+            }
+            
+            // Libero stays in position 3
+            roles[3] = "L"
+            labels[3] = liberoLabel
+            
+        } else {
+            // Standard 6-player rotation: [0,1,2,3,4,5] -> [5,0,1,2,3,4]
+            let rotatedRoles = [roles[5]] + Array(roles[0..<5])
+            let rotatedLabels = [labels[5]] + Array(labels[0..<5])
+            
+            for i in 0..<6 {
+                roles[i] = rotatedRoles[i]
+                labels[i] = rotatedLabels[i]
+            }
         }
         
         playerRoles = roles
