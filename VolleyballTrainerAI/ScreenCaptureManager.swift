@@ -186,15 +186,13 @@ class ScreenCaptureManager: NSObject, ObservableObject {
         ) else { return nil }
         
         // Use UIGraphicsPushContext to make our bitmap context the active UIKit context
-        // This ensures drawHierarchy renders correctly in UIKit's coordinate system
+        // This ensures drawHierarchy renders with UIKit's coordinate system correctly
         UIGraphicsPushContext(bitmapContext)
         
-        // Flip the context so UIKit drawing appears right-side up
-        // UIKit's origin is top-left, CoreGraphics' origin is bottom-left
-        bitmapContext.translateBy(x: 0, y: screenSize.height)
-        bitmapContext.scaleBy(x: 1, y: -1)
+        // Scale so drawHierarchy (which uses points) maps to pixel coordinates
+        bitmapContext.scaleBy(x: scale, y: scale)
         
-        // Draw the full window into the context
+        // Draw the full window into the context at point coordinates (no flip needed)
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
             window.drawHierarchy(in: window.bounds, afterScreenUpdates: false)
