@@ -31,6 +31,7 @@
 		96A000072FE8B0000012345C /* RotationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A000172FE8B0000012345C /* RotationsView.swift */; };
 		98A000012FE8B0000012345B /* PlayHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A000112FE8B0000012345B /* PlayHubView.swift */; };
 		98A000022FE8B0000012345C /* PracticeHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A000122FE8B0000012345C /* PracticeHubView.swift */; };
+		AD0000012FE8B0000012345D /* ScreenCaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0000022FE8B0000012345D /* ScreenCaptureManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -64,6 +65,7 @@
 		96A000172FE8B0000012345C /* RotationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RotationsView.swift; sourceTree = "<group>"; };
 		98A000112FE8B0000012345B /* PlayHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayHubView.swift; sourceTree = "<group>"; };
 		98A000122FE8B0000012345C /* PracticeHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeHubView.swift; sourceTree = "<group>"; };
+		AD0000022FE8B0000012345D /* ScreenCaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -124,6 +126,7 @@
 				963E76E12FE4477800590BC2 /* Preview Content */,
 				96A000162FE8B0000012345B /* PlayDesignerView.swift */,
 				96A000172FE8B0000012345C /* RotationsView.swift */,
+				AD0000022FE8B0000012345D /* ScreenCaptureManager.swift */,
 			);
 			path = VolleyballTrainerAI;
 			sourceTree = "<group>";
@@ -245,6 +248,7 @@
 				963E77062FE44A6100590BC2 /* PoseTracker.swift in Sources */,
 				96A000062FE8B0000012345B /* PlayDesignerView.swift in Sources */,
 				96A000072FE8B0000012345C /* RotationsView.swift in Sources */,
+				AD0000012FE8B0000012345D /* ScreenCaptureManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

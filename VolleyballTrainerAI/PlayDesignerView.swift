@@ -1,5 +1,4 @@
 import SwiftUI
-import ReplayKit
 import Photos
 
 struct PlayDesignerView: View {
@@ -39,7 +38,11 @@ struct PlayDesignerView: View {
     @State private var showRecordAlert = false
     @State private var showSaveRecordingAlert = false
     @State private var courtSize: CGSize = .zero
-    @State private var pendingRecordingURL: URL?
+    @State private var showSaveRecordingPrompt = false
+    @State private var recordingSaveError: String?
+    
+    // Screen capture manager - replaces ReplayKit
+    @StateObject private var screenCapture = ScreenCaptureManager()
     
     // Play animation state
     @State private var isPlaying = false
@@ -157,7 +160,10 @@ struct PlayDesignerView: View {
                 VStack(spacing: 0) {
                     // Back button + instructions toggle
                     HStack {
-                        Button(action: { dismiss() }) {
+                        Button(action: { 
+                            if isPlaying { stopPlay() }
+                            dismiss() 
+                        }) {
                             HStack(spacing: 6) {
                                 Image(systemName: "chevron.left")
                                 Text("Back")
@@ -264,18 +270,21 @@ struct PlayDesignerView: View {
                                 )
                             }
                             
-                            // Return ball indicators (left and right hidden - only middle visible for reference)
+                            // Return ball indicators
+                            // Left return indicator (hidden)
                             Circle()
                                 .fill(Color(hex: "#ff69b4").opacity(0))
                                 .frame(width: 32, height: 32)
-                                .position(x: courtSize.width * 0.2, y: courtSize.height * 0.13)
+                                .position(x: courtSize.width * 0.2, y: courtSize.height * 0.18)
                             
+                            // Middle return indicator (pink bubble) - moved UP 10% from original 0.18
                             Circle()
                                 .fill(Color(hex: "#ff69b4").opacity(mode == .defendMiddle ? 1 : 0.3))
                                 .frame(width: 32, height: 32)
                                 .shadow(color: Color(hex: "#ff69b4"), radius: mode == .defendMiddle ? 6 : 0)
-                                .position(x: courtSize.width * 0.5, y: courtSize.height * 0.13)
+                                .position(x: courtSize.width * 0.5, y: courtSize.height * 0.08)
                             
+                            // Right return indicator (hidden)
                             Circle()
                                 .fill(Color(hex: "#ff69b4").opacity(0))
                                 .frame(width: 32, height: 32)
@@ -359,6 +368,7 @@ struct PlayDesignerView: View {
             .navigationBarHidden(true)
             .onAppear {
                 initializePositions()
+                setupScreenCaptureCallbacks()
             }
             .onChange(of: rotation) { _, _ in
                 initializePositions()
@@ -408,17 +418,37 @@ struct PlayDesignerView: View {
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("Do you want to screen record this play? The recording will save to your camera roll when the play finishes.")
+                Text("Do you want to screen record this play?")
             }
             .alert("Incomplete Play", isPresented: $validationVisible) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text("Please complete all 5 formation steps before saving.")
             }
-            .alert("Recording Complete", isPresented: $showSaveRecordingAlert) {
-                Button("OK") {}
+            // Save recording prompt - no preview window, just ask to save
+            .alert("Recording Finished", isPresented: $showSaveRecordingPrompt) {
+                Button("Save to Camera Roll") {
+                    saveRecordingToCameraRoll()
+                }
+                Button("Discard", role: .destructive) {
+                    screenCapture.cleanupFile()
+                }
+                Button("Cancel", role: .cancel) {
+                    screenCapture.cleanupFile()
+                }
             } message: {
-                Text("Your recording has been saved to your camera roll.")
+                Text("The play recording is complete. Would you like to save it to your camera roll?")
+            }
+            // Recording error alert
+            .alert("Recording Error", isPresented: .init(
+                get: { recordingSaveError != nil },
+                set: { if !$0 { recordingSaveError = nil } }
+            )) {
+                Button("OK", role: .cancel) {
+                    recordingSaveError = nil
+                }
+            } message: {
+                Text(recordingSaveError ?? "An unknown error occurred.")
             }
         }
     }
@@ -464,6 +494,7 @@ struct PlayDesignerView: View {
                 .font(.system(size: 16, weight: .semibold))
                 
                 Button("Save") {
+                    if isPlaying { stopPlay() }
                     savePlay()
                 }
                 .foregroundColor(.white)
@@ -482,6 +513,21 @@ struct PlayDesignerView: View {
             RoundedRectangle(cornerRadius: 10)
                 .stroke(Color(hex: "#2b6cb0"), lineWidth: 2)
         )
+    }
+    
+    private func setupScreenCaptureCallbacks() {
+        screenCapture.onRecordingComplete = { url in
+            DispatchQueue.main.async { [self] in
+                // Play has finished, show save prompt
+                showSaveRecordingPrompt = true
+            }
+        }
+        screenCapture.onRecordingError = { errorMessage in
+            DispatchQueue.main.async { [self] in
+                recordingSaveError = errorMessage
+                isRecording = false
+            }
+        }
     }
     
     private func initializePositions() {
@@ -647,7 +693,11 @@ struct PlayDesignerView: View {
     private func animatePlayStep(_ courtSize: CGSize = CGSize(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.width * 0.85 * 1.1)) {
         let serverPos = playbackPositions[serverIndex]
         let courtHeight = courtSize.height
-        let middleReturn = CGPoint(x: 0.5, y: 0.13)  // Lowered return ball position by ~10% from original 0.14
+        // Middle return position - the pink bubble indicator is at y:0.08 (moved up 10%)
+        // The return ball animation needs to go 10% LOWER on the screen
+        // So we use separate offsets: pink bubble at 0.08, ball animation at 0.23
+        let middleReturnIndicator = CGPoint(x: 0.5, y: 0.08)  // Pink bubble position (moved up 10% from 0.18)
+        let middleReturnBall = CGPoint(x: 0.5, y: 0.23)      // Ball animation position (10% lower than original 0.13)
         let leftNet = CGPoint(x: 0.2, y: 0.65)  // Net position
         let middleNet = CGPoint(x: 0.5, y: 0.65)  // Net position
         let rightNet = CGPoint(x: 0.8, y: 0.65)  // Net position
@@ -664,13 +714,13 @@ struct PlayDesignerView: View {
                 }
             }
             
-            // Ball serves from serverPos to middleReturn
+            // Ball serves from serverPos to middleReturnBall position
             ballVisible = true
-            ballPosition = CGPoint(x: serverPos.x * courtSize.width, y: serverPos.y * courtHeight)
+            ballPosition = CGPoint(x: serverPos.x * courtSize.width, y: (serverPos.y + 0.3) * courtHeight)
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
                 withAnimation(.easeInOut(duration: 3.0)) {
-                    ballPosition = CGPoint(x: middleReturn.x * courtSize.width, y: middleReturn.y * courtHeight)
+                    ballPosition = CGPoint(x: middleReturnBall.x * courtSize.width, y: middleReturnBall.y * courtHeight)
                 }
             }
             
@@ -693,9 +743,9 @@ struct PlayDesignerView: View {
                 }
             }
             
-            // Ball travels to left net
+            // Ball travels from middleReturnBall to left net
             ballVisible = true
-            ballPosition = CGPoint(x: middleReturn.x * courtSize.width, y: middleReturn.y * courtHeight)
+            ballPosition = CGPoint(x: middleReturnBall.x * courtSize.width, y: middleReturnBall.y * courtHeight)
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
                 withAnimation(.easeInOut(duration: 2.5)) {
@@ -703,10 +753,10 @@ struct PlayDesignerView: View {
                 }
             }
             
-            // Ball returns to middle return
+            // Ball returns to middleReturnBall
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [self] in
                 withAnimation(.easeInOut(duration: 2.5)) {
-                    ballPosition = CGPoint(x: middleReturn.x * courtSize.width, y: middleReturn.y * courtHeight)
+                    ballPosition = CGPoint(x: middleReturnBall.x * courtSize.width, y: middleReturnBall.y * courtHeight)
                 }
             }
             
@@ -729,9 +779,9 @@ struct PlayDesignerView: View {
                 }
             }
             
-            // Ball travels to middle net
+            // Ball travels from middleReturnBall to middle net
             ballVisible = true
-            ballPosition = CGPoint(x: middleReturn.x * courtSize.width, y: middleReturn.y * courtHeight)
+            ballPosition = CGPoint(x: middleReturnBall.x * courtSize.width, y: middleReturnBall.y * courtHeight)
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
                 withAnimation(.easeInOut(duration: 2.5)) {
@@ -739,10 +789,10 @@ struct PlayDesignerView: View {
                 }
             }
             
-            // Ball returns to middle return
+            // Ball returns to middleReturnBall
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [self] in
                 withAnimation(.easeInOut(duration: 2.5)) {
-                    ballPosition = CGPoint(x: middleReturn.x * courtSize.width, y: middleReturn.y * courtHeight)
+                    ballPosition = CGPoint(x: middleReturnBall.x * courtSize.width, y: middleReturnBall.y * courtHeight)
                 }
             }
             
@@ -765,9 +815,9 @@ struct PlayDesignerView: View {
                 }
             }
             
-            // Ball travels to right net
+            // Ball travels from middleReturnBall to right net
             ballVisible = true
-            ballPosition = CGPoint(x: middleReturn.x * courtSize.width, y: middleReturn.y * courtHeight)
+            ballPosition = CGPoint(x: middleReturnBall.x * courtSize.width, y: middleReturnBall.y * courtHeight)
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
                 withAnimation(.easeInOut(duration: 3.0)) {
@@ -775,42 +825,26 @@ struct PlayDesignerView: View {
                 }
             }
             
-                // After ball reaches right net, return players to default positions
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { [self] in
-                    let defaultBase = sixTwoBase[rotation]!
-                    withAnimation(.easeInOut(duration: 1.5)) {
-                        for i in 0..<6 {
-                            playbackPositions[i] = defaultBase[i]
-                        }
-                    }
-                    withAnimation {
-                        ballVisible = false
-                    }
-                    isPlaying = false
-                    animationStep = 0
-                    
-                    // Stop recording without blocking UI
-                    if isRecording {
-                        isRecording = false
-                        RPScreenRecorder.shared().stopRecording { previewController, error in
-                            if let error = error {
-                                print("Failed to stop recording: \(error.localizedDescription)")
-                                return
-                            }
-                            // Present preview asynchronously
-                            if #available(iOS 15.0, *) {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                    if let previewVC = previewController {
-                                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                                           let rootViewController = windowScene.windows.first?.rootViewController {
-                                            rootViewController.present(previewVC, animated: true)
-                                        }
-                                    }
-                                }
-                            }
-                        }
+            // After ball reaches right net, return players to default positions
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { [self] in
+                let defaultBase = sixTwoBase[rotation]!
+                withAnimation(.easeInOut(duration: 1.5)) {
+                    for i in 0..<6 {
+                        playbackPositions[i] = defaultBase[i]
                     }
                 }
+                withAnimation {
+                    ballVisible = false
+                }
+                isPlaying = false
+                animationStep = 0
+                
+                // Stop recording if active - no preview window, just show save prompt
+                if isRecording {
+                    isRecording = false
+                    screenCapture.stopRecording()
+                }
+            }
             
         default:
             isPlaying = false
@@ -837,30 +871,10 @@ struct PlayDesignerView: View {
             }
         }
         
-        // Stop recording if active - defer preview presentation to avoid freezing
+        // Stop recording if active - no preview window
         if isRecording {
-            let wasRecording = isRecording
             isRecording = false
-            
-            if wasRecording {
-                RPScreenRecorder.shared().stopRecording { previewController, error in
-                    if let error = error {
-                        print("Failed to stop recording: \(error.localizedDescription)")
-                        return
-                    }
-                    // Present the preview controller asynchronously to avoid UI freeze
-                    if #available(iOS 15.0, *) {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            if let previewVC = previewController {
-                                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                                   let rootViewController = windowScene.windows.first?.rootViewController {
-                                    rootViewController.present(previewVC, animated: true)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            screenCapture.stopRecording()
         }
     }
     
@@ -869,42 +883,22 @@ struct PlayDesignerView: View {
     }
     
     private func startRecordingAndPlay() {
-        let recorder = RPScreenRecorder.shared()
-        guard recorder.isAvailable else {
-            print("Screen recorder not available")
-            runSavedPlay()
-            return
-        }
-        
-        // Check if already recording
-        if recorder.isRecording {
-            print("Already recording")
-            runSavedPlay()
-            return
-        }
-        
-        recorder.startRecording { error in
-            if let error = error {
-                print("Failed to start recording: \(error.localizedDescription)")
-                DispatchQueue.main.async { [self] in
-                    runSavedPlay()
-                }
-                return
-            }
-            print("Recording started successfully")
+        // Use our custom ScreenCaptureManager instead of ReplayKit
+        screenCapture.startRecording()
+        isRecording = true
+        runSavedPlay()
+    }
+    
+    private func saveRecordingToCameraRoll() {
+        screenCapture.saveToCameraRoll { success, error in
             DispatchQueue.main.async { [self] in
-                isRecording = true
-                runSavedPlay()
+                if success {
+                    showSaveRecordingAlert = true
+                } else {
+                    recordingSaveError = error ?? "Failed to save recording."
+                }
             }
         }
-    }
-    
-    private func saveRecordingToCameraRoll(_ movieURL: URL) {
-        // No longer needed - recordings auto-save via preview controller
-    }
-    
-    private func deleteRecording(_ movieURL: URL) {
-        // No longer needed - recordings auto-save via preview controller
     }
     
     private func resetPlay() {
