@@ -459,11 +459,10 @@ struct PlayDesignerView: View {
     }
     
     private func handleRotate() {
-        guard rotation < 6 else {
-            rotation = 1
-            return
-        }
         rotation += 1
+        if rotation > 6 {
+            rotation = 1
+        }
         
         var roles = playerRoles
         var labels = playerLabels
@@ -604,7 +603,7 @@ struct PlayDesignerView: View {
                 }
             }
             ballVisible = true
-            let serveStartY = min(serverPos.y + 0.80, 0.95) * courtHeight
+            let serveStartY = min(serverPos.y + 1.20, 0.95) * courtHeight
             ballPosition = CGPoint(x: serverPos.x * courtSize.width, y: serveStartY)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
                 withAnimation(.easeInOut(duration: 3.0)) {
