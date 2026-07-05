@@ -18,13 +18,10 @@ struct PlayDesignerView: View {
     @State private var playerRoles: [String] = ["OH", "MB", "OPP", "S", "MB", "OH"]
     @State private var playerLabels: [String?] = [nil, nil, nil, nil, nil, nil]
     
-    // Track original role before Libero change, so we can restore it
-    @State private var originalRoles: [String] = ["OH", "MB", "OPP", "S", "MB", "OH"]
-    
     @State private var roleModalVisible = false
     @State private var selectedPlayerIndex: Int?
     @State private var tempLabel = ""
-    @State private var tempRole = "OH"
+    @State private var tempLibero = false
     
     @State private var showRecordPrompt = false
     @State private var saveModalVisible = false
@@ -44,22 +41,16 @@ struct PlayDesignerView: View {
     @State private var showSaveRecordingPrompt = false
     @State private var recordingSaveError: String?
     
-    // Screen capture manager - replaces ReplayKit
     @StateObject private var screenCapture = ScreenCaptureManager()
     
-    // Play animation state
     @State private var isPlaying = false
     @State private var animationStep = 0
     @State private var playbackPositions: [CGPoint] = Array(repeating: .zero, count: 6)
-    @State private var savedPlayerPositions: [[CGPoint]] = [] // 5 sets of 6 positions
+    @State private var savedPlayerPositions: [[CGPoint]] = []
     @State private var savedRoles: [String] = []
     @State private var savedLabels: [String?] = []
     
-    private let width = UIScreen.main.bounds.width
-    private let courtHeight: CGFloat = UIScreen.main.bounds.width * 1.1
     private let savedPlaysKey = "SavedVolleyballPlays"
-    
-    private let roleOptions = ["OH", "MB", "OPP", "S", "L"]
     private let serverIndex = 5
     
     enum FormationMode: String, CaseIterable {
@@ -78,15 +69,6 @@ struct PlayDesignerView: View {
         "Step 5/5 — Right Return",
     ]
     
-    let playStepLabels = [
-        "Pre-Serve Formation",
-        "Active Serve",
-        "Left Return Defense",
-        "Middle Return Defense",
-        "Right Return Defense"
-    ]
-    
-    // Base positions as fractional values (0-1) relative to court area
     let sixTwoBase: [Int: [CGPoint]] = [
         1: [
             CGPoint(x: 0.25, y: 0.45), CGPoint(x: 0.50, y: 0.45), CGPoint(x: 0.72, y: 0.45),
@@ -114,15 +96,10 @@ struct PlayDesignerView: View {
         ]
     ]
     
-    // Convert fractional positions to actual CGPoints within the given court frame
     private func convertToScreen(_ fracPos: CGPoint, in courtSize: CGSize) -> CGPoint {
-        CGPoint(
-            x: fracPos.x * courtSize.width,
-            y: fracPos.y * courtSize.height
-        )
+        CGPoint(x: fracPos.x * courtSize.width, y: fracPos.y * courtSize.height)
     }
     
-    // Convert screen coordinates to fractional positions
     private func convertToFractional(_ screenPos: CGPoint, in courtSize: CGSize) -> CGPoint {
         CGPoint(
             x: max(0, min(1, screenPos.x / max(1, courtSize.width))),
@@ -143,25 +120,14 @@ struct PlayDesignerView: View {
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                Image("background")
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-                
-                Color.black.opacity(0.35)
-                    .ignoresSafeArea()
-                
-                Image("court")
-                    .resizable()
-                    .scaledToFill()
+                Image("background").resizable().scaledToFill().ignoresSafeArea()
+                Color.black.opacity(0.35).ignoresSafeArea()
+                Image("court").resizable().scaledToFill()
                     .frame(width: geo.size.width, height: geo.size.height * 0.85)
                     .position(x: geo.size.width / 2, y: geo.size.height * 0.5)
-                
-                Color.black.opacity(0.15)
-                    .ignoresSafeArea()
+                Color.black.opacity(0.15).ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Back button + instructions toggle
                     HStack {
                         Button(action: { 
                             if isPlaying { stopPlay() }
@@ -188,11 +154,9 @@ struct PlayDesignerView: View {
                         Spacer()
                         
                         if showInstructions {
-                            Button("Hide") {
-                                showInstructions = false
-                            }
-                            .foregroundColor(Color(hex: "#888"))
-                            .font(.system(size: 13, weight: .semibold))
+                            Button("Hide") { showInstructions = false }
+                                .foregroundColor(Color(hex: "#888"))
+                                .font(.system(size: 13, weight: .semibold))
                         } else {
                             Button(action: { showInstructions = true }) {
                                 Text("📘 Instructions")
@@ -209,19 +173,15 @@ struct PlayDesignerView: View {
                     .padding(.top, 6)
                     
                     if showInstructions {
-                        instructionsView
-                            .padding(.horizontal, 12)
-                            .padding(.top, 2)
+                        instructionsView.padding(.horizontal, 12).padding(.top, 2)
                     }
                     
-                    // Step label or play name
                     Text(isPlaying && !playName.isEmpty ? playName : (isPlaying ? "Playing..." : stepLabels[stepIndex]))
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.white)
                         .shadow(color: .black, radius: 3)
                         .padding(.top, 2)
                     
-                    // Go to next step button (hidden during playback)
                     if !isPlaying {
                         Button(action: goToNextStep) {
                             Text(stepIndex < 4 ? "Next Step →" : "Save Play")
@@ -235,11 +195,9 @@ struct PlayDesignerView: View {
                         .padding(.top, 4)
                     }
                     
-                    // Player area fills remaining space
                     GeometryReader { courtGeo in
                         let courtSize = courtGeo.size
                         ZStack {
-                            // Players
                             ForEach(Array(0..<6), id: \.self) { i in
                                 let positions: [CGPoint] = isPlaying ? playbackPositions : currentPositions
                                 let fracPos = positions.indices.contains(i) ? positions[i] : .zero
@@ -258,7 +216,7 @@ struct PlayDesignerView: View {
                                         if !isPlaying {
                                             selectedPlayerIndex = i
                                             tempLabel = label ?? ""
-                                            tempRole = role
+                                            tempLibero = role == "L"
                                             roleModalVisible = true
                                         }
                                     }
@@ -273,30 +231,21 @@ struct PlayDesignerView: View {
                                 )
                             }
                             
-                            // Return ball indicators
-                            // Left return indicator (hidden)
-                            Circle()
-                                .fill(Color(hex: "#ff69b4").opacity(0))
+                            Circle().fill(Color(hex: "#ff69b4").opacity(0))
                                 .frame(width: 32, height: 32)
                                 .position(x: courtSize.width * 0.2, y: courtSize.height * 0.18)
                             
-                            // Middle return indicator (pink bubble) - moved UP 10% from original 0.18
-                            Circle()
-                                .fill(Color(hex: "#ff69b4").opacity(mode == .defendMiddle ? 1 : 0.3))
+                            Circle().fill(Color(hex: "#ff69b4").opacity(mode == .defendMiddle ? 1 : 0.3))
                                 .frame(width: 32, height: 32)
                                 .shadow(color: Color(hex: "#ff69b4"), radius: mode == .defendMiddle ? 6 : 0)
                                 .position(x: courtSize.width * 0.5, y: courtSize.height * 0.08)
                             
-                            // Right return indicator (hidden)
-                            Circle()
-                                .fill(Color(hex: "#ff69b4").opacity(0))
+                            Circle().fill(Color(hex: "#ff69b4").opacity(0))
                                 .frame(width: 32, height: 32)
                                 .position(x: courtSize.width * 0.8, y: courtSize.height * 0.13)
                             
-                            // Animated ball
                             if ballVisible {
-                                Image("volleyball")
-                                    .resizable()
+                                Image("volleyball").resizable()
                                     .frame(width: 32, height: 32)
                                     .position(x: ballPosition.x, y: ballPosition.y)
                                     .shadow(radius: 3)
@@ -318,8 +267,7 @@ struct PlayDesignerView: View {
                     Spacer()
                     HStack(spacing: 6) {
                         Button(action: { showRecordAlert = true }) {
-                            Text("Run")
-                                .font(.system(size: 12, weight: .bold))
+                            Text("Run").font(.system(size: 12, weight: .bold))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 9)
@@ -329,8 +277,7 @@ struct PlayDesignerView: View {
                         .disabled(savedPlayerPositions.isEmpty)
                         
                         Button(action: goToLibrary) {
-                            Text("Load")
-                                .font(.system(size: 12, weight: .bold))
+                            Text("Load").font(.system(size: 12, weight: .bold))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 9)
@@ -339,8 +286,7 @@ struct PlayDesignerView: View {
                         }
                         
                         Button(action: resetPlay) {
-                            Text("Reset")
-                                .font(.system(size: 12, weight: .bold))
+                            Text("Reset").font(.system(size: 12, weight: .bold))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 9)
@@ -349,8 +295,7 @@ struct PlayDesignerView: View {
                         }
                         
                         Button(action: handleRotate) {
-                            Text("Rot\(rotation)")
-                                .font(.system(size: 12, weight: .bold))
+                            Text("Rot\(rotation)").font(.system(size: 12, weight: .bold))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 9)
@@ -373,24 +318,26 @@ struct PlayDesignerView: View {
                 initializePositions()
                 setupScreenCaptureCallbacks()
             }
-            .onChange(of: rotation) { _, _ in
-                initializePositions()
-            }
+            .onChange(of: rotation) { _, _ in initializePositions() }
             .sheet(isPresented: $roleModalVisible, onDismiss: {
                 tempLabel = ""
-                tempRole = "OH"
+                tempLibero = false
                 selectedPlayerIndex = nil
             }) {
                 EditPlayerView(
                     tempLabel: $tempLabel,
-                    tempRole: $tempRole,
+                    tempLibero: $tempLibero,
                     onSave: {
                         if let index = selectedPlayerIndex {
                             playerLabels[index] = tempLabel.isEmpty ? nil : tempLabel
-                            if tempRole == "L" && playerRoles[index] != "L" {
-                                originalRoles[index] = playerRoles[index]
+                            
+                            if tempLibero && !playerRoles.contains("L") {
+                                if index >= 3 {
+                                    playerRoles[index] = "L"
+                                }
+                            } else if !tempLibero && playerRoles[index] == "L" {
+                                playerRoles[index] = "OH"
                             }
-                            playerRoles[index] = tempRole
                         }
                         roleModalVisible = false
                     },
@@ -399,21 +346,13 @@ struct PlayDesignerView: View {
                     }
                 )
             }
-            .sheet(isPresented: $saveModalVisible) {
-                saveModalView
-            }
+            .sheet(isPresented: $saveModalVisible) { saveModalView }
             .sheet(isPresented: $showLibrary) {
-                PlayLibraryView { play in
-                    loadPlayData(play)
-                }
+                PlayLibraryView { play in loadPlayData(play) }
             }
             .alert("Record Play?", isPresented: $showRecordAlert) {
-                Button("Yes, Record") {
-                    startRecordingAndPlay()
-                }
-                Button("No, Just Run") {
-                    runSavedPlay()
-                }
+                Button("Yes, Record") { startRecordingAndPlay() }
+                Button("No, Just Run") { runSavedPlay() }
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Do you want to screen record this play?")
@@ -423,28 +362,18 @@ struct PlayDesignerView: View {
             } message: {
                 Text("Please complete all 5 formation steps before saving.")
             }
-            // Save recording prompt - no preview window, just ask to save
             .alert("Recording Finished", isPresented: $showSaveRecordingPrompt) {
-                Button("Save to Camera Roll") {
-                    saveRecordingToCameraRoll()
-                }
-                Button("Discard", role: .destructive) {
-                    screenCapture.cleanupFile()
-                }
-                Button("Cancel", role: .cancel) {
-                    screenCapture.cleanupFile()
-                }
+                Button("Save to Camera Roll") { saveRecordingToCameraRoll() }
+                Button("Discard", role: .destructive) { screenCapture.cleanupFile() }
+                Button("Cancel", role: .cancel) { screenCapture.cleanupFile() }
             } message: {
                 Text("The play recording is complete. Would you like to save it to your camera roll?")
             }
-            // Recording error alert
             .alert("Recording Error", isPresented: .init(
                 get: { recordingSaveError != nil },
                 set: { if !$0 { recordingSaveError = nil } }
             )) {
-                Button("OK", role: .cancel) {
-                    recordingSaveError = nil
-                }
+                Button("OK", role: .cancel) { recordingSaveError = nil }
             } message: {
                 Text(recordingSaveError ?? "An unknown error occurred.")
             }
@@ -453,18 +382,15 @@ struct PlayDesignerView: View {
     
     private var instructionsView: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("📘 Instructions")
-                .font(.system(size: 13, weight: .bold))
-                .foregroundColor(Color(hex: "#2b6cb0"))
-            
+            Text("📘 Instructions").font(.system(size: 13, weight: .bold)).foregroundColor(Color(hex: "#2b6cb0"))
             Text("Drag and drop players to desired positions for each step.")
             Text("Step 1: Set Pre‑Serve Formation.")
             Text("Step 2: Set Active Serve Formation.")
             Text("Steps 3–5: Set Left, Middle, Right Return formations.")
-            Text("Tap gear icon to edit name/number and role (OH, MB, OPP, S, L).")
-            Text("Libero (L) wears gold, restricted to back row only.")
-            Text("Save stores the full play (all 5 formations).")
-            Text("Tap Run to animate through the saved play.")
+            Text("Tap gear icon to edit name/number and libero.")
+            Text("Libero (L) wears gold, back row only.")
+            Text("Save stores the full play.")
+            Text("Tap Run to animate.")
                 .font(.system(size: 12))
                 .foregroundColor(Color(hex: "#333"))
         }
@@ -476,52 +402,29 @@ struct PlayDesignerView: View {
     
     private var saveModalView: some View {
         VStack(spacing: 20) {
-            Text("Save Full Play")
-                .font(.system(size: 20, weight: .bold))
-                .foregroundColor(Color(hex: "#2b6cb0"))
-            
-            TextField("Play name", text: $playName)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .foregroundColor(Color(hex: "#333"))
-            
+            Text("Save Full Play").font(.system(size: 20, weight: .bold)).foregroundColor(Color(hex: "#2b6cb0"))
+            TextField("Play name", text: $playName).textFieldStyle(RoundedBorderTextFieldStyle())
             HStack(spacing: 20) {
-                Button("Cancel") {
-                    saveModalVisible = false
-                }
-                .foregroundColor(Color(hex: "#888"))
-                .font(.system(size: 16, weight: .semibold))
-                
+                Button("Cancel") { saveModalVisible = false }.foregroundColor(Color(hex: "#888"))
                 Button("Save") {
                     if isPlaying { stopPlay() }
                     savePlay()
                 }
-                .foregroundColor(.white)
-                .font(.system(size: 16, weight: .bold))
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-                .background(Color(hex: "#2b6cb0"))
-                .cornerRadius(6)
+                .foregroundColor(.white).font(.system(size: 16, weight: .bold))
+                .padding(.horizontal, 20).padding(.vertical, 10)
+                .background(Color(hex: "#2b6cb0")).cornerRadius(6)
             }
         }
-        .padding()
-        .frame(maxWidth: 300)
-        .background(Color.white)
-        .cornerRadius(10)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Color(hex: "#2b6cb0"), lineWidth: 2)
-        )
+        .padding().frame(maxWidth: 300).background(Color.white).cornerRadius(10)
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "#2b6cb0"), lineWidth: 2))
     }
     
     private func setupScreenCaptureCallbacks() {
         screenCapture.onRecordingComplete = { url in
-            DispatchQueue.main.async { [self] in
-                // Play has finished, show save prompt
-                showSaveRecordingPrompt = true
-            }
+            DispatchQueue.main.async { showSaveRecordingPrompt = true }
         }
         screenCapture.onRecordingError = { errorMessage in
-            DispatchQueue.main.async { [self] in
+            DispatchQueue.main.async {
                 recordingSaveError = errorMessage
                 isRecording = false
             }
@@ -544,16 +447,11 @@ struct PlayDesignerView: View {
     
     private func updatePosition(at index: Int, to point: CGPoint) {
         switch mode {
-        case .preServe:
-            preServePositions[index] = point
-        case .activeServe:
-            activeServePositions[index] = point
-        case .defendLeft:
-            defendLeftPositions[index] = point
-        case .defendMiddle:
-            defendMiddlePositions[index] = point
-        case .defendRight:
-            defendRightPositions[index] = point
+        case .preServe: preServePositions[index] = point
+        case .activeServe: activeServePositions[index] = point
+        case .defendLeft: defendLeftPositions[index] = point
+        case .defendMiddle: defendMiddlePositions[index] = point
+        case .defendRight: defendRightPositions[index] = point
         }
     }
     
@@ -567,54 +465,65 @@ struct PlayDesignerView: View {
         var roles = playerRoles
         var labels = playerLabels
         
-        // Volleyball Libero rotation rules:
-        // - Libero stays fixed in position 3 (middle back)
-        // - Other 5 players rotate around the Libero
-        // - Position order: [OH, MB, OPP, S, MB, OH] - front court
-        // - Positions 3-5 are back court
-        
-        let hasLibero = roles.contains("L")
-        
-        if hasLibero {
-            // Get Libero data before rotation
-            let liberoLabel = labels[3]
+        if let liberoIndex = roles.firstIndex(of: "L") {
+            // Keep libero fixed, rotate other players
+            // Top row moves right: 0→1→2, bottom row moves left: 3→4→5
+            // Corners wrap: 2↔5, 4↔3
+            let liberoLabel = labels[liberoIndex]
+            let allIndices = [0, 1, 2, 3, 4, 5]
+            let nonLiberoIndices = allIndices.filter { $0 != liberoIndex }
             
-            // Get the 5 rotating players (positions: 4,5,0,1,2 - skip position 3)
-            // These correspond to: back left, server, front left, middle, right
-            let rotatingOrder = [4, 5, 0, 1, 2]
-            var rotatingRoles: [String] = []
-            var rotatingLabels: [String?] = []
+            // Map each non-libero index to where it goes
+            // 0→1, 1→2, 2→5, 3→0, 4→3, 5→4
+            var newRoles = roles
+            var newLabels = labels
             
-            for pos in rotatingOrder {
-                rotatingRoles.append(roles[pos])
-            }
-            for pos in rotatingOrder {
-                rotatingLabels.append(labels[pos])
-            }
-            
-            // Rotate these 5 players clockwise (shift right by 1)
-            // Position 4 <- Position 5 <- Position 0 <- Position 1 <- Position 2 <- Position 4
-            let rotatedRoles = [rotatingRoles[4]] + Array(rotatingRoles[0..<4])
-            let rotatedLabels = [rotatingLabels[4]] + Array(rotatingLabels[0..<4])
-            
-            // Put them back
-            for (i, pos) in rotatingOrder.enumerated() {
-                roles[pos] = rotatedRoles[i]
-                labels[pos] = rotatedLabels[i]
+            for idx in nonLiberoIndices {
+                let sourceRole = roles[idx]
+                let sourceLabel = labels[idx]
+                var destIndex: Int
+                
+                switch idx {
+                case 0: destIndex = 1      // top-left → top-middle
+                case 1: destIndex = 2      // top-middle → top-right
+                case 2: destIndex = 5      // top-right → bottom-right
+                case 3: destIndex = 0      // bottom-left → top-left
+                case 4: destIndex = 3      // bottom-middle → bottom-left
+                case 5: destIndex = 4      // bottom-right → bottom-middle
+                default: destIndex = idx
+                }
+                
+                newRoles[destIndex] = sourceRole
+                newLabels[destIndex] = sourceLabel
             }
             
-            // Libero stays in position 3
-            roles[3] = "L"
-            labels[3] = liberoLabel
-            
+            roles = newRoles
+            labels = newLabels
+            roles[liberoIndex] = "L"
+            labels[liberoIndex] = liberoLabel
         } else {
-            // Standard 6-player rotation: [0,1,2,3,4,5] -> [5,0,1,2,3,4]
-            let rotatedRoles = [roles[5]] + Array(roles[0..<5])
-            let rotatedLabels = [labels[5]] + Array(labels[0..<5])
+            // Standard 6-player rotation
+            // 0→1, 1→2, 2→5, 3→0, 4→3, 5→4
+            let newRoles = [
+                roles[3],  // 0 gets from 3
+                roles[0],  // 1 gets from 0
+                roles[1],  // 2 gets from 1
+                roles[4],  // 3 gets from 4
+                roles[5],  // 4 gets from 5
+                roles[2]   // 5 gets from 2
+            ]
+            let newLabels = [
+                labels[3],
+                labels[0],
+                labels[1],
+                labels[4],
+                labels[5],
+                labels[2]
+            ]
             
             for i in 0..<6 {
-                roles[i] = rotatedRoles[i]
-                labels[i] = rotatedLabels[i]
+                roles[i] = newRoles[i]
+                labels[i] = newLabels[i]
             }
         }
         
@@ -625,34 +534,20 @@ struct PlayDesignerView: View {
     private func goToNextStep() {
         if stepIndex < 4 {
             stepIndex += 1
-            let allModes = FormationMode.allCases
-            mode = allModes[stepIndex]
+            mode = FormationMode.allCases[stepIndex]
         } else {
             openSaveModal()
         }
     }
     
     private func openSaveModal() {
-        let defaultName = "Rotation \(rotation) – Custom Play"
-        playName = defaultName
+        playName = "Rotation \(rotation) – Custom Play"
         saveModalVisible = true
     }
     
     private func validateFormations() -> Bool {
-        let formations = [
-            preServePositions,
-            activeServePositions,
-            defendLeftPositions,
-            defendMiddlePositions,
-            defendRightPositions
-        ]
-        
-        let allValid = formations.allSatisfy { $0.count == 6 }
-        if !allValid {
-            validationVisible = true
-            return false
-        }
-        return true
+        let formations = [preServePositions, activeServePositions, defendLeftPositions, defendMiddlePositions, defendRightPositions]
+        return formations.allSatisfy { $0.count == 6 }
     }
     
     private func savePlay() {
@@ -660,30 +555,13 @@ struct PlayDesignerView: View {
         guard !rawName.isEmpty else { return }
         guard validateFormations() else { return }
         
-        // Save all 5 formation position sets and current roles/labels
-        savedPlayerPositions = [
-            preServePositions,
-            activeServePositions,
-            defendLeftPositions,
-            defendMiddlePositions,
-            defendRightPositions
-        ]
+        savedPlayerPositions = [preServePositions, activeServePositions, defendLeftPositions, defendMiddlePositions, defendRightPositions]
         savedRoles = playerRoles
         savedLabels = playerLabels
         
-        // Create SavedPlay and persist to UserDefaults
-        let newPlay = SavedPlay(
-            name: rawName,
-            positions: savedPlayerPositions,
-            roles: savedRoles,
-            labels: savedLabels
-        )
-        
+        let newPlay = SavedPlay(name: rawName, positions: savedPlayerPositions, roles: savedRoles, labels: savedLabels)
         persistSavedPlay(newPlay)
-        
-        // Dismiss save modal and return to PlayDesigner
         saveModalVisible = false
-        // The view stays on PlayDesigner, modal just closes
     }
     
     private func runSavedPlay() {
@@ -695,7 +573,6 @@ struct PlayDesignerView: View {
         playbackPositions = currentPositions
         ballVisible = false
         
-        // Show preServe formation first
         withAnimation(.easeInOut(duration: 1.5)) {
             for i in 0..<6 {
                 playbackPositions[i] = savedPlayerPositions[0][i]
@@ -710,140 +587,97 @@ struct PlayDesignerView: View {
     private func animatePlayStep(_ courtSize: CGSize = CGSize(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.width * 0.85 * 1.1)) {
         let serverPos = playbackPositions[serverIndex]
         let courtHeight = courtSize.height
-        // Middle return position - the pink bubble indicator is at y:0.08 (moved up 10%)
-        // The return ball animation needs to go 10% LOWER on the screen
-        // So we use separate offsets: pink bubble at 0.08, ball animation at 0.23
-        let middleReturnIndicator = CGPoint(x: 0.5, y: 0.08)  // Pink bubble position (moved up 10% from 0.18)
-        let middleReturnBall = CGPoint(x: 0.5, y: 0.23)      // Ball animation position (10% lower than original 0.13)
-        let leftNet = CGPoint(x: 0.2, y: 0.81)  // Net position (16% lower than original 0.65)
-        let middleNet = CGPoint(x: 0.5, y: 0.81)  // Net position (16% lower than original 0.65)
-        let rightNet = CGPoint(x: 0.8, y: 0.81)  // Net position (16% lower than original 0.65)
+        let middleReturnBall = CGPoint(x: 0.5, y: 0.23)
+        let leftNet = CGPoint(x: 0.2, y: 0.81)
+        let middleNet = CGPoint(x: 0.5, y: 0.81)
+        let rightNet = CGPoint(x: 0.8, y: 0.81)
 
         switch animationStep {
         case 0:
-            // Step 0: Show preServe (already set in runSavedPlay), then serve to activeServe
-            let targetPositions = savedPlayerPositions[1]  // activeServe
-            let playerAnimationDuration = 2.0
-            
-            withAnimation(.easeInOut(duration: playerAnimationDuration)) {
+            let targetPositions = savedPlayerPositions[1]
+            withAnimation(.easeInOut(duration: 2.0)) {
                 for i in 0..<min(6, targetPositions.count) {
                     playbackPositions[i] = targetPositions[i]
                 }
             }
-            
-            // Ball serves from serverPos to middleReturnBall position
             ballVisible = true
             let serveStartY = min(serverPos.y + 0.40, 0.95) * courtHeight
             ballPosition = CGPoint(x: serverPos.x * courtSize.width, y: serveStartY)
-            
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
                 withAnimation(.easeInOut(duration: 3.0)) {
                     ballPosition = CGPoint(x: middleReturnBall.x * courtSize.width, y: middleReturnBall.y * courtHeight)
                 }
             }
-            
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [self] in
-                withAnimation {
-                    ballVisible = false
-                }
+                withAnimation { ballVisible = false }
                 animationStep = 1
                 animatePlayStep()
             }
             
         case 1:
-            // Step 1: Serve to Left Return
-            let targetPositions = savedPlayerPositions[2]  // defendLeft
-            let playerAnimationDuration = 2.0
-            
-            withAnimation(.easeInOut(duration: playerAnimationDuration)) {
+            let targetPositions = savedPlayerPositions[2]
+            withAnimation(.easeInOut(duration: 2.0)) {
                 for i in 0..<min(6, targetPositions.count) {
                     playbackPositions[i] = targetPositions[i]
                 }
             }
-            
-            // Ball travels from middleReturnBall to left net
             ballVisible = true
             ballPosition = CGPoint(x: middleReturnBall.x * courtSize.width, y: middleReturnBall.y * courtHeight)
-            
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
                 withAnimation(.easeInOut(duration: 2.5)) {
                     ballPosition = CGPoint(x: leftNet.x * courtSize.width, y: leftNet.y * courtHeight)
                 }
             }
-            
-            // Ball returns to middleReturnBall
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [self] in
                 withAnimation(.easeInOut(duration: 2.5)) {
                     ballPosition = CGPoint(x: middleReturnBall.x * courtSize.width, y: middleReturnBall.y * courtHeight)
                 }
             }
-            
             DispatchQueue.main.asyncAfter(deadline: .now() + 5.8) { [self] in
-                withAnimation {
-                    ballVisible = false
-                }
+                withAnimation { ballVisible = false }
                 animationStep = 2
                 animatePlayStep()
             }
             
         case 2:
-            // Step 2: Return to Middle Net
-            let targetPositions = savedPlayerPositions[3]  // defendMiddle
-            let playerAnimationDuration = 2.0
-            
-            withAnimation(.easeInOut(duration: playerAnimationDuration)) {
+            let targetPositions = savedPlayerPositions[3]
+            withAnimation(.easeInOut(duration: 2.0)) {
                 for i in 0..<min(6, targetPositions.count) {
                     playbackPositions[i] = targetPositions[i]
                 }
             }
-            
-            // Ball travels from middleReturnBall to middle net
             ballVisible = true
             ballPosition = CGPoint(x: middleReturnBall.x * courtSize.width, y: middleReturnBall.y * courtHeight)
-            
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
                 withAnimation(.easeInOut(duration: 2.5)) {
                     ballPosition = CGPoint(x: middleNet.x * courtSize.width, y: middleNet.y * courtHeight)
                 }
             }
-            
-            // Ball returns to middleReturnBall
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [self] in
                 withAnimation(.easeInOut(duration: 2.5)) {
                     ballPosition = CGPoint(x: middleReturnBall.x * courtSize.width, y: middleReturnBall.y * courtHeight)
                 }
             }
-            
             DispatchQueue.main.asyncAfter(deadline: .now() + 5.8) { [self] in
-                withAnimation {
-                    ballVisible = false
-                }
+                withAnimation { ballVisible = false }
                 animationStep = 3
                 animatePlayStep()
             }
             
         case 3:
-            // Step 3: Return to Right Net
-            let targetPositions = savedPlayerPositions[4]  // defendRight
-            let playerAnimationDuration = 2.0
-            
-            withAnimation(.easeInOut(duration: playerAnimationDuration)) {
+            let targetPositions = savedPlayerPositions[4]
+            withAnimation(.easeInOut(duration: 2.0)) {
                 for i in 0..<min(6, targetPositions.count) {
                     playbackPositions[i] = targetPositions[i]
                 }
             }
-            
-            // Ball travels from middleReturnBall to right net
             ballVisible = true
             ballPosition = CGPoint(x: middleReturnBall.x * courtSize.width, y: middleReturnBall.y * courtHeight)
-            
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
                 withAnimation(.easeInOut(duration: 3.0)) {
                     ballPosition = CGPoint(x: rightNet.x * courtSize.width, y: rightNet.y * courtHeight)
                 }
             }
-            
-            // After ball reaches right net, return players to default positions
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { [self] in
                 let defaultBase = sixTwoBase[rotation]!
                 withAnimation(.easeInOut(duration: 1.5)) {
@@ -851,13 +685,9 @@ struct PlayDesignerView: View {
                         playbackPositions[i] = defaultBase[i]
                     }
                 }
-                withAnimation {
-                    ballVisible = false
-                }
+                withAnimation { ballVisible = false }
                 isPlaying = false
                 animationStep = 0
-                
-                // Stop recording if active - no preview window, just show save prompt
                 if isRecording {
                     isRecording = false
                     screenCapture.stopRecording()
@@ -872,7 +702,6 @@ struct PlayDesignerView: View {
     }
     
     private func stopPlay() {
-        // Reset animation state first
         isPlaying = false
         animationStep = 0
         ballVisible = false
@@ -889,19 +718,15 @@ struct PlayDesignerView: View {
             }
         }
         
-        // Stop recording if active - no preview window
         if isRecording {
             isRecording = false
             screenCapture.stopRecording()
         }
     }
     
-    private func goToLibrary() {
-        showLibrary = true
-    }
+    private func goToLibrary() { showLibrary = true }
     
     private func startRecordingAndPlay() {
-        // Use our custom ScreenCaptureManager instead of ReplayKit
         screenCapture.startRecording()
         isRecording = true
         runSavedPlay()
@@ -948,17 +773,12 @@ struct PlayDesignerPlayerView: View {
                 .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
             
             VStack(spacing: 1) {
-                Text(role)
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(.white)
+                Text(role).font(.system(size: 10, weight: .bold)).foregroundColor(.white)
                 if let label = label, !label.isEmpty {
-                    Text(label)
-                        .font(.system(size: 8, weight: .bold))
+                    Text(label).font(.system(size: 8, weight: .bold))
                         .foregroundColor(.white.opacity(0.9))
-                        .padding(.horizontal, 2)
-                        .padding(.vertical, 1)
-                        .background(Color.black.opacity(0.25))
-                        .cornerRadius(4)
+                        .padding(.horizontal, 2).padding(.vertical, 1)
+                        .background(Color.black.opacity(0.25)).cornerRadius(4)
                 }
             }
             
@@ -967,48 +787,34 @@ struct PlayDesignerPlayerView: View {
                     Spacer()
                     HStack {
                         Spacer()
-                        Circle()
-                            .fill(Color(hex: "#ff69b4"))
-                            .frame(width: 20, height: 20)
-                            .overlay(
-                                Text("S")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.white)
-                            )
+                        Circle().fill(Color(hex: "#ff69b4")).frame(width: 20, height: 20)
+                            .overlay(Text("S").font(.system(size: 10, weight: .bold)).foregroundColor(.white))
                     }
-                    .padding(.trailing, -5)
-                    .padding(.bottom, -5)
+                    .padding(.trailing, -5).padding(.bottom, -5)
                 }
             }
             
-            // Gear icon - lower left
             VStack {
                 Spacer()
                 HStack {
                     Button(action: onEdit) {
-                        Text("⚙️")
-                            .font(.system(size: 16))
+                        Text("⚙️").font(.system(size: 16))
                     }
-                    .padding(.leading, -5)
-                    .padding(.bottom, -5)
+                    .padding(.leading, -5).padding(.bottom, -5)
                     Spacer()
                 }
             }
-            .frame(width: 50, height: 50)
         }
         .frame(width: 50, height: 50)
         .position(x: position.x, y: position.y)
     }
 }
 
-// MARK: - Edit Player View
 struct EditPlayerView: View {
     @Binding var tempLabel: String
-    @Binding var tempRole: String
+    @Binding var tempLibero: Bool
     let onSave: () -> Void
     let onCancel: () -> Void
-    
-    private let roleOptions = ["OH", "MB", "OPP", "S", "L"]
     
     var body: some View {
         NavigationStack {
@@ -1019,24 +825,25 @@ struct EditPlayerView: View {
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                 
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Position")
-                        .font(.headline)
-                        .foregroundColor(.primary)
+                    Text("Libero").font(.headline).foregroundColor(.primary)
+                    Text("Player is in back row (positions 3-5)").font(.caption).foregroundColor(.secondary)
                     
                     HStack(spacing: 10) {
-                        ForEach(roleOptions, id: \.self) { role in
-                            Button(action: {
-                                tempRole = role
-                            }) {
-                                Text(role)
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .frame(width: 60, height: 50)
-                                    .background(tempRole == role ? Color.blue : Color.gray.opacity(0.4))
-                                    .cornerRadius(10)
-                            }
-                            .buttonStyle(PlainButtonStyle())
+                        Button(action: { tempLibero = true }) {
+                            Text("On").font(.system(size: 16, weight: .bold)).foregroundColor(.white)
+                                .frame(maxWidth: .infinity).frame(height: 50)
+                                .background(tempLibero ? Color(hex: "#FFD700") : Color.blue.opacity(0.6))
+                                .cornerRadius(10)
                         }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        Button(action: { tempLibero = false }) {
+                            Text("Off").font(.system(size: 16, weight: .bold)).foregroundColor(.white)
+                                .frame(maxWidth: .infinity).frame(height: 50)
+                                .background(!tempLibero ? Color.gray : Color.gray.opacity(0.4))
+                                .cornerRadius(10)
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
                 }
                 
@@ -1047,23 +854,16 @@ struct EditPlayerView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        onCancel()
-                    }
+                    Button("Cancel") { onCancel() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        onSave()
-                    }
-                    .foregroundColor(.blue)
-                    .fontWeight(.bold)
+                    Button("Save") { onSave() }.foregroundColor(.blue).fontWeight(.bold)
                 }
             }
         }
     }
 }
 
-// MARK: - SavedPlay Model
 struct SavedPlay: Codable {
     let name: String
     let positions: [[CGPoint]]
@@ -1080,23 +880,17 @@ struct SavedPlay: Codable {
     }
 }
 
-// MARK: - Play Library View
 struct PlayLibraryView: View {
     let onSelect: (SavedPlay) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var savedPlays: [SavedPlay] = []
-    
     private let savedPlaysKey = "SavedVolleyballPlays"
     
     private func loadAllSavedPlays() -> [SavedPlay] {
-        guard let data = UserDefaults.standard.data(forKey: savedPlaysKey) else {
-            return []
-        }
+        guard let data = UserDefaults.standard.data(forKey: savedPlaysKey) else { return [] }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        if let plays = try? decoder.decode([SavedPlay].self, from: data) {
-            return plays
-        }
+        if let plays = try? decoder.decode([SavedPlay].self, from: data) { return plays }
         return []
     }
     
@@ -1113,9 +907,7 @@ struct PlayLibraryView: View {
         NavigationStack {
             List {
                 if savedPlays.isEmpty {
-                    Text("No saved plays yet.")
-                        .foregroundColor(.secondary)
-                        .padding()
+                    Text("No saved plays yet.").foregroundColor(.secondary).padding()
                 }
                 ForEach(savedPlays, id: \.name) { play in
                     Button(action: {
@@ -1123,12 +915,9 @@ struct PlayLibraryView: View {
                         dismiss()
                     }) {
                         VStack(alignment: .leading) {
-                            Text(play.name)
-                                .font(.headline)
-                                .foregroundColor(.primary)
+                            Text(play.name).font(.headline).foregroundColor(.primary)
                             Text("Saved \(play.timestamp.formatted(date: .abbreviated, time: .shortened))")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .font(.caption).foregroundColor(.secondary)
                         }
                         .padding(.vertical, 4)
                     }
@@ -1148,48 +937,35 @@ struct PlayLibraryView: View {
     }
 }
 
-// MARK: - Play Persistence
 extension PlayDesignerView {
     private func persistSavedPlay(_ play: SavedPlay) {
         var savedPlays = loadAllSavedPlays()
         savedPlays.append(play)
-        
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
-        
         if let data = try? encoder.encode(savedPlays) {
-            UserDefaults.standard.set(data, forKey: savedPlaysKey)
+            UserDefaults.standard.set(data, forKey: "SavedVolleyballPlays")
         }
     }
     
     private func loadAllSavedPlays() -> [SavedPlay] {
-        guard let data = UserDefaults.standard.data(forKey: savedPlaysKey) else {
-            return []
-        }
-        
+        guard let data = UserDefaults.standard.data(forKey: "SavedVolleyballPlays") else { return [] }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        
-        if let plays = try? decoder.decode([SavedPlay].self, from: data) {
-            return plays
-        } else {
-            return []
-        }
+        if let plays = try? decoder.decode([SavedPlay].self, from: data) { return plays }
+        return []
     }
     
     private func loadPlayData(_ play: SavedPlay) {
         guard play.positions.count >= 5 else { return }
-        
         preServePositions = play.positions[0]
         activeServePositions = play.positions[1]
         defendLeftPositions = play.positions[2]
         defendMiddlePositions = play.positions[3]
         defendRightPositions = play.positions[4]
-        
         playerRoles = play.roles
         playerLabels = play.labels
-        playName = play.name  // Set the play name for display
-        
+        playName = play.name
         savedPlayerPositions = play.positions
         savedRoles = play.roles
         savedLabels = play.labels
