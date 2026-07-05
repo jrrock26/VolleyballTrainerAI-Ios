@@ -145,24 +145,20 @@ class ScreenCaptureManager: NSObject, ObservableObject {
     private func captureScreenPixelBuffer() -> CVPixelBuffer? {
         let screenSize = UIScreen.main.bounds.size
         let scale = UIScreen.main.scale
-        let width = Int(screenSize.width * scale)
-        let height = Int(screenSize.height * scale)
+        let fullWidth = Int(screenSize.width * scale)
+        let fullHeight = Int(screenSize.height * scale)
         
-        guard width > 0, height > 0 else { return nil }
+        guard fullWidth > 0, fullHeight > 0 else { return nil }
         
-        // Capture the screen as a UIImage using UIGraphicsImageRenderer
-        // This handles UIKit coordinate system correctly
-        let renderer = UIGraphicsImageRenderer(size: screenSize)
-        let capturedImage = renderer.image { ctx in
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
-                window.drawHierarchy(in: window.bounds, afterScreenUpdates: false)
-            }
-        }
+        // Crop to court area: exclude top header (~12%) and bottom buttons (~12%)
+        let topInset = screenSize.height * 0.12
+        let bottomInset = screenSize.height * 0.12
+        let cropHeight = screenSize.height - topInset - bottomInset
+        let cropRect = CGRect(x: 0, y: topInset, width: screenSize.width, height: cropHeight)
         
-        guard let cgImage = capturedImage.cgImage else { return nil }
+        let cropHeightPixels = Int(cropHeight * scale)
         
-        // Create pixel buffer
+        // Create pixel buffer at cropped size
         let attrs: [String: Any] = [
             kCVPixelBufferCGImageCompatibilityKey as String: true,
             kCVPixelBufferCGBitmapContextCompatibilityKey as String: true
@@ -171,8 +167,8 @@ class ScreenCaptureManager: NSObject, ObservableObject {
         var pixelBuffer: CVPixelBuffer?
         let status = CVPixelBufferCreate(
             kCFAllocatorDefault,
-            width,
-            height,
+            fullWidth,
+            cropHeightPixels,
             kCVPixelFormatType_32BGRA,
             attrs as CFDictionary,
             &pixelBuffer
@@ -185,24 +181,34 @@ class ScreenCaptureManager: NSObject, ObservableObject {
         
         let pixelData = CVPixelBufferGetBaseAddress(buffer)
         let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
-        // BGRA pixel format: Blue, Green, Red, Alpha
         let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue)
         
         guard let bitmapContext = CGContext(
             data: pixelData,
-            width: width,
-            height: height,
+            width: fullWidth,
+            height: cropHeightPixels,
             bitsPerComponent: 8,
             bytesPerRow: CVPixelBufferGetBytesPerRow(buffer),
             space: rgbColorSpace,
             bitmapInfo: bitmapInfo.rawValue
         ) else { return nil }
         
-        // Draw the captured CGImage into the pixel buffer context
-        // CGImage has origin at bottom-left, so we flip vertically
-        bitmapContext.translateBy(x: 0, y: CGFloat(height))
+        // Use UIGraphicsPushContext to make our bitmap context the active UIKit context
+        // This ensures drawHierarchy renders correctly in UIKit's coordinate system
+        UIGraphicsPushContext(bitmapContext)
+        
+        // Flip the context so UIKit drawing appears right-side up
+        // UIKit's origin is top-left, CoreGraphics' origin is bottom-left
+        bitmapContext.translateBy(x: 0, y: cropHeight)
         bitmapContext.scaleBy(x: 1, y: -1)
-        bitmapContext.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        
+        // Draw the window into the context (only the court area portion)
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
+            window.drawHierarchy(in: cropRect, afterScreenUpdates: false)
+        }
+        
+        UIGraphicsPopContext()
         
         return buffer
     }
