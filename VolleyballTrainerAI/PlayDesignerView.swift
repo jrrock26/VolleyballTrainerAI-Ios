@@ -466,41 +466,43 @@ struct PlayDesignerView: View {
         var labels = playerLabels
         
         if let liberoIndex = roles.firstIndex(of: "L") {
-            // Keep libero fixed, rotate other players
-            // Top row moves right: 0→1→2, bottom row moves left: 3→4→5
-            // Corners wrap: 2↔5, 4↔3
-            let liberoLabel = labels[liberoIndex]
+            // Libero ON: keep libero fixed, rotate only the 5 non-libero positions
+            // Position labels stay fixed to their court locations
+            // Users are players that move. Position labels don't move.
+            // Non-libero roles move: 0→1, 1→2, 3→0, and bottom row (skipping L): 4↔5 or 5→4→3
+            // Top row moves right: 0→1, 1→2
+            // Bottom row moves left: 3→0 (wrap up), and the two remaining bottom positions move left
+            // Rotation order: top row right then bottom row left wrapping
+            // 0→1, 1→2, 2→5, 5→4, 4→3, 3→0 (when L is at index 3, skip 3→0 for that slot)
+            // Actually: skip L slot. Pre-L slot feeds into post-L slot.
+            // Example L at 3: 0→1, 1→2, 2 goes through 5→4→3(L fixed), 4→5, 5→4 -- but wrap should be 3→0
+            
+            // Determine the rotation chain skipping the libero
             let allIndices = [0, 1, 2, 3, 4, 5]
             let nonLiberoIndices = allIndices.filter { $0 != liberoIndex }
             
-            // Map each non-libero index to where it goes
-            // 0→1, 1→2, 2→5, 3→0, 4→3, 5→4
+            // Build rotation: each index maps to destination
+            // Without libero: 0→1, 1→2, 2→5, 5→4, 4→3, 3→0 (bottom row left then wrap)
+            // With libero, skip the L position in the chain
+            // The non-libero indices maintain relative order but skip L
             var newRoles = roles
             var newLabels = labels
             
-            for idx in nonLiberoIndices {
-                let sourceRole = roles[idx]
-                let sourceLabel = labels[idx]
-                var destIndex: Int
-                
-                switch idx {
-                case 0: destIndex = 1      // top-left → top-middle
-                case 1: destIndex = 2      // top-middle → top-right
-                case 2: destIndex = 5      // top-right → bottom-right
-                case 3: destIndex = 0      // bottom-left → top-left
-                case 4: destIndex = 3      // bottom-middle → bottom-left
-                case 5: destIndex = 4      // bottom-right → bottom-middle
-                default: destIndex = idx
+            // Position labels stay fixed - don't rotate them
+            // Only rotate player roles (who occupies each position)
+            let sourceToDest: [Int: Int] = buildLiberoRotation(liberoIndex: liberoIndex)
+            
+            // Rotate player roles based on rotation mapping
+            for (source, dest) in sourceToDest {
+                if !isLibero(at: source, in: roles) {
+                    newRoles[dest] = roles[source]
+                    // Keep position labels fixed at their court locations
+                    // newLabels stays the same as original labels
                 }
-                
-                newRoles[destIndex] = sourceRole
-                newLabels[destIndex] = sourceLabel
             }
             
             roles = newRoles
-            labels = newLabels
-            roles[liberoIndex] = "L"
-            labels[liberoIndex] = liberoLabel
+            // labels stay fixed - position labels don't move with players
         } else {
             // Standard 6-player rotation
             // 0→1, 1→2, 2→5, 3→0, 4→3, 5→4
@@ -528,7 +530,45 @@ struct PlayDesignerView: View {
         }
         
         playerRoles = roles
-        playerLabels = labels
+        // Keep position labels fixed - they don't rotate with players
+    }
+    
+    private func buildLiberoRotation(liberoIndex: Int) -> [Int: Int] {
+        // Returns source->dest mapping for non-libero positions
+        // Standard 6-player rotation: 0→1, 1→2, 2→5, 5→4, 4→3, 3→0
+        // With libero, only 5 players rotate among 5 court positions
+        // The non-libero players shift clockwise, each going to the next position
+        // Example L at 3: non-libero indices are [0,1,2,4,5] — they rotate such that
+        // 0→1, 1→2, 2→5, 4→0, 5→4 (skipping index 3 which is L)
+        switch liberoIndex {
+        case 3:
+            // L at bottom-left: top row moves right, bottom-right→bottom-middle→top-left
+            return [0: 1, 1: 2, 2: 5, 5: 4, 4: 0, 3: 3]
+        case 4:
+            // L at bottom-middle: top row moves right, bottom-right→bottom-left→wrap to top-left
+            // Non-libero: 0,1,2,3,5. Standard chain skipping L at 4.
+            // 0→1, 1→2, 2→5, 5→3, 3→0, 4(L fixed)
+            return [0: 1, 1: 2, 2: 5, 5: 3, 3: 0, 4: 4]
+        case 5:
+            // L at bottom-right: top row moves right, bottom-middle→bottom-left→top-left
+            // Non-libero in order: 0,1,2,3,4. Each shifts to next, last wraps to first.
+            // 0→1, 1→2, 2→4, 3→0, 4→3
+            return [0: 1, 1: 2, 2: 4, 3: 0, 4: 3, 5: 5]
+        default:
+            let nonLib = [0, 1, 2, 3, 4, 5].filter { $0 != liberoIndex }
+            var result: [Int: Int] = [:]
+            for i in 0..<nonLib.count {
+                let source = nonLib[i]
+                let dest = nonLib[(i + 1) % nonLib.count]
+                result[source] = dest
+            }
+            result[liberoIndex] = liberoIndex
+            return result
+        }
+    }
+    
+    private func isLibero(at index: Int, in roles: [String]) -> Bool {
+        return roles.indices.contains(index) && roles[index] == "L"
     }
     
     private func goToNextStep() {
@@ -601,7 +641,7 @@ struct PlayDesignerView: View {
                 }
             }
             ballVisible = true
-            let serveStartY = min(serverPos.y + 0.40, 0.95) * courtHeight
+            let serveStartY = serverPos.y * courtHeight
             ballPosition = CGPoint(x: serverPos.x * courtSize.width, y: serveStartY)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
                 withAnimation(.easeInOut(duration: 3.0)) {
