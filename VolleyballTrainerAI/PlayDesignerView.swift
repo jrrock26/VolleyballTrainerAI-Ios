@@ -698,9 +698,9 @@ struct PlayDesignerView: View {
         // So we use separate offsets: pink bubble at 0.08, ball animation at 0.23
         let middleReturnIndicator = CGPoint(x: 0.5, y: 0.08)  // Pink bubble position (moved up 10% from 0.18)
         let middleReturnBall = CGPoint(x: 0.5, y: 0.23)      // Ball animation position (10% lower than original 0.13)
-        let leftNet = CGPoint(x: 0.2, y: 0.73)  // Net position (8% lower than 0.65)
-        let middleNet = CGPoint(x: 0.5, y: 0.73)  // Net position (8% lower than 0.65)
-        let rightNet = CGPoint(x: 0.8, y: 0.73)  // Net position (8% lower than 0.65)
+        let leftNet = CGPoint(x: 0.2, y: 0.77)  // Net position (12% lower than original 0.65)
+        let middleNet = CGPoint(x: 0.5, y: 0.77)  // Net position (12% lower than original 0.65)
+        let rightNet = CGPoint(x: 0.8, y: 0.77)  // Net position (12% lower than original 0.65)
 
         switch animationStep {
         case 0:
@@ -714,9 +714,9 @@ struct PlayDesignerView: View {
                 }
             }
             
-            // Ball serves from serverPos to middleReturnBall position (start 20% lower than before)
+            // Ball serves from serverPos to middleReturnBall position (start 30% lower than original)
             ballVisible = true
-            ballPosition = CGPoint(x: serverPos.x * courtSize.width, y: (serverPos.y + 0.5) * courtHeight)
+            ballPosition = CGPoint(x: serverPos.x * courtSize.width, y: (serverPos.y + 0.6) * courtHeight)
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
                 withAnimation(.easeInOut(duration: 3.0)) {
