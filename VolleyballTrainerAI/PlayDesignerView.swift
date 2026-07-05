@@ -18,6 +18,9 @@ struct PlayDesignerView: View {
     @State private var playerRoles: [String] = ["OH", "MB", "OPP", "S", "MB", "OH"]
     @State private var playerLabels: [String?] = [nil, nil, nil, nil, nil, nil]
     
+    // Track original role before Libero change, so we can restore it
+    @State private var originalRoles: [String] = ["OH", "MB", "OPP", "S", "MB", "OH"]
+    
     @State private var roleModalVisible = false
     @State private var selectedPlayerIndex: Int?
     @State private var tempLabel = ""
@@ -387,6 +390,15 @@ struct PlayDesignerView: View {
                 Button("Save") {
                     if let index = selectedPlayerIndex {
                         playerLabels[index] = tempLabel.isEmpty ? nil : tempLabel
+                        // If changing to Libero, save the original role
+                        if tempRole == "L" && playerRoles[index] != "L" {
+                            originalRoles[index] = playerRoles[index]
+                        }
+                        // If changing from Libero back to something else, restore original tracking
+                        if playerRoles[index] == "L" && tempRole != "L" {
+                            // Restore the original role from originalRoles
+                            // (tempRole already has the new role)
+                        }
                         playerRoles[index] = tempRole
                     }
                     tempLabel = ""
@@ -568,18 +580,23 @@ struct PlayDesignerView: View {
         
         let liberoIndex = playerRoles.firstIndex(of: "L")
         var liberoLabel: String? = nil
+        var liberoOrigRole: String? = nil
         if let idx = liberoIndex {
             liberoLabel = playerLabels[idx]
+            // The original role for the Libero (what they were before becoming L)
+            liberoOrigRole = originalRoles[idx]
         }
         
         var roles = playerRoles
         var labels = playerLabels
         
+        // Remove Libero from rotation entirely
         if let idx = liberoIndex {
             roles.remove(at: idx)
             labels.remove(at: idx)
         }
         
+        // Rotate the remaining 5 players clockwise
         let clockwiseOrder = [5, 4, 3, 0, 1, 2]
         var orderedRoles = clockwiseOrder.map { roles[$0] }
         var orderedLabels = clockwiseOrder.map { labels[$0] }
@@ -595,10 +612,14 @@ struct PlayDesignerView: View {
             labels[pos] = orderedLabels[idx]
         }
         
-        if let libIdx = liberoIndex {
-            let safeIdx = max(3, min(5, libIdx))
-            roles[safeIdx] = "L"
-            labels[safeIdx] = liberoLabel
+        // Place Libero back in back row (indices 3-5)
+        if let libIdx = liberoIndex, let origRole = liberoOrigRole {
+            // Keep the Libero in a back row position (3, 4, or 5)
+            // If they were in position 0-2 (front row), move them to a back row slot
+            let backRowSlot = libIdx >= 3 ? libIdx : 3
+            roles[backRowSlot] = "L"
+            labels[backRowSlot] = liberoLabel
+            // The original role stays recorded in originalRoles for when L is removed
         }
         
         playerRoles = roles

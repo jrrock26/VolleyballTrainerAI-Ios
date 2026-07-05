@@ -150,15 +150,7 @@ class ScreenCaptureManager: NSObject, ObservableObject {
         
         guard fullWidth > 0, fullHeight > 0 else { return nil }
         
-        // Crop to court area: exclude top header (~12%) and bottom buttons (~12%)
-        let topInset = screenSize.height * 0.12
-        let bottomInset = screenSize.height * 0.12
-        let cropHeight = screenSize.height - topInset - bottomInset
-        let cropRect = CGRect(x: 0, y: topInset, width: screenSize.width, height: cropHeight)
-        
-        let cropHeightPixels = Int(cropHeight * scale)
-        
-        // Create pixel buffer at cropped size
+        // Create pixel buffer at full screen size
         let attrs: [String: Any] = [
             kCVPixelBufferCGImageCompatibilityKey as String: true,
             kCVPixelBufferCGBitmapContextCompatibilityKey as String: true
@@ -168,7 +160,7 @@ class ScreenCaptureManager: NSObject, ObservableObject {
         let status = CVPixelBufferCreate(
             kCFAllocatorDefault,
             fullWidth,
-            cropHeightPixels,
+            fullHeight,
             kCVPixelFormatType_32BGRA,
             attrs as CFDictionary,
             &pixelBuffer
@@ -186,7 +178,7 @@ class ScreenCaptureManager: NSObject, ObservableObject {
         guard let bitmapContext = CGContext(
             data: pixelData,
             width: fullWidth,
-            height: cropHeightPixels,
+            height: fullHeight,
             bitsPerComponent: 8,
             bytesPerRow: CVPixelBufferGetBytesPerRow(buffer),
             space: rgbColorSpace,
@@ -199,13 +191,13 @@ class ScreenCaptureManager: NSObject, ObservableObject {
         
         // Flip the context so UIKit drawing appears right-side up
         // UIKit's origin is top-left, CoreGraphics' origin is bottom-left
-        bitmapContext.translateBy(x: 0, y: cropHeight)
+        bitmapContext.translateBy(x: 0, y: screenSize.height)
         bitmapContext.scaleBy(x: 1, y: -1)
         
-        // Draw the window into the context (only the court area portion)
+        // Draw the full window into the context
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
-            window.drawHierarchy(in: cropRect, afterScreenUpdates: false)
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: false)
         }
         
         UIGraphicsPopContext()
