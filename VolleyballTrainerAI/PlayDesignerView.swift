@@ -378,13 +378,19 @@ struct PlayDesignerView: View {
             }
             .alert("Edit Player", isPresented: $roleModalVisible) {
                 VStack {
-                    TextField("Name/Number", text: $tempLabel)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                    Picker("Role", selection: $tempRole) {
-                        ForEach(roleOptions, id: \.self) { role in
-                            Text(role).tag(role)
-                        }
+                TextField("Name/Number", text: $tempLabel)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                Picker("Role", selection: $tempRole) {
+                    ForEach(roleOptions, id: \.self) { role in
+                        Text(role).tag(role)
+                    }
+                }
+                }
+                // Ensure tempRole is valid before the alert renders
+                .onChange(of: roleModalVisible) { _, isVisible in
+                    if isVisible, !roleOptions.contains(tempRole) {
+                        tempRole = roleOptions.first ?? "OH"
                     }
                 }
                 Button("Save") {
