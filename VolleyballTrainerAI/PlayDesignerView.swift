@@ -24,7 +24,7 @@ struct PlayDesignerView: View {
     @State private var roleModalVisible = false
     @State private var selectedPlayerIndex: Int?
     @State private var tempLabel = ""
-    @State private var tempRole = ""
+    @State private var tempRole = "OH"
     
     @State private var showRecordPrompt = false
     @State private var saveModalVisible = false
@@ -376,48 +376,28 @@ struct PlayDesignerView: View {
             .onChange(of: rotation) { _, _ in
                 initializePositions()
             }
-            .alert("Edit Player", isPresented: $roleModalVisible) {
-                VStack {
-                TextField("Name/Number", text: $tempLabel)
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
-                Picker("Role", selection: $tempRole) {
-                    ForEach(roleOptions, id: \.self) { role in
-                        Text(role).tag(role)
-                    }
-                }
-                }
-                // Ensure tempRole is valid before the alert renders
-                .onChange(of: roleModalVisible) { _, isVisible in
-                    if isVisible, !roleOptions.contains(tempRole) {
-                        tempRole = roleOptions.first ?? "OH"
-                    }
-                }
-                Button("Save") {
-                    if let index = selectedPlayerIndex {
-                        playerLabels[index] = tempLabel.isEmpty ? nil : tempLabel
-                        // If changing to Libero, save the original role
-                        if tempRole == "L" && playerRoles[index] != "L" {
-                            originalRoles[index] = playerRoles[index]
+            .sheet(isPresented: $roleModalVisible, onDismiss: {
+                tempLabel = ""
+                tempRole = "OH"
+                selectedPlayerIndex = nil
+            }) {
+                EditPlayerView(
+                    tempLabel: $tempLabel,
+                    tempRole: $tempRole,
+                    onSave: {
+                        if let index = selectedPlayerIndex {
+                            playerLabels[index] = tempLabel.isEmpty ? nil : tempLabel
+                            if tempRole == "L" && playerRoles[index] != "L" {
+                                originalRoles[index] = playerRoles[index]
+                            }
+                            playerRoles[index] = tempRole
                         }
-                        // If changing from Libero back to something else, restore original tracking
-                        if playerRoles[index] == "L" && tempRole != "L" {
-                            // Restore the original role from originalRoles
-                            // (tempRole already has the new role)
-                        }
-                        playerRoles[index] = tempRole
+                        roleModalVisible = false
+                    },
+                    onCancel: {
+                        roleModalVisible = false
                     }
-                    tempLabel = ""
-                    tempRole = ""
-                    selectedPlayerIndex = nil
-                    roleModalVisible = false
-                }
-                Button("Cancel") {
-                    tempLabel = ""
-                    tempRole = ""
-                    selectedPlayerIndex = nil
-                    roleModalVisible = false
-                }
+                )
             }
             .sheet(isPresented: $saveModalVisible) {
                 saveModalView
@@ -741,9 +721,10 @@ struct PlayDesignerView: View {
                 }
             }
             
-            // Ball serves from serverPos to middleReturnBall position (start 40% lower than original)
+            // Ball serves from serverPos to middleReturnBall position
             ballVisible = true
-            ballPosition = CGPoint(x: serverPos.x * courtSize.width, y: (serverPos.y + 0.70) * courtHeight)
+            let serveStartY = min(serverPos.y + 0.40, 0.95) * courtHeight
+            ballPosition = CGPoint(x: serverPos.x * courtSize.width, y: serveStartY)
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
                 withAnimation(.easeInOut(duration: 3.0)) {
@@ -1007,6 +988,68 @@ struct PlayDesignerPlayerView: View {
         }
         .frame(width: 50, height: 50)
         .position(x: position.x, y: position.y)
+    }
+}
+
+// MARK: - Edit Player View
+struct EditPlayerView: View {
+    @Binding var tempLabel: String
+    @Binding var tempRole: String
+    let onSave: () -> Void
+    let onCancel: () -> Void
+    
+    private let roleOptions = ["OH", "MB", "OPP", "S", "L"]
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                TextField("Name/Number", text: $tempLabel)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Position")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    HStack(spacing: 10) {
+                        ForEach(roleOptions, id: \.self) { role in
+                            Button(action: {
+                                tempRole = role
+                            }) {
+                                Text(role)
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(width: 60, height: 50)
+                                    .background(tempRole == role ? Color.blue : Color.gray.opacity(0.4))
+                                    .cornerRadius(10)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }
+                }
+                
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Edit Player")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        onCancel()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        onSave()
+                    }
+                    .foregroundColor(.blue)
+                    .fontWeight(.bold)
+                }
+            }
+        }
     }
 }
 

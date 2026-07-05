@@ -25,8 +25,8 @@ class ScreenCaptureManager: NSObject, ObservableObject {
         let documentsPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
         let timestamp = Int(Date().timeIntervalSince1970)
         outputURL = URL(fileURLWithPath: "\(documentsPath)/play_recording_\(timestamp).mp4")
-        // ~15 fps gives smooth enough playback without huge file sizes
-        frameDuration = 1.0 / 15.0
+        // ~30 fps for smooth playback
+        frameDuration = 1.0 / 30.0
         super.init()
     }
     
@@ -39,11 +39,19 @@ class ScreenCaptureManager: NSObject, ObservableObject {
         
         let screenSize = UIScreen.main.bounds.size
         let scale = UIScreen.main.scale
-        let videoWidth = screenSize.width * scale
-        let videoHeight = screenSize.height * scale
         
-        guard videoWidth > 0, videoHeight > 0, videoWidth.isFinite, videoHeight.isFinite else {
-            onRecordingError?("Invalid frame dimension (\(videoWidth) x \(videoHeight))")
+        guard screenSize.width > 0, screenSize.height > 0,
+              screenSize.width.isFinite, screenSize.height.isFinite,
+              scale > 0, scale.isFinite else {
+            onRecordingError?("Invalid screen dimensions")
+            return
+        }
+        
+        let videoWidth = Int(screenSize.width * scale)
+        let videoHeight = Int(screenSize.height * scale)
+        
+        guard videoWidth > 0, videoHeight > 0 else {
+            onRecordingError?("Invalid video dimensions (\(videoWidth) x \(videoHeight))")
             return
         }
         
