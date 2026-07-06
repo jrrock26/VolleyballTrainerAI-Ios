@@ -129,11 +129,10 @@ struct PlayDesignerView: View {
                 Color.black.opacity(0.15).ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    if !isPlaying {
                     HStack {
-                        Button(action: { 
+                        Button(action: {
                             if isPlaying { stopPlay() }
-                            dismiss() 
+                            dismiss()
                         }) {
                             HStack(spacing: 6) {
                                 Image(systemName: "chevron.left")
@@ -153,6 +152,7 @@ struct PlayDesignerView: View {
                             )
                         }
                         .buttonStyle(PlainButtonStyle())
+                        .disabled(isPlaying)
                         Spacer()
                         
                         if showInstructions {
@@ -173,30 +173,31 @@ struct PlayDesignerView: View {
                     }
                     .padding(.horizontal, 12)
                     .padding(.top, 6)
-                    }
+                    .opacity(isPlaying ? 0 : 1)
                     
-                    if !isPlaying && showInstructions {
+                    if showInstructions {
                         instructionsView.padding(.horizontal, 12).padding(.top, 2)
+                            .opacity(isPlaying ? 0 : 1)
                     }
                     
-                    if !isPlaying {
                     Text(isPlaying && !playName.isEmpty ? playName : (isPlaying ? "Playing..." : stepLabels[stepIndex]))
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.white)
                         .shadow(color: .black, radius: 3)
                         .padding(.top, 2)
                     
-                        Button(action: goToNextStep) {
-                            Text(stepIndex < 4 ? "Next Step →" : "Save Play")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: geo.size.width * 0.5)
-                                .padding(.vertical, 8)
-                                .background(Color(hex: "#2b6cb0"))
-                                .cornerRadius(8)
-                        }
-                        .padding(.top, 4)
+                    Button(action: goToNextStep) {
+                        Text(stepIndex < 4 ? "Next Step →" : "Save Play")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: geo.size.width * 0.5)
+                            .padding(.vertical, 8)
+                            .background(Color(hex: "#2b6cb0"))
+                            .cornerRadius(8)
                     }
+                    .padding(.top, 4)
+                    .opacity(isPlaying ? 0 : 1)
+                    .disabled(isPlaying)
                     
                     GeometryReader { courtGeo in
                         let courtSize = courtGeo.size
@@ -266,7 +267,6 @@ struct PlayDesignerView: View {
                 }
             }
             .overlay(alignment: .bottom) {
-                if !isPlaying {
                 VStack {
                     Spacer()
                     HStack(spacing: 6) {
@@ -278,7 +278,7 @@ struct PlayDesignerView: View {
                                 .background(savedPlayerPositions.isEmpty ? Color.gray : Color(hex: "#2b6cb0"))
                                 .cornerRadius(8)
                         }
-                        .disabled(savedPlayerPositions.isEmpty)
+                        .disabled(savedPlayerPositions.isEmpty || isPlaying)
                         
                         Button(action: goToLibrary) {
                             Text("Load").font(.system(size: 12, weight: .bold))
@@ -288,6 +288,7 @@ struct PlayDesignerView: View {
                                 .background(Color(hex: "#2b6cb0"))
                                 .cornerRadius(8)
                         }
+                        .disabled(isPlaying)
                         
                         Button(action: resetPlay) {
                             Text("Reset").font(.system(size: 12, weight: .bold))
@@ -297,6 +298,7 @@ struct PlayDesignerView: View {
                                 .background(Color(hex: "#2b6cb0"))
                                 .cornerRadius(8)
                         }
+                        .disabled(isPlaying)
                         
                         Button(action: handleRotate) {
                             Text("Rot\(rotation)").font(.system(size: 12, weight: .bold))
@@ -306,6 +308,7 @@ struct PlayDesignerView: View {
                                 .background(Color(hex: "#2b6cb0"))
                                 .cornerRadius(8)
                         }
+                        .disabled(isPlaying)
                     }
                     .frame(width: geo.size.width - 24)
                     .padding(.horizontal, 12)
@@ -313,10 +316,10 @@ struct PlayDesignerView: View {
                     .padding(.bottom, max(2, geo.safeAreaInsets.bottom - 8))
                     .background(Color.black.opacity(0.8))
                     .offset(y: -50)
+                    .opacity(isPlaying ? 0 : 1)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 .zIndex(30)
-                }
             }
             .navigationBarHidden(true)
             .onAppear {
@@ -594,35 +597,72 @@ struct PlayDesignerView: View {
         }
     }
     
+    private func positionOneIndex(in positions: [CGPoint]) -> Int {
+        guard positions.count == 6 else { return 5 }
+
+        // Position 1 = back-right player (largest X and largest Y)
+        var bestIndex = 0
+        var bestScore: CGFloat = -.greatestFiniteMagnitude
+
+        for (index, point) in positions.enumerated() {
+            let score = point.x + point.y
+            if score > bestScore {
+                bestScore = score
+                bestIndex = index
+            }
+        }
+
+        return bestIndex
+    }
+    
+    
     private func animatePlayStep(_ courtSize: CGSize = CGSize(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.width * 0.85 * 1.1)) {
-        let serverPos = playbackPositions[serverIndex]
+
         let courtHeight = courtSize.height
+
+        // Fixed serve origin (bottom-right service area)
+        // Adjust these two numbers until it lines up perfectly with your court graphic.
+        let serveOrigin = CGPoint(x: 0.82, y: 1.5)
+
         let middleReturnBall = CGPoint(x: 0.5, y: 0.23)
-        let leftNet = CGPoint(x: 0.2, y: 0.81)
-        let middleNet = CGPoint(x: 0.5, y: 0.81)
-        let rightNet = CGPoint(x: 0.8, y: 0.81)
+        let leftNet = CGPoint(x: 0.2, y: 0.95)
+        let middleNet = CGPoint(x: 0.5, y: 0.95)
+        let rightNet = CGPoint(x: 0.8, y: 0.95)
 
         switch animationStep {
         case 0:
             let targetPositions = savedPlayerPositions[1]
+
             withAnimation(.easeInOut(duration: 2.0)) {
                 for i in 0..<min(6, targetPositions.count) {
                     playbackPositions[i] = targetPositions[i]
                 }
             }
+
             ballVisible = true
-            let serveStartY = min(serverPos.y + 1.20, 0.95) * courtHeight
-            ballPosition = CGPoint(x: serverPos.x * courtSize.width, y: serveStartY)
+
+            // Always start the serve from the same location.
+            ballPosition = CGPoint(
+                x: serveOrigin.x * courtSize.width,
+                y: serveOrigin.y * courtHeight
+            )
+
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
                 withAnimation(.easeInOut(duration: 3.0)) {
-                    ballPosition = CGPoint(x: middleReturnBall.x * courtSize.width, y: middleReturnBall.y * courtHeight)
+                    ballPosition = CGPoint(
+                        x: middleReturnBall.x * courtSize.width,
+                        y: middleReturnBall.y * courtHeight
+                    )
                 }
             }
+
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [self] in
                 withAnimation { ballVisible = false }
                 animationStep = 1
                 animatePlayStep()
             }
+
+        // ...leave the rest of animatePlayStep() exactly as it is...
             
         case 1:
             let targetPositions = savedPlayerPositions[2]
