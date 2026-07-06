@@ -1,5 +1,4 @@
 import SwiftUI
-import PhotosUI
 
 // MARK: - Profile Manager
 
@@ -44,7 +43,6 @@ struct PlayerProfileView: View {
     @State private var selectedSkillLevel: SkillLevel = .jrHigh
     @State private var selectedPosition: PlayerPosition = .all
     @State private var athleteName: String = ""
-    @State private var selectedImage: PhotosPickerItem? = nil
     
     var body: some View {
         NavigationStack {
@@ -231,7 +229,6 @@ struct PlayerProfileView: View {
                             heightFeet = 5
                             heightInchPart = 8
                             athleteName = ""
-                            profileImageData = nil
                         }) {
                             Text("Reset Profile")
                                 .font(.system(size: 14, weight: .medium))
