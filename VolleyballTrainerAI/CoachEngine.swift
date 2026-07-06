@@ -106,6 +106,34 @@ struct SessionIntelligence {
     }
 }
 
+// MARK: - Skill Level & Position
+
+enum SkillLevel: String, Codable, CaseIterable {
+    case jrHigh = "Jr. High"
+    case varsity = "Varsity"
+    case collegiate = "Collegiate"
+    case coach = "Coach"
+    
+    var mappedAthleteLevel: AthleteLevel {
+        switch self {
+        case .jrHigh: return .beginner
+        case .varsity: return .intermediate
+        case .collegiate: return .advanced
+        case .coach: return .elite
+        }
+    }
+}
+
+enum PlayerPosition: String, Codable, CaseIterable {
+    case all = "All"
+    case outsideHitter = "Outside Hitter"
+    case middleBlocker = "Middle Blocker"
+    case oppositeHitter = "Opposite Hitter"
+    case setter = "Setter"
+    case libero = "Libero"
+    case defensiveSpecialist = "Defensive Specialist"
+}
+
 // MARK: - Enhanced Athlete Profile
 
 struct HitMetricSnapshot: Codable, Equatable {
@@ -118,6 +146,7 @@ struct HitMetricSnapshot: Codable, Equatable {
 
 struct AthleteProfile: Codable, Equatable {
     var id: UUID = UUID()
+    var athleteName: String = ""
     var athleteLevel: AthleteLevel = .beginner
 
     // Core cumulative stats
@@ -144,6 +173,8 @@ struct AthleteProfile: Codable, Equatable {
     var strongAreas: [String] = []
     var fatigueThreshold: Double = 0.30
     var heightInches: Double = 0 // 0 means not set
+    var skillLevel: SkillLevel = .jrHigh
+    var position: PlayerPosition = .all
 
     mutating func incorporate(hit: VolleyballHit, sessionID: UUID) {
         totalHits += 1
