@@ -19,14 +19,20 @@ struct HomeScreen: View {
                         Spacer()
                             .frame(height: geo.size.height * 0.45)
 
-                        HStack(spacing: 8) {
-                            CourtPushButton(title: "Play Hub", icon: "play.circle") {
-                                navigateTo = "PlayHub"
-                            }
-                            CourtPushButton(title: "Practice Hub", icon: "figure.run") {
-                                navigateTo = "PracticeHub"
-                            }
+                    HStack(spacing: 8) {
+                        CourtPushButton(title: "Play Hub", icon: "play.circle") {
+                            navigateTo = "PlayHub"
                         }
+                        CourtPushButton(title: "Practice Hub", icon: "figure.run") {
+                            navigateTo = "PracticeHub"
+                        }
+                    }
+
+                    HStack(spacing: 8) {
+                        CourtPushButton(title: "Player Profile", icon: "person.circle") {
+                            navigateTo = "PlayerProfile"
+                        }
+                    }
 
                         Spacer()
                             .frame(height: geo.size.height * 0.02)
@@ -69,6 +75,12 @@ struct HomeScreen: View {
                 set: { if !$0 { navigateTo = nil } }
             )) {
                 PerformanceHubView()
+            }
+            .navigationDestination(isPresented: Binding(
+                get: { navigateTo == "PlayerProfile" },
+                set: { if !$0 { navigateTo = nil } }
+            )) {
+                PlayerProfileView()
             }
         }
     }

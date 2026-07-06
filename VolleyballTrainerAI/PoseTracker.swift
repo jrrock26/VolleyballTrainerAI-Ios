@@ -29,7 +29,14 @@ class PoseTracker: NSObject, ObservableObject {
     private var isBaselineLocked = false
     private let baselineFramesNeeded = 25
     private var bodyScaleNorm: Double? = nil
-    private let assumedTorsoInches: Double = 22.0
+    private var assumedTorsoInches: Double {
+        let height = ProfileManager.shared.profile.heightInches
+        if height > 0 {
+            // Torso (shoulder-to-hip) is approximately 28.8% of total height
+            return height * 0.288
+        }
+        return 22.0 // default fallback
+    }
 
     private var smoothedJoints: [VNHumanBodyPoseObservation.JointName: CGPoint] = [:]
     private var jointMissingFrames: [VNHumanBodyPoseObservation.JointName: Int] = [:]

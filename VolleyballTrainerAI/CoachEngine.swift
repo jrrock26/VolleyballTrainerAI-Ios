@@ -143,6 +143,7 @@ struct AthleteProfile: Codable, Equatable {
     var weakAreas: [String] = []
     var strongAreas: [String] = []
     var fatigueThreshold: Double = 0.30
+    var heightInches: Double = 0 // 0 means not set
 
     mutating func incorporate(hit: VolleyballHit, sessionID: UUID) {
         totalHits += 1
