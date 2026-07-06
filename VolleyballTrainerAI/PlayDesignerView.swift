@@ -52,7 +52,7 @@ struct PlayDesignerView: View {
     @State private var savedLabels: [String?] = []
     
     private let savedPlaysKey = "SavedVolleyballPlays"
-    private let serverIndex = 5
+    private let serverIndex = 3
     
     enum FormationMode: String, CaseIterable {
         case preServe = "preServe"
@@ -129,6 +129,7 @@ struct PlayDesignerView: View {
                 Color.black.opacity(0.15).ignoresSafeArea()
                 
                 VStack(spacing: 0) {
+                    if !isPlaying {
                     HStack {
                         Button(action: { 
                             if isPlaying { stopPlay() }
@@ -172,18 +173,19 @@ struct PlayDesignerView: View {
                     }
                     .padding(.horizontal, 12)
                     .padding(.top, 6)
+                    }
                     
-                    if showInstructions {
+                    if !isPlaying && showInstructions {
                         instructionsView.padding(.horizontal, 12).padding(.top, 2)
                     }
                     
+                    if !isPlaying {
                     Text(isPlaying && !playName.isEmpty ? playName : (isPlaying ? "Playing..." : stepLabels[stepIndex]))
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.white)
                         .shadow(color: .black, radius: 3)
                         .padding(.top, 2)
                     
-                    if !isPlaying {
                         Button(action: goToNextStep) {
                             Text(stepIndex < 4 ? "Next Step →" : "Save Play")
                                 .font(.system(size: 12, weight: .bold))
@@ -264,6 +266,7 @@ struct PlayDesignerView: View {
                 }
             }
             .overlay(alignment: .bottom) {
+                if !isPlaying {
                 VStack {
                     Spacer()
                     HStack(spacing: 6) {
@@ -313,13 +316,18 @@ struct PlayDesignerView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 .zIndex(30)
+                }
             }
             .navigationBarHidden(true)
             .onAppear {
                 initializePositions()
                 setupScreenCaptureCallbacks()
             }
-            .onChange(of: rotation) { _, _ in initializePositions() }
+            .onChange(of: rotation) { _, _ in
+                if !isPlaying {
+                    initializePositions()
+                }
+            }
             .sheet(isPresented: $roleModalVisible, onDismiss: {
                 tempLabel = ""
                 tempLibero = false
