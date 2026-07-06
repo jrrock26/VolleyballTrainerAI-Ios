@@ -52,7 +52,7 @@ struct PlayDesignerView: View {
     @State private var savedLabels: [String?] = []
     
     private let savedPlaysKey = "SavedVolleyballPlays"
-    private let serverIndex = 3
+    private let serverIndex = 5
     
     enum FormationMode: String, CaseIterable {
         case preServe = "preServe"
