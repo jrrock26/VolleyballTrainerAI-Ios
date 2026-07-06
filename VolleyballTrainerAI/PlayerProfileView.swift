@@ -44,8 +44,7 @@ struct PlayerProfileView: View {
     @State private var selectedSkillLevel: SkillLevel = .jrHigh
     @State private var selectedPosition: PlayerPosition = .all
     @State private var athleteName: String = ""
-    @State private var selectedImage: PhotosPickerItem?
-    @State private var profileImageData: Data?
+    @State private var selectedImage: PhotosPickerItem? = nil
     
     var body: some View {
         NavigationStack {
@@ -60,48 +59,16 @@ struct PlayerProfileView: View {
                 
                 ScrollView {
                     VStack(spacing: 16) {
-                        // Header with Profile Image and Name
+                        // Header with Name
                         VStack(spacing: 12) {
-                            PhotosPicker(selection: $selectedImage, matching: .images) {
-                                ZStack {
-                                    if let data = profileImageData,
-                                       let uiImage = UIImage(data: data) {
-                                        Image(uiImage: uiImage)
-                                            .resizable()
-                                            .scaledToFill()
-                                    } else {
-                                        Image(systemName: "person.circle.fill")
-                                            .font(.system(size: 70))
-                                            .foregroundColor(Color(hex: "#2b6cb0"))
-                                    }
-                                    
-                                    VStack {
-                                        Spacer()
-                                        HStack {
-                                            Spacer()
-                                            Image(systemName: "camera.circle.fill")
-                                                .font(.system(size: 28))
-                                                .foregroundColor(.white)
-                                                .shadow(radius: 4)
-                                        }
-                                        .padding(.trailing, 8)
-                                        .padding(.bottom, 8)
-                                    }
-                                }
-                                .frame(width: 120, height: 120)
-                                .clipShape(Circle())
-                                .overlay(Circle().stroke(Color(hex: "#2b6cb0"), lineWidth: 3))
-                            }
-                            
                             TextField("Enter your name", text: $athleteName)
                                 .font(.system(size: 20, weight: .semibold, design: .rounded))
                                 .foregroundColor(.white)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 20)
                                 .padding(.vertical, 10)
-                                .background(Color(hex: "#2b6cb0").opacity(0.15))
+                                .background(Color.clear)
                                 .cornerRadius(10)
-                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "#2b6cb0").opacity(0.5), lineWidth: 1))
                         }
                         .padding(.top, 20)
                         
@@ -120,7 +87,7 @@ struct PlayerProfileView: View {
                                         }
                                     }
                                     .pickerStyle(.wheel)
-                                    .frame(height: 80)
+                                    .frame(height: 100)
                                     .clipped()
                                 }
                                 
@@ -132,7 +99,7 @@ struct PlayerProfileView: View {
                                         }
                                     }
                                     .pickerStyle(.wheel)
-                                    .frame(height: 80)
+                                    .frame(height: 100)
                                     .clipped()
                                 }
                             }
@@ -140,12 +107,12 @@ struct PlayerProfileView: View {
                             // Display total
                             let totalInches = Double(heightFeet * 12 + heightInchPart)
                             Text("\(heightFeet)'\(heightInchPart)\" (\(Int(totalInches)) inches)")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(Color(hex: "#2b6cb0"))
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.pink)
                                 .frame(maxWidth: .infinity)
                         }
                         .padding()
-                        .background(Color(red: 0.12, green: 0.12, blue: 0.14).opacity(0.9))
+                        .background(Color(red: 0.12, green: 0.12, blue: 0.14).opacity(0.6))
                         .cornerRadius(12)
                         .padding(.horizontal)
                         
@@ -155,18 +122,18 @@ struct PlayerProfileView: View {
                                 .font(.system(size: 16, weight: .bold, design: .rounded))
                                 .foregroundColor(.white)
                             
-                            HStack(spacing: 6) {
+                            HStack(spacing: 8) {
                                 ForEach(SkillLevel.allCases, id: \.self) { level in
                                     Button(action: { selectedSkillLevel = level }) {
                                         Text(level.rawValue)
-                                            .font(.system(size: 11, weight: .bold))
+                                            .font(.system(size: 12, weight: .bold))
                                             .foregroundColor(selectedSkillLevel == level ? .white : .gray)
                                             .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 8)
+                                            .padding(.vertical, 10)
                                             .background(
                                                 selectedSkillLevel == level
-                                                    ? Color(hex: "#2b6cb0")
-                                                    : Color(red: 0.08, green: 0.08, blue: 0.10)
+                                                    ? .pink
+                                                    : Color(red: 0.08, green: 0.08, blue: 0.10).opacity(0.6)
                                             )
                                             .cornerRadius(8)
                                     }
@@ -175,10 +142,10 @@ struct PlayerProfileView: View {
                             }
                             Text("Mapped to: \(selectedSkillLevel.mappedAthleteLevel.rawValue) training difficulty")
                                 .font(.system(size: 11))
-                                .foregroundColor(Color(hex: "#2b6cb0").opacity(0.8))
+                                .foregroundColor(.pink)
                         }
                         .padding()
-                        .background(Color(red: 0.12, green: 0.12, blue: 0.14).opacity(0.9))
+                        .background(Color(red: 0.12, green: 0.12, blue: 0.14).opacity(0.6))
                         .cornerRadius(12)
                         .padding(.horizontal)
                         
@@ -206,18 +173,18 @@ struct PlayerProfileView: View {
                                         .foregroundColor(.white)
                                     Spacer()
                                     Image(systemName: "chevron.down")
-                                        .foregroundColor(Color(hex: "#2b6cb0"))
+                                        .foregroundColor(.pink)
                                         .font(.system(size: 14))
                                 }
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 10)
-                                .background(Color(red: 0.08, green: 0.08, blue: 0.10))
+                                .background(Color(red: 0.08, green: 0.08, blue: 0.10).opacity(0.6))
                                 .cornerRadius(8)
-                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(hex: "#2b6cb0").opacity(0.3), lineWidth: 1))
+                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(.pink.opacity(0.3), lineWidth: 1))
                             }
                         }
                         .padding()
-                        .background(Color(red: 0.12, green: 0.12, blue: 0.14).opacity(0.9))
+                        .background(Color(red: 0.12, green: 0.12, blue: 0.14).opacity(0.6))
                         .cornerRadius(12)
                         .padding(.horizontal)
                         
@@ -229,18 +196,18 @@ struct PlayerProfileView: View {
                                     .foregroundColor(.white)
                                 
                                 HStack {
-                                    ProfileStatBox(label: "Hits", value: "\(profileManager.profile.totalHits)", color: .blue)
-                                    ProfileStatBox(label: "Sessions", value: "\(profileManager.profile.totalSessions)", color: .green)
-                                    ProfileStatBox(label: "Level", value: profileManager.profile.athleteLevel.rawValue, color: .orange)
+                                    ProfileStatBox(label: "Hits", value: "\(profileManager.profile.totalHits)", color: .pink)
+                                    ProfileStatBox(label: "Sessions", value: "\(profileManager.profile.totalSessions)", color: .pink)
+                                    ProfileStatBox(label: "Level", value: profileManager.profile.athleteLevel.rawValue, color: .pink)
                                 }
                                 
                                 HStack {
-                                    ProfileStatBox(label: "Best Jump", value: String(format: "%.1f in", profileManager.profile.lifetimeBestJumpHeight), color: .purple)
-                                    ProfileStatBox(label: "Best Speed", value: String(format: "%.1f mph", profileManager.profile.lifetimeBestBallSpeed), color: .red)
+                                    ProfileStatBox(label: "Best Jump", value: String(format: "%.1f in", profileManager.profile.lifetimeBestJumpHeight), color: .pink)
+                                    ProfileStatBox(label: "Best Speed", value: String(format: "%.1f mph", profileManager.profile.lifetimeBestBallSpeed), color: .pink)
                                 }
                             }
                             .padding()
-                            .background(Color(red: 0.12, green: 0.12, blue: 0.14).opacity(0.9))
+                            .background(Color(red: 0.12, green: 0.12, blue: 0.14).opacity(0.6))
                             .cornerRadius(12)
                             .padding(.horizontal)
                         }
@@ -252,15 +219,9 @@ struct PlayerProfileView: View {
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
-                                .background(
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [Color(hex: "#2b6cb0"), Color(hex: "#1e4d8c")]),
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
+                                .background(.pink)
                                 .cornerRadius(10)
-                                .shadow(color: Color(hex: "#2b6cb0").opacity(0.4), radius: 8, x: 0, y: 4)
+                                .shadow(color: .pink.opacity(0.4), radius: 8, x: 0, y: 4)
                         }
                         .padding(.horizontal)
                         
@@ -274,11 +235,11 @@ struct PlayerProfileView: View {
                         }) {
                             Text("Reset Profile")
                                 .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.red.opacity(0.8))
+                                .foregroundColor(.pink.opacity(0.8))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
-                                .background(Color.red.opacity(0.1))
-                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.red.opacity(0.3), lineWidth: 1))
+                                .background(Color.clear)
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(.pink.opacity(0.3), lineWidth: 1))
                                 .cornerRadius(10)
                         }
                         .padding(.horizontal)
@@ -286,23 +247,16 @@ struct PlayerProfileView: View {
                     }
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(true)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Back") { dismiss() }
-                        .foregroundColor(Color(hex: "#2b6cb0"))
+                        .foregroundColor(.pink)
                         .font(.system(size: 16, weight: .semibold))
                 }
             }
             .onAppear {
                 loadProfile()
-            }
-            .onChange(of: selectedImage) { newItem in
-                Task {
-                    if let data = try? await newItem?.loadTransferable(type: Data.self) {
-                        profileImageData = data
-                    }
-                }
             }
         }
     }
