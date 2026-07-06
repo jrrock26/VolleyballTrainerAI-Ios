@@ -164,7 +164,7 @@
 /* Begin PBXNativeTarget section */
 		963E76D52FE4477400590BC2 /* VolleyballTrainerAI */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 96BCF4742FF66EED00FA2CDA /* Build configuration list */;
+			buildConfigurationList = 96BCF4742FF66EED00FA2CDA /* Build configuration list for PBXNativeTarget "VolleyballTrainerAI" */;
 			buildPhases = (
 				963E76D22FE4477400590BC2 /* Sources */,
 				963E76D32FE4477400590BC2 /* Frameworks */,
@@ -397,8 +397,8 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_NSCameraUsageDescription = "VolleyballTrainerAI requires live camera access to compute real-time skeleton point mapping and ball tracking paths.\n";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "VolleyballTrainerAI requires microphone access to measure structural audio spike impacts.\n";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "VolleyballTrainerAI needs access to your photo library to save screen recordings of your plays.\n";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "VolleyballTrainerAI needs access to save screen recordings to your camera roll.\n";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "VolleyballTrainerAI needs access to your photo library to save screen recordings of your plays.\n";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -433,8 +433,8 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_NSCameraUsageDescription = "VolleyballTrainerAI requires live camera access to compute real-time skeleton point mapping and ball tracking paths.\n";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "VolleyballTrainerAI requires microphone access to measure structural audio spike impacts.\n";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "VolleyballTrainerAI needs access to your photo library to save screen recordings of your plays.\n";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "VolleyballTrainerAI needs access to save screen recordings to your camera roll.\n";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "VolleyballTrainerAI needs access to your photo library to save screen recordings of your plays.\n";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -465,7 +465,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		96BCF4742FF66EED00FA2CDA /* Build configuration list */ = {
+		96BCF4742FF66EED00FA2CDA /* Build configuration list for PBXNativeTarget "VolleyballTrainerAI" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				96BCF4722FF66ED500FA2CDA /* Debug */,

@@ -542,7 +542,7 @@ struct RotationsView: View {
             
             Text("Select Run to simulate a serve. Select a return ball to simulate a defensive transition.")
             Text("Rotate will rotate players just like they would on the court.")
-            Text("Use the formation toggle to switch between 6–2 and 5–1.")
+            Text("Use the rotation toggle to switch between 6–2 and 5–1.")
                 .font(.system(size: 12))
                 .foregroundColor(Color(hex: "#333"))
         }

@@ -17,71 +17,58 @@ struct HomeScreen: View {
                     VStack(spacing: 0) {
 
                         Spacer()
-                            .frame(height: geo.size.height * 0.45)
+                            .frame(height: geo.size.height * 0.48)
 
-                    HStack(spacing: 8) {
-                        CourtPushButton(title: "Play Hub", icon: "play.circle") {
-                            navigateTo = "PlayHub"
-                        }
-                        CourtPushButton(title: "Practice Hub", icon: "figure.run") {
-                            navigateTo = "PracticeHub"
-                        }
-                    }
+                        VStack(spacing: 22) {
 
-                    HStack(spacing: 8) {
-                        CourtPushButton(title: "Player Profile", icon: "person.circle") {
-                            navigateTo = "PlayerProfile"
-                        }
-                    }
+                            CourtPushButton(title: "Play Hub", icon: "play.circle") {
+                                navigateTo = "PlayHub"
+                            }
+                            .frame(width: geo.size.width * 0.50, height: 60)
+                            .font(.custom("Orbitron-Regular", size: 22))
+                            .multilineTextAlignment(.center)
 
-                        Spacer()
-                            .frame(height: geo.size.height * 0.02)
+                            CourtPushButton(title: "Practice Hub", icon: "figure.run") {
+                                navigateTo = "PracticeHub"
+                            }
+                            .frame(width: geo.size.width * 0.50, height: 60)
+                            .font(.custom("Orbitron-Regular", size: 22))
+                            .multilineTextAlignment(.center)
 
-                        HStack(spacing: 8) {
+                            CourtPushButton(title: "Player Profile", icon: "person.circle") {
+                                navigateTo = "PlayerProfile"
+                            }
+                            .frame(width: geo.size.width * 0.50, height: 60)
+                            .font(.custom("Orbitron-Regular", size: 22))
+                            .multilineTextAlignment(.center)
+
                             CourtPushButton(title: "Training Hub", icon: "dumbbell") {
                                 navigateTo = "TrainingHub"
                             }
+                            .frame(width: geo.size.width * 0.50, height: 60)
+                            .font(.custom("Orbitron-Regular", size: 22))
+                            .multilineTextAlignment(.center)
+
                             CourtPushButton(title: "Performance Hub", icon: "chart.line.uptrend.xyaxis") {
                                 navigateTo = "PerformanceHub"
                             }
+                            .frame(width: geo.size.width * 0.50, height: 60)
+                            .font(.custom("Orbitron-Regular", size: 22))
+                            .multilineTextAlignment(.center)
                         }
 
                         Spacer()
                     }
                     .frame(maxHeight: .infinity, alignment: .top)
-                    .padding(.horizontal, 12)
                 }
             }
-            .navigationDestination(isPresented: Binding(
-                get: { navigateTo == "PlayHub" },
-                set: { if !$0 { navigateTo = nil } }
-            )) {
-                PlayHubView()
-            }
-            .navigationDestination(isPresented: Binding(
-                get: { navigateTo == "PracticeHub" },
-                set: { if !$0 { navigateTo = nil } }
-            )) {
-                PracticeHubView()
-            }
-            .navigationDestination(isPresented: Binding(
-                get: { navigateTo == "TrainingHub" },
-                set: { if !$0 { navigateTo = nil } }
-            )) {
-                TrainingHubView()
-            }
-            .navigationDestination(isPresented: Binding(
-                get: { navigateTo == "PerformanceHub" },
-                set: { if !$0 { navigateTo = nil } }
-            )) {
-                PerformanceHubView()
-            }
-            .navigationDestination(isPresented: Binding(
-                get: { navigateTo == "PlayerProfile" },
-                set: { if !$0 { navigateTo = nil } }
-            )) {
-                PlayerProfileView()
-            }
+
+            // Navigation destinations
+            .navigationDestination(isPresented: Binding(get: { navigateTo == "PlayHub" }, set: { if !$0 { navigateTo = nil } })) { PlayHubView() }
+            .navigationDestination(isPresented: Binding(get: { navigateTo == "PracticeHub" }, set: { if !$0 { navigateTo = nil } })) { PracticeHubView() }
+            .navigationDestination(isPresented: Binding(get: { navigateTo == "TrainingHub" }, set: { if !$0 { navigateTo = nil } })) { TrainingHubView() }
+            .navigationDestination(isPresented: Binding(get: { navigateTo == "PerformanceHub" }, set: { if !$0 { navigateTo = nil } })) { PerformanceHubView() }
+            .navigationDestination(isPresented: Binding(get: { navigateTo == "PlayerProfile" }, set: { if !$0 { navigateTo = nil } })) { PlayerProfileView() }
         }
     }
 }
@@ -89,3 +76,4 @@ struct HomeScreen: View {
 #Preview {
     HomeScreen()
 }
+

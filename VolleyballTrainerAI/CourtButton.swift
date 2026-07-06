@@ -9,44 +9,51 @@ struct CourtPushButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 10) {
+            VStack(spacing: 4) {
+
+                // --- SPORTY ICON ---
                 if let icon = icon {
                     Image(systemName: icon)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.pink)
-                        .frame(width: 20, height: 20)
+                        .shadow(color: .pink.opacity(0.5), radius: 3)
                 }
-                Text(title)
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+
+                // --- NEW SPORTY FONT (compact + athletic) ---
+                Text(title.uppercased())
+                    .font(.custom("Rajdhani-SemiBold", size: 17))
                     .foregroundColor(.white)
-                Spacer()
+                    .multilineTextAlignment(.center)
+                    .shadow(color: .blue.opacity(0.45), radius: 2)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)      // smaller
+            .padding(.horizontal, 6)     // narrower
             .background(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: 14)
                     .fill(Color.black.opacity(0.55))
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
                             .stroke(
                                 LinearGradient(
                                     gradient: Gradient(colors: [
-                                        .pink.opacity(0.8),
-                                        .blue.opacity(0.6)
+                                        .pink.opacity(0.9),
+                                        .blue.opacity(0.7)
                                     ]),
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
-                                lineWidth: 1.5
+                                lineWidth: 2
                             )
                     )
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.pink.opacity(isPressed ? 1.0 : 0.4), lineWidth: isPressed ? 2 : 1)
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.pink.opacity(isPressed ? 1.0 : 0.4),
+                            lineWidth: isPressed ? 2 : 1)
             )
         }
-        .scaleEffect(isPressed ? 0.97 : 1.0)
+        .scaleEffect(isPressed ? 0.96 : 1.0)
         .animation(.easeInOut(duration: 0.1), value: isPressed)
         .buttonStyle(PlainButtonStyle())
         .simultaneousGesture(
@@ -63,9 +70,8 @@ struct CourtButton: View {
     let title: String
     let action: () -> Void
 
-    @State private var isPressed = false
-
     var body: some View {
         CourtPushButton(title: title, icon: nil, action: action)
     }
 }
+

@@ -622,12 +622,12 @@ struct PlayDesignerView: View {
 
         // Fixed serve origin (bottom-right service area)
         // Adjust these two numbers until it lines up perfectly with your court graphic.
-        let serveOrigin = CGPoint(x: 0.82, y: 1.5)
+        let serveOrigin = CGPoint(x: 0.82, y: 1.4)
 
         let middleReturnBall = CGPoint(x: 0.5, y: 0.23)
-        let leftNet = CGPoint(x: 0.2, y: 0.95)
-        let middleNet = CGPoint(x: 0.5, y: 0.95)
-        let rightNet = CGPoint(x: 0.8, y: 0.95)
+        let leftNet = CGPoint(x: 0.2, y: 0.85)
+        let middleNet = CGPoint(x: 0.5, y: 0.85)
+        let rightNet = CGPoint(x: 0.8, y: 0.85)
 
         switch animationStep {
         case 0:
