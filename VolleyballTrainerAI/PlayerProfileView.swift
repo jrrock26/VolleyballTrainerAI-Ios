@@ -118,6 +118,7 @@ struct PlayerProfileView: View {
                                         Picker("Feet", selection: $heightFeet) {
                                             ForEach(4...7, id: \.self) { ft in
                                                 Text("\(ft) ft").tag(ft)
+                                                    .foregroundColor(.pink)
                                             }
                                         }
                                         .pickerStyle(.wheel)
@@ -130,6 +131,7 @@ struct PlayerProfileView: View {
                                         Picker("Inches", selection: $heightInchPart) {
                                             ForEach(0...11, id: \.self) { inch in
                                                 Text("\(inch) in").tag(inch)
+                                                    .foregroundColor(.pink)
                                             }
                                         }
                                         .pickerStyle(.wheel)
