@@ -201,11 +201,9 @@ struct SavedReplayPlaybackView: View {
                                     jointPoints: tracker.jointPoints,
                                     videoRect: tracker.videoRect
                                 )
-                                .frame(width: containerWidth, height: videoHeight)
-                                .cornerRadius(12)
-                                .clipped()
+                                .frame(width: tracker.videoRect.width, height: tracker.videoRect.height)
+                                .position(x: tracker.videoRect.midX, y: tracker.videoRect.midY)
                                 .allowsHitTesting(false)
-                                .scaleEffect(0.90)
 
                                 if let ballRect = tracker.ballBoundingBoxRect {
                                     let scaleX = tracker.videoRect.width
