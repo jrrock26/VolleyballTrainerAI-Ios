@@ -48,7 +48,7 @@ struct SavedHitsListView: View {
                     .buttonStyle(PlainButtonStyle())
                     Spacer()
                 }
-                .padding(.top, 16)
+                .padding(.top, 24)
 
                 VStack(spacing: 4) {
                     Text("Saved Hits")
@@ -97,11 +97,13 @@ struct SavedHitsListView: View {
                                     .padding(.vertical, 8)
                                     .background(Color(red: 0.14, green: 0.14, blue: 0.16))
                                     .cornerRadius(10)
+                                    .listRowSeparator(.hidden)
                                 }
                             }
                         }
                     }
                     .scrollContentBackground(.hidden)
+                    .listRowSeparator(.hidden)
                     .toolbar {
                         ToolbarItem(placement: .primaryAction) {
                             Button(role: .destructive, action: {

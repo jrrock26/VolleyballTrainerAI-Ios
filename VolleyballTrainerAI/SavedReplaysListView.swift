@@ -46,7 +46,7 @@ struct SavedReplaysListView: View {
                     .buttonStyle(PlainButtonStyle())
                     Spacer()
                 }
-                .padding(.top, 16)
+                .padding(.top, 24)
 
                 VStack(spacing: 4) {
                     Text("Saved Replays")
@@ -128,6 +128,7 @@ struct SavedReplaysListView: View {
                         }
                     }
                     .scrollContentBackground(.hidden)
+                    .listRowSeparator(.hidden)
                 }
             }
         }
