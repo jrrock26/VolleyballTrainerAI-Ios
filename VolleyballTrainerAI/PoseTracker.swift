@@ -40,8 +40,8 @@ class PoseTracker: NSObject, ObservableObject {
 
     private var smoothedJoints: [VNHumanBodyPoseObservation.JointName: CGPoint] = [:]
     private var jointMissingFrames: [VNHumanBodyPoseObservation.JointName: Int] = [:]
-    private let jointSmoothingAlpha: CGFloat = 0.5
-    private let jointHoldFrames = 8
+    private let jointSmoothingAlpha: CGFloat = 0.75
+    private let jointHoldFrames = 4
 
     private var lastFrameTime = Date()
     private var isHitCaptured = false
