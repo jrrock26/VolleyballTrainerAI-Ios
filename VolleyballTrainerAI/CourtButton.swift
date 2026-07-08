@@ -27,8 +27,8 @@ struct CourtPushButton: View {
                     .shadow(color: .blue.opacity(0.45), radius: 2)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)      // smaller
-            .padding(.horizontal, 6)     // narrower
+            .padding(.vertical, 12)
+            .padding(.horizontal, 8)
             .background(
                 RoundedRectangle(cornerRadius: 14)
                     .fill(Color.black.opacity(0.55))

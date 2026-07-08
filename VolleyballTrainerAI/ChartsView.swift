@@ -23,15 +23,13 @@ struct ChartsView: View {
 
     var body: some View {
         ZStack {
-            // Neon arena background
+            Color.black.ignoresSafeArea()
+            
             Image("background")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
-                .opacity(0.5)
-
-            Color.black.opacity(0.55)
-                .ignoresSafeArea()
+                .opacity(0.3)
 
             VStack(spacing: 0) {
                 // Back button

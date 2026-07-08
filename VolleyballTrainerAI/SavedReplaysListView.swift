@@ -80,40 +80,41 @@ struct SavedReplaysListView: View {
                             Button(action: {
                                 selectedReplay = replay
                             }) {
-                                HStack(spacing: 12) {
-                                    Image(systemName: "play.rectangle.fill")
-                                        .font(.title2)
-                                        .foregroundColor(.pink)
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "play.rectangle.fill")
+                                            .font(.title2)
+                                            .foregroundColor(.pink)
 
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(replay.title)
-                                            .font(.subheadline)
-                                            .foregroundColor(.white)
-                                            .lineLimit(1)
-                                        HStack(spacing: 6) {
-                                            Text("\(replay.hitType) • \(String(format: "%.0f mph", replay.ballSpeedMPH))")
-                                                .font(.caption)
-                                                .foregroundColor(.gray)
-                                            Text("•")
-                                                .font(.caption)
-                                                .foregroundColor(.gray)
-                                            Text(replay.createdAt, style: .date)
-                                                .font(.caption)
-                                                .foregroundColor(.gray)
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(replay.title)
+                                                .font(.subheadline)
+                                                .foregroundColor(.white)
+                                                .lineLimit(1)
+                                            HStack(spacing: 6) {
+                                                Text("\(replay.hitType) • \(String(format: "%.0f mph", replay.ballSpeedMPH))")
+                                                    .font(.caption)
+                                                    .foregroundColor(.gray)
+                                                Text("•")
+                                                    .font(.caption)
+                                                    .foregroundColor(.gray)
+                                                Text(replay.createdAt, style: .date)
+                                                    .font(.caption)
+                                                    .foregroundColor(.gray)
+                                            }
+                                            Text("Score: \(String(format: "%.0f", replay.overallScore)) pts")
+                                                .font(.caption2)
+                                                .foregroundColor(.pink.opacity(0.8))
                                         }
-                                        Text("Score: \(String(format: "%.0f", replay.overallScore)) pts")
+
+                                        Spacer()
+
+                                        Image(systemName: "chevron.right")
                                             .font(.caption2)
-                                            .foregroundColor(.pink.opacity(0.8))
+                                            .foregroundColor(.gray)
                                     }
-
-                                    Spacer()
-
-                                    Image(systemName: "chevron.right")
-                                        .font(.caption2)
-                                        .foregroundColor(.gray)
-                                }
-                                .padding(.vertical, 6)
-                                .listRowBackground(Color(red: 0.14, green: 0.14, blue: 0.16))
+                                    .padding(.vertical, 8)
+                                    .background(Color(red: 0.14, green: 0.14, blue: 0.16))
+                                    .cornerRadius(10)
                             }
                             .buttonStyle(.plain)
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
@@ -150,8 +151,7 @@ struct SavedReplaysListView: View {
         } message: {
             Text("You've reached the maximum of \(maxReplays) saved replays. Delete some to make room for more.")
         }
-        .navigationTitle("Saved Replays")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(true)
     }
 
     private func deleteReplay(_ replay: SavedReplay) {

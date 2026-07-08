@@ -94,7 +94,9 @@ struct SavedHitsListView: View {
                                                 .foregroundColor(.red)
                                         }
                                     }
-                                    .listRowBackground(Color(red: 0.14, green: 0.14, blue: 0.16))
+                                    .padding(.vertical, 8)
+                                    .background(Color(red: 0.14, green: 0.14, blue: 0.16))
+                                    .cornerRadius(10)
                                 }
                             }
                         }
@@ -123,8 +125,7 @@ struct SavedHitsListView: View {
         } message: {
             Text("This will permanently remove all \(allHits.count) saved hits.")
         }
-        .navigationTitle("Saved Hits")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(true)
         .onAppear {
             purgeOldHits()
         }

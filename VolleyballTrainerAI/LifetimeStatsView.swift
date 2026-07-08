@@ -175,8 +175,7 @@ struct LifetimeStatsView: View {
                 .padding(.bottom, 20)
             }
         }
-        .navigationTitle("Lifetime Stats")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(true)
         .fullScreenCover(item: $selectedHitReplay) { sessionWrapper in
             ReplaySummaryView(sessionHits: sessionWrapper.hits)
         }
