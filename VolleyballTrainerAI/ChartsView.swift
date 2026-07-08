@@ -6,6 +6,7 @@ struct ChartsView: View {
     @Query(sort: \VolleyballHit.timestamp, order: .reverse) private var allHits: [VolleyballHit]
     
     @State private var selectedHitType: String = "All"
+    @State private var hasLoaded = false
 
     private var filteredHits: [VolleyballHit] {
         if selectedHitType == "All" {

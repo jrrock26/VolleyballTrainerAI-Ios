@@ -224,22 +224,6 @@ struct ReplaySummaryView: View {
                                 .background(Color.green)
                                 .cornerRadius(8)
 
-                                Button("Saved Analytics Vault") {
-                                    dismiss()
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                        NotificationCenter.default.post(
-                                            name: NSNotification.Name("NavigateToScreen"),
-                                            object: "SavedAnalytics"
-                                        )
-                                    }
-                                }
-                                .font(.caption.bold())
-                                .foregroundColor(.black)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(Color.yellow)
-                                .cornerRadius(8)
-
                                 Button("Close") {
                                     player.pause()
                                     dismiss()
