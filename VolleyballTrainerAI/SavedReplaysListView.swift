@@ -128,7 +128,10 @@ struct SavedReplaysListView: View {
                         }
                     }
                     .scrollContentBackground(.hidden)
+                    .listStyle(.plain)
+                    .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
+                    .padding(.horizontal, -20)
                 }
             }
         }

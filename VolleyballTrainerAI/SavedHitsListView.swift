@@ -103,7 +103,10 @@ struct SavedHitsListView: View {
                         }
                     }
                     .scrollContentBackground(.hidden)
+                    .listStyle(.plain)
+                    .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
+                    .padding(.horizontal, -20)
                     .toolbar {
                         ToolbarItem(placement: .primaryAction) {
                             Button(role: .destructive, action: {
