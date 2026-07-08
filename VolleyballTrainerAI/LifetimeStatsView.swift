@@ -36,13 +36,45 @@ struct LifetimeStatsView: View {
     private var bestScore: VolleyballHit? { allHits.max(by: { $0.overallScore < $1.overallScore }) }
     private var bestDistance: VolleyballHit? { allHits.max(by: { $0.ballDistanceFeet < $1.ballDistanceFeet }) }
 
+    @Environment(\.dismiss) private var dismiss
+    
     var body: some View {
         ZStack {
-            Color(red: 0.07, green: 0.07, blue: 0.09)
+            Color.black.ignoresSafeArea()
+            
+            Image("background")
+                .resizable()
+                .scaledToFill()
                 .ignoresSafeArea()
+                .opacity(0.3)
 
             ScrollView {
                 VStack(spacing: 16) {
+                    // Back button
+                    HStack {
+                        Button(action: { dismiss() }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "chevron.left")
+                                Text("Back")
+                            }
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .foregroundColor(.pink)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color.black.opacity(0.4))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(Color.pink.opacity(0.5), lineWidth: 1)
+                                    )
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        Spacer()
+                    }
+                    .padding(.top, 16)
+                    
                     // Header
                     VStack(spacing: 6) {
                         Text("Lifetime Performance Overview")

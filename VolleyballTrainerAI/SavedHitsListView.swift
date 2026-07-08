@@ -3,6 +3,7 @@ import SwiftData
 
 struct SavedHitsListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @Query(sort: \VolleyballHit.timestamp, order: .reverse) private var allHits: [VolleyballHit]
     @State private var showDeleteAllAlert = false
 
@@ -16,10 +17,39 @@ struct SavedHitsListView: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.07, green: 0.07, blue: 0.09)
+            Color.black.ignoresSafeArea()
+            
+            Image("background")
+                .resizable()
+                .scaledToFill()
                 .ignoresSafeArea()
+                .opacity(0.3)
 
             VStack(spacing: 16) {
+                HStack {
+                    Button(action: { dismiss() }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "chevron.left")
+                            Text("Back")
+                        }
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundColor(.pink)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color.black.opacity(0.4))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color.pink.opacity(0.5), lineWidth: 1)
+                                )
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    Spacer()
+                }
+                .padding(.top, 16)
+
                 VStack(spacing: 4) {
                     Text("Saved Hits")
                         .font(.title2)

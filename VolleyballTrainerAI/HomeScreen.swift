@@ -21,6 +21,20 @@ struct HomeScreen: View {
 
                         VStack(spacing: 22) {
 
+                            CourtPushButton(title: "Player Profile", icon: "person.circle") {
+                                navigateTo = "PlayerProfile"
+                            }
+                            .frame(width: geo.size.width * 0.50, height: 60)
+                            .font(.custom("Orbitron-Regular", size: 22))
+                            .multilineTextAlignment(.center)
+
+                            CourtPushButton(title: "Performance Hub", icon: "chart.line.uptrend.xyaxis") {
+                                navigateTo = "PerformanceHub"
+                            }
+                            .frame(width: geo.size.width * 0.50, height: 60)
+                            .font(.custom("Orbitron-Regular", size: 22))
+                            .multilineTextAlignment(.center)
+
                             CourtPushButton(title: "Play Hub", icon: "play.circle") {
                                 navigateTo = "PlayHub"
                             }
@@ -35,22 +49,8 @@ struct HomeScreen: View {
                             .font(.custom("Orbitron-Regular", size: 22))
                             .multilineTextAlignment(.center)
 
-                            CourtPushButton(title: "Player Profile", icon: "person.circle") {
-                                navigateTo = "PlayerProfile"
-                            }
-                            .frame(width: geo.size.width * 0.50, height: 60)
-                            .font(.custom("Orbitron-Regular", size: 22))
-                            .multilineTextAlignment(.center)
-
                             CourtPushButton(title: "Training Hub", icon: "dumbbell") {
                                 navigateTo = "TrainingHub"
-                            }
-                            .frame(width: geo.size.width * 0.50, height: 60)
-                            .font(.custom("Orbitron-Regular", size: 22))
-                            .multilineTextAlignment(.center)
-
-                            CourtPushButton(title: "Performance Hub", icon: "chart.line.uptrend.xyaxis") {
-                                navigateTo = "PerformanceHub"
                             }
                             .frame(width: geo.size.width * 0.50, height: 60)
                             .font(.custom("Orbitron-Regular", size: 22))

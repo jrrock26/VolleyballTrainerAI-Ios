@@ -4,6 +4,7 @@ import AVKit
 
 struct SavedReplaysListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @Query(sort: \SavedReplay.createdAt, order: .reverse) private var savedReplays: [SavedReplay]
     @State private var selectedReplay: SavedReplay? = nil
     @State private var showDeleteAlert = false
@@ -14,15 +15,44 @@ struct SavedReplaysListView: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.07, green: 0.07, blue: 0.09)
+            Color.black.ignoresSafeArea()
+            
+            Image("background")
+                .resizable()
+                .scaledToFill()
                 .ignoresSafeArea()
+                .opacity(0.3)
 
             VStack(spacing: 16) {
+                HStack {
+                    Button(action: { dismiss() }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "chevron.left")
+                            Text("Back")
+                        }
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundColor(.pink)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color.black.opacity(0.4))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color.pink.opacity(0.5), lineWidth: 1)
+                                )
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    Spacer()
+                }
+                .padding(.top, 16)
+
                 VStack(spacing: 4) {
                     Text("Saved Replays")
                         .font(.title2)
                         .bold()
-                        .foregroundColor(.white)
+                        .foregroundColor(.pink)
                     Text("\(savedReplays.count)/\(maxReplays) slots used")
                         .font(.caption)
                         .foregroundColor(savedReplays.count >= maxReplays ? .red : .gray)
@@ -53,7 +83,7 @@ struct SavedReplaysListView: View {
                                 HStack(spacing: 12) {
                                     Image(systemName: "play.rectangle.fill")
                                         .font(.title2)
-                                        .foregroundColor(.yellow)
+                                        .foregroundColor(.pink)
 
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(replay.title)
@@ -73,7 +103,7 @@ struct SavedReplaysListView: View {
                                         }
                                         Text("Score: \(String(format: "%.0f", replay.overallScore)) pts")
                                             .font(.caption2)
-                                            .foregroundColor(.yellow.opacity(0.8))
+                                            .foregroundColor(.pink.opacity(0.8))
                                     }
 
                                     Spacer()
