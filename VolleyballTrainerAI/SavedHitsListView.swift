@@ -4,7 +4,6 @@ import SwiftData
 struct SavedHitsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \VolleyballHit.timestamp, order: .reverse) private var allHits: [VolleyballHit]
-    @State private var selectedHitReplay: IdentifiableHitSession? = nil
     @State private var showDeleteAllAlert = false
 
     private var groupedSessions: [(date: Date, hits: [VolleyballHit])] {
@@ -26,7 +25,7 @@ struct SavedHitsListView: View {
                         .font(.title2)
                         .bold()
                         .foregroundColor(.white)
-                    Text("\(allHits.count) total hits recorded")
+                    Text("\(allHits.count) total hits recorded • Auto-deletes after 40 days")
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
@@ -58,13 +57,6 @@ struct SavedHitsListView: View {
                                         }
                                         Spacer()
                                         Button(action: {
-                                            replaySingle(hit)
-                                        }) {
-                                            Image(systemName: "play.circle.fill")
-                                                .font(.title2)
-                                                .foregroundColor(.green)
-                                        }
-                                        Button(action: {
                                             delete(hit)
                                         }) {
                                             Image(systemName: "trash")
@@ -93,9 +85,6 @@ struct SavedHitsListView: View {
                 }
             }
         }
-        .fullScreenCover(item: $selectedHitReplay) { sessionWrapper in
-            ReplaySummaryView(sessionHits: sessionWrapper.hits)
-        }
         .alert("Delete all saved hits?", isPresented: $showDeleteAllAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete All", role: .destructive) {
@@ -106,10 +95,9 @@ struct SavedHitsListView: View {
         }
         .navigationTitle("Saved Hits")
         .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private func replaySingle(_ hit: VolleyballHit) {
-        selectedHitReplay = IdentifiableHitSession(id: hit.id, hits: [hit])
+        .onAppear {
+            purgeOldHits()
+        }
     }
 
     private func delete(_ hit: VolleyballHit) {
@@ -122,6 +110,17 @@ struct SavedHitsListView: View {
             modelContext.delete(hit)
         }
         try? modelContext.save()
+    }
+
+    private func purgeOldHits() {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -40, to: Date()) ?? Date()
+        let oldHits = allHits.filter { $0.timestamp < cutoff }
+        for hit in oldHits {
+            modelContext.delete(hit)
+        }
+        if !oldHits.isEmpty {
+            try? modelContext.save()
+        }
     }
 
     private func formattedTime(_ date: Date) -> String {

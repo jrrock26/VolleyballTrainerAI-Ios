@@ -33,6 +33,8 @@
 		98A000022FE8B0000012345C /* PracticeHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A000122FE8B0000012345C /* PracticeHubView.swift */; };
 		AD0000012FE8B0000012345D /* ScreenCaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0000022FE8B0000012345D /* ScreenCaptureManager.swift */; };
 		CD0000012FE8B0000012345E /* PlayerProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD0000022FE8B0000012345E /* PlayerProfileView.swift */; };
+		D60000032FE8B00000123461 /* SavedReplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60000012FE8B0000012345F /* SavedReplay.swift */; };
+		D60000042FE8B00000123462 /* SavedReplaysListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60000022FE8B00000123460 /* SavedReplaysListView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -68,6 +70,8 @@
 		98A000122FE8B0000012345C /* PracticeHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeHubView.swift; sourceTree = "<group>"; };
 		AD0000022FE8B0000012345D /* ScreenCaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureManager.swift; sourceTree = "<group>"; };
 		CD0000022FE8B0000012345E /* PlayerProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerProfileView.swift; sourceTree = "<group>"; };
+		D60000012FE8B0000012345F /* SavedReplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedReplay.swift; sourceTree = "<group>"; };
+		D60000022FE8B00000123460 /* SavedReplaysListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedReplaysListView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -130,6 +134,8 @@
 				96A000172FE8B0000012345C /* RotationsView.swift */,
 				AD0000022FE8B0000012345D /* ScreenCaptureManager.swift */,
 				CD0000022FE8B0000012345E /* PlayerProfileView.swift */,
+				D60000012FE8B0000012345F /* SavedReplay.swift */,
+				D60000022FE8B00000123460 /* SavedReplaysListView.swift */,
 			);
 			path = VolleyballTrainerAI;
 			sourceTree = "<group>";
@@ -253,6 +259,8 @@
 				96A000072FE8B0000012345C /* RotationsView.swift in Sources */,
 				AD0000012FE8B0000012345D /* ScreenCaptureManager.swift in Sources */,
 				CD0000012FE8B0000012345E /* PlayerProfileView.swift in Sources */,
+				D60000032FE8B00000123461 /* SavedReplay.swift in Sources */,
+				D60000042FE8B00000123462 /* SavedReplaysListView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

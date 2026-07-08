@@ -8,6 +8,7 @@ struct PerformanceHubView: View {
     @State private var showCharts = false
     @State private var showSavedHits = false
     @State private var showLifetimeStats = false
+    @State private var showSavedReplays = false
 
     @Environment(\.dismiss) private var dismiss
 
@@ -82,6 +83,13 @@ struct PerformanceHubView: View {
                             .frame(width: geo.size.width * 0.50, height: 60)
                             .font(.custom("Orbitron-Regular", size: 22))
                             .multilineTextAlignment(.center)
+
+                            CourtPushButton(title: "Saved Replays", icon: "video.badge.plus") {
+                                showSavedReplays = true
+                            }
+                            .frame(width: geo.size.width * 0.50, height: 60)
+                            .font(.custom("Orbitron-Regular", size: 20))
+                            .multilineTextAlignment(.center)
                         }
 
                         Spacer()
@@ -96,6 +104,7 @@ struct PerformanceHubView: View {
         .navigationDestination(isPresented: $showSavedHits) { SavedHitsListView() }
         .navigationDestination(isPresented: $showCharts) { ChartsView() }
         .navigationDestination(isPresented: $showLifetimeStats) { LifetimeStatsView() }
+        .navigationDestination(isPresented: $showSavedReplays) { SavedReplaysListView() }
     }
 }
 

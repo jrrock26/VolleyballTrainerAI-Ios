@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import AVKit
 import Vision
 
@@ -13,11 +14,17 @@ enum PortraitOrientation {
 struct ReplaySummaryView: View {
     let sessionHits: [VolleyballHit]
 
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \SavedReplay.createdAt, order: .reverse) private var savedReplays: [SavedReplay]
     @StateObject private var tracker = PoseTracker()
     @State private var selectedHitIndex: Int = 0
     @State private var slowMotionEnabled = true
     @State private var player = AVPlayer()
+    @State private var showSaveConfirm = false
+    @State private var saveMessage = ""
     @Environment(\.dismiss) private var dismiss
+
+    private let maxReplays = 30
 
     var body: some View {
         GeometryReader { geo in
@@ -78,8 +85,6 @@ struct ReplaySummaryView: View {
                                 .cornerRadius(12)
                                 .clipped()
                                 .allowsHitTesting(false)
-                                .scaleEffect(0.70)
-                                .offset(x: 10, y: 0)
 
                                 if let ballRect = tracker.ballBoundingBoxRect {
                                     let scaleX = tracker.videoRect.width
@@ -207,6 +212,16 @@ struct ReplaySummaryView: View {
                             )
 
                             HStack(spacing: 8) {
+                                Button("Save Replay") {
+                                    saveCurrentHitAsReplay(currentHit)
+                                }
+                                .font(.caption.bold())
+                                .foregroundColor(.black)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Color.green)
+                                .cornerRadius(8)
+
                                 Button("Saved Analytics Vault") {
                                     dismiss()
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -242,6 +257,73 @@ struct ReplaySummaryView: View {
         }
         .onAppear {
             PortraitOrientation.lock()
+        }
+        .alert("Save Replay", isPresented: $showSaveConfirm) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(saveMessage)
+        }
+    }
+
+    private func saveCurrentHitAsReplay(_ hit: VolleyballHit) {
+        guard !hit.videoLocalURLString.isEmpty else {
+            saveMessage = "No video file associated with this hit."
+            showSaveConfirm = true
+            return
+        }
+
+        let sourceURL = URL(fileURLWithPath: hit.videoLocalURLString)
+        guard FileManager.default.fileExists(atPath: sourceURL.path) else {
+            saveMessage = "Video file not found on disk."
+            showSaveConfirm = true
+            return
+        }
+
+        // Check max limit
+        if savedReplays.count >= maxReplays {
+            saveMessage = "Maximum of \(maxReplays) saved replays reached. Delete some to save more."
+            showSaveConfirm = true
+            return
+        }
+
+        // Copy the video file to a persistent location
+        let documentsPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+        let replaysDir = (documentsPath as NSString).appendingPathComponent("SavedReplays")
+        try? FileManager.default.createDirectory(at: URL(fileURLWithPath: replaysDir), withIntermediateDirectories: true)
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd_HHmmss"
+        let dateStr = dateFormatter.string(from: Date())
+        let destFileName = "replay_\(dateStr)_\(hit.hitType).mp4"
+        let destURL = URL(fileURLWithPath: (replaysDir as NSString).appendingPathComponent(destFileName))
+
+        do {
+            // Remove if already exists
+            try? FileManager.default.removeItem(at: destURL)
+            try FileManager.default.copyItem(at: sourceURL, to: destURL)
+
+            let title = "\(hit.hitType) - \(dateFormatter.string(from: Date()))"
+            let replay = SavedReplay(
+                title: title,
+                videoURLString: destURL.path,
+                sessionDate: hit.timestamp,
+                hitType: hit.hitType,
+                ballSpeedMPH: hit.ballSpeedMPH,
+                overallScore: hit.overallScore,
+                jumpHeightInches: hit.jumpHeightInches,
+                armAngleDegrees: hit.armAngleDegrees,
+                ballAngleDegrees: hit.ballAngleDegrees,
+                ballDistanceFeet: hit.ballDistanceFeet,
+                coachFeedback: hit.coachFeedback
+            )
+            modelContext.insert(replay)
+            try? modelContext.save()
+
+            saveMessage = "Replay saved successfully! (\(savedReplays.count + 1)/\(maxReplays) slots used)"
+            showSaveConfirm = true
+        } catch {
+            saveMessage = "Failed to save replay: \(error.localizedDescription)"
+            showSaveConfirm = true
         }
     }
 }

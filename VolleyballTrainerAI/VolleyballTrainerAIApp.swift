@@ -20,6 +20,7 @@ struct VolleyballTrainerAIApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             VolleyballHit.self,
+            SavedReplay.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
