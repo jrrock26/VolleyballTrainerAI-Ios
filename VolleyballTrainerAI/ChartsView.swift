@@ -8,6 +8,11 @@ struct ChartsView: View {
     @State private var selectedHitType: String = "All"
     @State private var hasLoaded = false
 
+    private var availableHitTypes: [String] {
+        let types = Array(Set(allHits.map(\.hitType))).sorted()
+        return types
+    }
+
     private var filteredHits: [VolleyballHit] {
         if selectedHitType == "All" {
             return Array(allHits.reversed())
@@ -36,8 +41,9 @@ struct ChartsView: View {
                     // Filter picker
                     Picker("Hit Type", selection: $selectedHitType) {
                         Text("All").tag("All")
-                        Text("Spike").tag("Spike")
-                        Text("Serve").tag("Serve")
+                        ForEach(availableHitTypes, id: \.self) { type in
+                            Text(type).tag(type)
+                        }
                     }
                     .pickerStyle(.segmented)
                     .padding(.horizontal)
