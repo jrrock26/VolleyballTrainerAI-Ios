@@ -35,6 +35,18 @@ enum AthleteLevel: String, Codable, CaseIterable {
         default: return .elite
         }
     }
+
+    /// Estimates a level directly from a single rep's raw metrics so feedback
+    /// is always rich even when no persistent profile exists yet.
+    static func estimate(from hitType: String, ballSpeed: Double, jumpHeight: Double, armAngle: Double) -> AthleteLevel {
+        let power = ballSpeed + jumpHeight * 1.2 + max(0, armAngle - 130) * 0.3
+        switch power {
+        case 0..<45:   return .beginner
+        case 45..<65:  return .intermediate
+        case 65..<90:  return .advanced
+        default:       return .elite
+        }
+    }
 }
 
 // MARK: - Drill Library
@@ -63,7 +75,10 @@ struct Drill: Identifiable, Codable, Equatable {
         Drill(name: "Toss-Under-Cone", category: "Toss & Reach", description: "Place a cone 18 in above your reach. Toss so it barely grazes the cone top before contact.", difficulty: .beginner, reps: "20", sets: "3", restSeconds: 45, focuses: ["tossConsistency","armExtension"], progressionHint: "Raise cone 2 inches when you hit 80% success for a session."),
         Drill(name: "Medicine Ball Rotational Toss", category: "Power Generation", description: "6–8 lb med ball, face sideways, rotate through core and toss into wall.", difficulty: .intermediate, reps: "12", sets: "4", restSeconds: 60, focuses: ["coreRotation","servePower"], progressionHint: "Add a 2-step hop before the toss to mimic jump serve load."),
         Drill(name: "Light Ball Speed Drill", category: "Power Generation", description: "Use a beach ball or very light ball. Serve as hard as possible — forces a loose, whippy arm.", difficulty: .beginner, reps: "15", sets: "3", restSeconds: 45, focuses: ["armSpeed","serveTechnique"], progressionHint: "Switch to a normal volleyball as speed improves."),
-        Drill(name: "Target Serve Zone Drill", category: "Serve Depth", description: "Place a cone or towel in the back third. Serve ONLY to that zone to force flatter, faster trajectory.", difficulty: .intermediate, reps: "15", sets: "3", restSeconds: 60, focuses: ["serveAccuracy","launchAngle"], progressionHint: "Target smaller zones (e.g., just behind the 10-ft line).")
+        Drill(name: "Target Serve Zone Drill", category: "Serve Depth", description: "Place a cone or towel in the back third. Serve ONLY to that zone to force flatter, faster trajectory.", difficulty: .intermediate, reps: "15", sets: "3", restSeconds: 60, focuses: ["serveAccuracy","launchAngle"], progressionHint: "Target smaller zones (e.g., just behind the 10-ft line)."),
+        Drill(name: "Contact-Point Timing Drill", category: "Contact Timing", description: "Tape a height mark on a wall at your full-reach contact point. Strike a tossed ball exactly as it reaches that mark so contact always happens at full extension.", difficulty: .intermediate, reps: "12", sets: "4", restSeconds: 50, focuses: ["contactPoint","timing"], progressionHint: "Lower the mark 2 inches only after 10 clean reps in a row."),
+        Drill(name: "Deep Corner Targeting Drill", category: "Shot Placement", description: "Lay two cones in the back-left and back-right corners. Alternate spikes aiming to land inside each cone to build angle control and court awareness.", difficulty: .intermediate, reps: "10", sets: "4", restSeconds: 55, focuses: ["placement","launchAngle"], progressionHint: "Shrink the target cones once accuracy exceeds 70%."),
+        Drill(name: "Wrist-Lag Snap Drill", category: "Power Transfer", description: "Hold a weighted wristband. Practice 'lagging' the wrist behind the forearm until the last 6 inches of the swing, then whip it over the top of the ball.", difficulty: .advanced, reps: "20", sets: "3", restSeconds: 40, focuses: ["wristSnap","armSpeed"], progressionHint: "Remove the band and feel the same late snap with a live ball.")
     ]
 
     static func recommended(for focusArea: String, level: AthleteLevel) -> Drill {
@@ -113,7 +128,7 @@ enum SkillLevel: String, Codable, CaseIterable {
     case varsity = "Varsity"
     case collegiate = "Collegiate"
     case coach = "Coach"
-    
+
     var mappedAthleteLevel: AthleteLevel {
         switch self {
         case .jrHigh: return .beginner
@@ -216,7 +231,6 @@ struct AthleteProfile: Codable, Equatable {
             nextTargetJumpHeight += 1.5
             nextTargetBallSpeed  += 3.0
         } else if avg < 45 {
-            // slight retreat for safety — coach back to fundamentals
             nextTargetArmAngle   = max(130, nextTargetArmAngle   - 1.0)
             nextTargetJumpHeight = max(6,  nextTargetJumpHeight - 0.8)
             nextTargetBallSpeed  = max(12, nextTargetBallSpeed  - 1.5)
@@ -247,7 +261,6 @@ struct AthleteProfile: Codable, Equatable {
             if avgSpeed < 25 { weakAreas.append("powerTransfer") }
             else { strongAreas.append("powerTransfer") }
         case .advanced, .elite:
-            // fine-grained granularity at higher levels
             if avgAngle < 160 { weakAreas.append("armExtension") }
             if avgJump < 18 { weakAreas.append("explosiveness") }
             if avgSpeed < 40 { weakAreas.append("wristSnap") }
@@ -278,14 +291,25 @@ struct BiomechanicalFault: Identifiable, Equatable {
     let category: String
     let phase: MovementPhase
     let severity: FaultSeverity
-    let observation: String
-    let rootCause: String
+    let observation: String      // What the data shows
+    let whyItMatters: String     // Consequence for performance
+    let rootCause: String        // Biomechanical reason
+    let fixSteps: [String]       // Ordered, actionable corrections
     let drill: Drill
     let drillContext: String
-    let microCue: String            // one sentence real-time cue
-    let confidence: Double          // 0–1 based on tracking certainty
+    let microCue: String         // one sentence real-time cue
+    let confidence: Double       // 0–1 based on tracking certainty
 
     enum FaultSeverity: Int, Codable { case low = 1, medium = 2, high = 3, critical = 4 }
+
+    var severityLabel: String {
+        switch severity {
+        case .low: return "Minor"
+        case .medium: return "Moderate"
+        case .high: return "Significant"
+        case .critical: return "Critical"
+        }
+    }
 }
 
 enum MovementPhase: String {
@@ -319,48 +343,74 @@ struct DetectSpike {
         let targetJump  = profile.nextTargetJumpHeight
         let targetSpeed = profile.nextTargetBallSpeed
 
-        // Contact phase: arm extension
+        // MARK: Arm extension at contact
         if armAngle < targetAngle - 20 {
             faults.append(BiomechanicalFault(
                 category: "Arm Action", phase: .contact, severity: .critical,
-                observation: "Contact is \(Int(targetAngle - armAngle))° below target — power window is wasted.",
-                rootCause: "Premature shoulder rotation pulls the elbow forward before full stretch.",
+                observation: "Your arm reached only \(Int(armAngle))° of extension versus a \(Int(targetAngle))° target — you're contacting well below the high point.",
+                whyItMatters: "Every degree of lost extension lowers your contact height. Blockers read a lower ball easily, and you sacrifice the steep downward window that makes spikes unreturnable.",
+                rootCause: "The hitting shoulder rotates open too early, pulling the elbow forward and down before the arm fully stretches overhead.",
+                fixSteps: [
+                    "On your draw, picture pulling the elbow straight UP to the sky, thumb near your ear — not back behind you.",
+                    "Delay shoulder rotation until the hand is at its highest point.",
+                    "Jump a half-count later so your arm reaches full stretch exactly at apex.",
+                    "Practice 3×15 Wall Shadow reps feeling the elbow brush the wall before contact."
+                ],
                 drill: Drill.recommended(for: "armExtension", level: profile.athleteLevel),
-                drillContext: "Emphasize vertical reach before horizontal rotation.",
+                drillContext: "Emphasize vertical reach BEFORE any horizontal rotation.",
                 microCue: "Reach UP first, swing LATER.",
                 confidence: 0.92
             ))
         } else if armAngle < targetAngle - 5 {
             faults.append(BiomechanicalFault(
                 category: "Arm Action", phase: .contact, severity: .medium,
-                observation: "Close to target arm extension, but still \(Int(targetAngle - armAngle))° short.",
-                rootCause: "Late elbow drop or insufficient arm-drive momentum.",
+                observation: "Arm extension is \(Int(targetAngle - armAngle))° short of your \(Int(targetAngle))° target — close, but leaving power on the table.",
+                whyItMatters: "A slightly low contact point flattens your possible trajectory and costs 2–4 mph of downward drive.",
+                rootCause: "A late elbow drop or insufficient upward arm-drive momentum before rotation.",
+                fixSteps: [
+                    "Focus on 'elbow to ear' before the hand opens.",
+                    "Add a small pause at the top of your draw to reinforce the high position.",
+                    "Drill with a cone 2 ft above your reach and contact at its height."
+                ],
                 drill: Drill.recommended(for: "armExtension", level: profile.athleteLevel),
                 drillContext: "Feel the elbow brush past your ear before the hand opens.",
                 microCue: "Elbow to ear, then open.",
                 confidence: 0.88
             ))
-        } else {
-            // good arm angle — check wrist snap at contact
-            if ballSpeed < targetSpeed * 0.75 {
-                faults.append(BiomechanicalFault(
-                    category: "Power Transfer", phase: .contact, severity: .medium,
-                    observation: "Arm is tracking but ball speed lags — wrist is likely slapping flat.",
-                    rootCause: "Hand contacts as a rigid paddle; fingers do not wrap over the ball.",
-                    drill: Drill.recommended(for: "wristSnap", level: profile.athleteLevel),
-                    drillContext: "Open hand, relax wrist, snap through the top of the ball.",
-                    microCue: "Pull the ball down, don't push it.",
-                    confidence: 0.85
-                ))
-            }
         }
 
-        // Jump / approach
+        // MARK: Wrist snap / power transfer when arm is good
+        if armAngle >= targetAngle - 5 && ballSpeed < targetSpeed * 0.75 {
+            faults.append(BiomechanicalFault(
+                category: "Power Transfer", phase: .contact, severity: .medium,
+                observation: "Arm extension looks right, but ball speed (\(Int(ballSpeed)) mph) is well under your \(Int(targetSpeed)) mph target — the wrist isn't converting arm speed into the ball.",
+                whyItMatters: "A flat, paddle-like hand 'pushes' the ball instead of whipping it, bleeding 30–40% of available power.",
+                rootCause: "The hand contacts as a rigid plate; fingers don't wrap and snap over the top-back of the ball.",
+                fixSteps: [
+                    "At contact, imagine slapping the top of the ball and your fingers following through DOWN past your opposite hip.",
+                    "Keep the wrist relaxed until the last 6 inches, then whip it.",
+                    "Use the Towel Snap Drill to train a loud, fast snap."
+                ],
+                drill: Drill.recommended(for: "wristSnap", level: profile.athleteLevel),
+                drillContext: "Open hand, relax wrist, snap through the top of the ball.",
+                microCue: "Pull the ball down, don't push it.",
+                confidence: 0.85
+            ))
+        }
+
+        // MARK: Jump / approach
         if jumpHeight < targetJump - 4 {
             faults.append(BiomechanicalFault(
                 category: "Approach & Jump", phase: .blockJump, severity: .critical,
-                observation: "Jump is \(String(format: "%.1f", targetJump - jumpHeight)) in below target — attack angle is compromised.",
-                rootCause: "Penultimate step is too vertical; hips are not loading back and down.",
+                observation: "Jump height is \(String(format: "%.1f", jumpHeight)) in versus a \(String(format: "%.1f", targetJump)) in target — your attack angle is severely compromised.",
+                whyItMatters: "Lower jumps mean a lower contact point. You're forced to hit flatter, giving blockers and diggers an easy read.",
+                rootCause: "The penultimate step is too vertical and the hips never load back-and-down, so you can't convert horizontal speed into vertical lift.",
+                fixSteps: [
+                    "On the second-to-last step, sit BACK and DOWN like lowering into a chair.",
+                    "Swing both arms back, then drive them aggressively forward/up as you plant.",
+                    "Plant with a heel-toe roll and let the plant foot's stopping force launch you up.",
+                    "Add Box Jump Transitions to wire the approach-to-jump conversion."
+                ],
                 drill: Drill.recommended(for: "verticalJump", level: profile.athleteLevel),
                 drillContext: "Sit back on the penultimate step like sitting into a chair.",
                 microCue: "Load hips, explode up.",
@@ -369,8 +419,13 @@ struct DetectSpike {
         } else if jumpHeight < targetJump {
             faults.append(BiomechanicalFault(
                 category: "Approach & Jump", phase: .blockJump, severity: .low,
-                observation: "Moderate vert. A 2–3 in gain closes air space for blockers.",
-                rootCause: "Approach timing is slightly off arm-swing-to-plant ratio.",
+                observation: "Vertical is \(String(format: "%.1f", jumpHeight)) in — within range but a 2–3 in gain would open more attacking angles.",
+                whyItMatters: "Small jump gains create valuable air space that forces blockers to commit earlier.",
+                rootCause: "Slight mismatch between arm-swing timing and the plant moment.",
+                fixSteps: [
+                    "Count your approach out loud: 'down-up' syncing arms down on the penultimate step, arms up on plant.",
+                    "Film from the side to check arm-plant sync."
+                ],
                 drill: Drill.recommended(for: "approachTiming", level: profile.athleteLevel),
                 drillContext: "Match arm swing peak to plant moment exactly.",
                 microCue: "Arms down, plant, arms up, jump.",
@@ -378,12 +433,18 @@ struct DetectSpike {
             ))
         }
 
-        // Trajectory / launch angle
+        // MARK: Trajectory / launch angle
         if launchAngle >= 0 {
             faults.append(BiomechanicalFault(
                 category: "Angle of Attack", phase: .contact, severity: .critical,
-                observation: "Ball is launching upward at +\(Int(launchAngle))°. Should always drive down for a spike.",
-                rootCause: "Contact point is too low on the ball; palm is pushing rather than topping.",
+                observation: "Ball left at +\(Int(launchAngle))° — it's going UP, not down. A spike must always drive into the court.",
+                whyItMatters: "An upward spike sails long or into the block. It's the single most common reason a swing gets stuffed or goes out.",
+                rootCause: "Contact point is too low on the ball; the palm pushes the underside instead of topping it.",
+                fixSteps: [
+                    "Contact the TOP-BACK quadrant of the ball with your wrist leading over it.",
+                    "Think 'highlight the ball' — hand on top, fingers pointing down after contact.",
+                    "Use the Downward Contact Drill against a wall to feel the downward whip."
+                ],
                 drill: Drill.recommended(for: "contactHand", level: profile.athleteLevel),
                 drillContext: "Contact the top-back quadrant with wrist leading.",
                 microCue: "Hit the top — not the bottom.",
@@ -392,8 +453,14 @@ struct DetectSpike {
         } else if launchAngle > -6 {
             faults.append(BiomechanicalFault(
                 category: "Angle of Attack", phase: .followThrough, severity: .medium,
-                observation: "Downward angle is shallow (\(String(format: "%.1f", launchAngle))°). Blockers feast on flat angle.",
-                rootCause: "Wrist is not snapping over; hand is finishing forward rather than downward.",
+                observation: "Downward angle is shallow (\(String(format: "%.1f", launchAngle))°). Blockers feast on a flat trajectory.",
+                whyItMatters: "A shallow angle is easy to read and dig; steeper angles disappear below the blocker's hands.",
+                rootCause: "The wrist isn't snapping OVER the ball; the hand finishes forward rather than downward.",
+                fixSteps: [
+                    "After contact, drive your palm down toward the floor as if pressing a button.",
+                    "Imagine 'breaking' the ball over the net like a topspin tennis serve.",
+                    "Rep the Downward Contact Drill aiming for -10° or steeper."
+                ],
                 drill: Drill.recommended(for: "launchAngle", level: profile.athleteLevel),
                 drillContext: "Break the ball over the net like a tennis topspin serve.",
                 microCue: "Snap your palm down NOW.",
@@ -401,16 +468,40 @@ struct DetectSpike {
             ))
         }
 
-        // Speed vs arm angle trade-off (efficiency indicator)
-        if ballSpeed < targetSpeed * 0.6 && armAngle > targetAngle - 5 {
+        // MARK: Speed vs arm-angle efficiency
+        if ballSpeed < targetSpeed * 0.6 && armAngle >= targetAngle - 5 {
             faults.append(BiomechanicalFault(
                 category: "Power Transfer", phase: .contact, severity: .medium,
-                observation: "Arm extension is right, but power is leaking — likely grip tension.",
-                rootCause: "Gripping the ball too tightly decelerates arm speed at contact.",
+                observation: "Arm extension is correct yet speed is only \(Int(ballSpeed)) mph (target \(Int(targetSpeed))). Power is leaking somewhere in the chain.",
+                whyItMatters: "You're doing the shape right but not transferring force — the ball comes off soft.",
+                rootCause: "Gripping the ball too tightly or bracing the wrist decelerates the arm right before contact.",
+                fixSteps: [
+                    "Soften the hand at the top of the swing — a tight grip acts like a brake.",
+                    "Let the hand be a 'lash', not a 'baton'.",
+                    "Use Arm Swing Jumps to feel arm-only speed."
+                ],
                 drill: Drill.recommended(for: "armSpeed", level: profile.athleteLevel),
                 drillContext: "Loosen grip; let the hand be a lash, not a baton.",
                 microCue: "Soft hand at the top.",
                 confidence: 0.76
+            ))
+        }
+
+        // MARK: Shot placement / distance
+        if distance > 0 && distance < 18 {
+            faults.append(BiomechanicalFault(
+                category: "Shot Placement", phase: .followThrough, severity: .low,
+                observation: "Landing point is \(String(format: "%.1f", distance)) ft from the net — a short tip that a middle blocker digs easily.",
+                whyItMatters: "Short landings let the defense transition and reset instead of being scored on.",
+                rootCause: "Contact happens slightly behind the body so the ball is pushed, not driven deep.",
+                fixSteps: [
+                    "Aim the follow-through at the back-third seam, not straight down.",
+                    "Use the Deep Corner Targeting Drill to build depth control."
+                ],
+                drill: Drill.recommended(for: "placement", level: profile.athleteLevel),
+                drillContext: "Drive the ball to the deep corners to stretch the defense.",
+                microCue: "Follow through to the back corner.",
+                confidence: 0.74
             ))
         }
 
@@ -419,6 +510,7 @@ struct DetectSpike {
 }
 
 struct DetectServe {
+
     static func detect(
         armAngle: Double,
         ballSpeed: Double,
@@ -433,12 +525,18 @@ struct DetectServe {
                           : profile.athleteLevel == .intermediate ? 35
                           : profile.athleteLevel == .advanced ? 45 : 55
 
-        // Arm extension / toss
+        // MARK: Arm extension / toss
         if armAngle < targetAngle - 15 {
             faults.append(BiomechanicalFault(
                 category: "Toss & Reach", phase: .trophyPose, severity: .critical,
-                observation: "Contact point is \(Int(targetAngle - armAngle))° below target — toss is too low.",
-                rootCause: "Toss placement is drifting behind or to the side of the contact shoulder.",
+                observation: "Contact point is \(Int(targetAngle - armAngle))° below your \(Int(targetAngle))° target — the toss is too low or drifting.",
+                whyItMatters: "A low contact point kills serve velocity and forces an upward, net-hazard trajectory.",
+                rootCause: "The toss is landing behind or to the side of the contact shoulder instead of 1 ft in front and 2 ft above reach.",
+                fixSteps: [
+                    "Toss the ball so it peaks 1 ft IN FRONT of and 2 ft ABOVE your max reach.",
+                    "Keep your tossing arm extended and release late for a consistent drop.",
+                    "Use Toss-Under-Cone to groove the height."
+                ],
                 drill: Drill.recommended(for: "tossConsistency", level: profile.athleteLevel),
                 drillContext: "Toss must peak 1 ft in front and 2 ft above your reach.",
                 microCue: "Toss UP and FRONT.",
@@ -447,8 +545,13 @@ struct DetectServe {
         } else if armAngle < targetAngle - 3 {
             faults.append(BiomechanicalFault(
                 category: "Toss & Reach", phase: .trophyPose, severity: .low,
-                observation: "Good extension, close to \(Int(armAngle))°.",
-                rootCause: "Toss location variance is the next bottleneck.",
+                observation: "Extension is good at \(Int(armAngle))°, just shy of the \(Int(targetAngle))° ideal.",
+                whyItMatters: "A slightly low contact point costs a few mph and net margin.",
+                rootCause: "Small toss-location variance is now the limiting factor.",
+                fixSteps: [
+                    "Toss to the same landing spot every rep — mark it with tape.",
+                    "Reach a touch higher before swinging."
+                ],
                 drill: Drill.recommended(for: "tossConsistency", level: profile.athleteLevel),
                 drillContext: "Toss to the same landing spot every time.",
                 microCue: "",
@@ -456,12 +559,18 @@ struct DetectServe {
             ))
         }
 
-        // Speed
+        // MARK: Speed / power
         if ballSpeed < targetSpeed * 0.6 {
             faults.append(BiomechanicalFault(
                 category: "Power Generation", phase: .serveContact, severity: .critical,
-                observation: "Serve velocity \(Int(ballSpeed)) mph — leg-to-core transfer is underdeveloped.",
-                rootCause: "Rotation stops at the shoulder; hips do not lead the torso.",
+                observation: "Serve velocity is \(Int(ballSpeed)) mph versus a \(Int(targetSpeed)) mph target — leg-to-core transfer is underdeveloped.",
+                whyItMatters: "Soft serves are passed cleanly and attacked against you. Power starts from the ground, not the arm.",
+                rootCause: "Rotation stops at the shoulder; the hips don't lead the torso, so the core never fires.",
+                fixSteps: [
+                    "Load the back hip and rotate hip-to-shoulder separation INTO contact.",
+                    "Let the non-hitting arm pull down and across to drive rotation.",
+                    "Use Medicine Ball Rotational Toss to build the core sequence."
+                ],
                 drill: Drill.recommended(for: "coreRotation", level: profile.athleteLevel),
                 drillContext: "Load back hip, rotate hip-to-shoulder separation at contact.",
                 microCue: "Hips first, arm last.",
@@ -470,8 +579,13 @@ struct DetectServe {
         } else if ballSpeed < targetSpeed {
             faults.append(BiomechanicalFault(
                 category: "Power Generation", phase: .serveContact, severity: .low,
-                observation: "Moderate speed. A looser wrist snap adds 3–5 mph instantly.",
-                rootCause: "Arm is rigid through contact; decelerates before snapping.",
+                observation: "Moderate speed at \(Int(ballSpeed)) mph. A looser wrist snap adds 3–5 mph instantly.",
+                whyItMatters: "Even small velocity gains make the pass harder and the seam tougher to read.",
+                rootCause: "The arm is rigid through contact and decelerates before the snap.",
+                fixSteps: [
+                    "Accelerate almost to the point of losing the ball — then rip it.",
+                    "Let the wrist 'lag' behind, then whip over the top."
+                ],
                 drill: Drill.recommended(for: "armSpeed", level: profile.athleteLevel),
                 drillContext: "Accelerate almost to the point of losing the ball — let it rip.",
                 microCue: "Whip through the ball.",
@@ -479,12 +593,18 @@ struct DetectServe {
             ))
         }
 
-        // Trajectory
+        // MARK: Trajectory
         if launchAngle < 5 {
             faults.append(BiomechanicalFault(
                 category: "Trajectory", phase: .serveContact, severity: .medium,
                 observation: "Launch angle \(String(format: "%.1f", launchAngle))° is very flat — net margin is razor thin.",
-                rootCause: "Toss contact too low on the body; brow-beating the ball down.",
+                whyItMatters: "A flat serve either clips the net or sits up for an easy pass.",
+                rootCause: "Contact is too low on the body; you're brow-beating the ball downward.",
+                fixSteps: [
+                    "Raise the toss 6–10 inches and contact with a higher elbow.",
+                    "Strike the ball's equator, not its top.",
+                    "Use Target Serve Zone Drill with a slightly higher contact point."
+                ],
                 drill: Drill.recommended(for: "launchAngle", level: profile.athleteLevel),
                 drillContext: "Raise toss 6–10 inches and contact with a higher elbow.",
                 microCue: "Get above the ball.",
@@ -493,8 +613,13 @@ struct DetectServe {
         } else if launchAngle > 25 {
             faults.append(BiomechanicalFault(
                 category: "Trajectory", phase: .serveSwing, severity: .medium,
-                observation: "High launch \(String(format: "%.1f", launchAngle))° gives the passer a beach ball.",
-                rootCause: "Swing path is underneath and lifting — not driving through the equator.",
+                observation: "High launch \(String(format: "%.1f", launchAngle))° gives the passer a slow, attackable ball.",
+                whyItMatters: "Lobbed serves are the easiest in the game to pass and run a offense against.",
+                rootCause: "The swing path is underneath and lifting, not driving through the equator.",
+                fixSteps: [
+                    "Drive the hand AT the target, following through in a flat direction.",
+                    "Think 'throw your hand through the ball to the passer's chest'."
+                ],
                 drill: Drill.recommended(for: "launchAngle", level: profile.athleteLevel),
                 drillContext: "Drive the hand AT the target; follow-through leads in flat direction.",
                 microCue: "Hit through, not up.",
@@ -502,11 +627,18 @@ struct DetectServe {
             ))
         }
 
-        if distance < 20 {
+        // MARK: Depth
+        if distance > 0 && distance < 20 {
             faults.append(BiomechanicalFault(
                 category: "Serve Depth", phase: .serveContact, severity: .medium,
-                observation: "Serve \(String(format: "%.1f", distance)) ft — lands in no-man's land, easy pass transition.",
-                rootCause: "Shoulder rotation stops at contact; no balanced cross-body follow-through.",
+                observation: "Serve landed \(String(format: "%.1f", distance)) ft from the net — no-man's land, an easy transition pass.",
+                whyItMatters: "Short serves let the opponent's best passer handle the ball in rhythm.",
+                rootCause: "Shoulder rotation stops at contact; there's no balanced cross-body finish to drive depth.",
+                fixSteps: [
+                    "Finish with the hitting arm crossing your opposite hip.",
+                    "Transfer weight forward onto the front foot through contact.",
+                    "Use Target Serve Zone Drill aiming for the deep 3 ft."
+                ],
                 drill: Drill.recommended(for: "serveAccuracy", level: profile.athleteLevel),
                 drillContext: "Finish with the hitting arm crossing your opposite hip.",
                 microCue: "Finish across the body.",
@@ -530,7 +662,6 @@ struct SessionAnalyzer {
         let hitCount = sessionHits.count
         let consistency = profile.sessionConsistency
 
-        // Fatigue: slope of last 6 scores vs first 6 (when available)
         var fatigueDetected = false
         if scores.count >= 10 {
             let firstHalf = Array(scores.prefix(scores.count / 2))
@@ -542,7 +673,6 @@ struct SessionAnalyzer {
             }
         }
 
-        // Find peak window (5-hit rolling max avg)
         var peakStart: Int?
         var peakEnd: Int?
         var bestAvg: Double = 0
@@ -557,7 +687,6 @@ struct SessionAnalyzer {
             }
         }
 
-        // Trending direction
         let trend: SessionIntelligence.TrendDirection
         if scores.count >= 6 {
             let chunkSize = scores.count / 3
@@ -572,10 +701,8 @@ struct SessionAnalyzer {
             trend = .stable
         }
 
-        // Dominant fault category (from profile weak areas)
         let dominant = profile.weakAreas.first
 
-        // Recovery recommendation
         let recovery: String?
         if fatigueDetected {
             recovery = "Fatigue detected. Reduce volume by 40% and focus on single-phase shadow reps. Hydrate. Return fresh in 90 min or next session."
@@ -601,7 +728,6 @@ struct SessionAnalyzer {
     static func recommendedSessionFocus(profile: AthleteProfile) -> [String] {
         var focus: [String] = []
         if profile.weakAreas.isEmpty {
-            // Emerging athlete — push the highest-impact fundamental
             if profile.athleteLevel == .beginner {
                 focus = ["armExtension", "verticalJump", "powerTransfer"]
             } else {
@@ -620,7 +746,7 @@ struct SessionAnalyzer {
 struct CoachEngine {
 
     // -------------------------------------------------------------------
-    // Public API: Keep compatibility with existing `VolleyballHit.init`
+    // Score computation (unchanged public API)
     // -------------------------------------------------------------------
     static func computeScore(
         hitType: String,
@@ -649,7 +775,34 @@ struct CoachEngine {
     }
 
     // -------------------------------------------------------------------
-    // Public API: Enhanced multi-instance coaching
+    // Build an inferred profile when none is supplied, so feedback is
+    // always rich and adaptive rather than falling back to a flat style.
+    // -------------------------------------------------------------------
+    private static func inferredProfile(
+        hitType: String,
+        armAngle: Double,
+        jumpHeight: Double,
+        ballSpeed: Double,
+        launchAngle: Double
+    ) -> AthleteProfile {
+        var p = AthleteProfile()
+        let level = AthleteLevel.estimate(from: hitType, ballSpeed: ballSpeed, jumpHeight: jumpHeight, armAngle: armAngle)
+        p.athleteLevel = level
+        p.nextTargetArmAngle   = level.targetArmAngleSpike
+        p.nextTargetJumpHeight = level.targetJumpHeightInches
+        p.nextTargetBallSpeed  = (hitType == "Spike") ? level.targetBallSpeedMPH : level.targetServeSpeedMPH
+        // Seed a small window so session intelligence + areas have something to read.
+        for _ in 0..<3 {
+            p.recentHitMetrics.append(HitMetricSnapshot(
+                speed: ballSpeed, angle: armAngle, jump: jumpHeight,
+                launch: launchAngle, score: computeScore(hitType: hitType, armAngle: armAngle, jumpHeight: jumpHeight, ballSpeed: ballSpeed, launchAngle: launchAngle, distance: 0)
+            ))
+        }
+        return p
+    }
+
+    // -------------------------------------------------------------------
+    // Unified, thorough coaching feedback
     // -------------------------------------------------------------------
     static func generateFeedback(
         hitType: String,
@@ -663,16 +816,11 @@ struct CoachEngine {
         confidence: Double = 1.0
     ) -> String {
 
-        guard let profile else {
-            // Fallback to legacy feedback if no profile is passed
-            return generateLegacyFeedback(
-                hitType: hitType,
-                armAngle: armAngle,
-                jumpHeight: jumpHeight,
-                ballSpeed: ballSpeed,
-                launchAngle: launchAngle,
-                distance: distance
-            )
+        let prof: AthleteProfile
+        if let profile = profile {
+            prof = profile
+        } else {
+            prof = inferredProfile(hitType: hitType, armAngle: armAngle, jumpHeight: jumpHeight, ballSpeed: ballSpeed, launchAngle: launchAngle)
         }
 
         let faults: [BiomechanicalFault]
@@ -683,7 +831,7 @@ struct CoachEngine {
                 ballSpeed: ballSpeed,
                 launchAngle: launchAngle,
                 distance: distance,
-                profile: profile
+                profile: prof
             )
         } else {
             faults = DetectServe.detect(
@@ -691,160 +839,123 @@ struct CoachEngine {
                 ballSpeed: ballSpeed,
                 launchAngle: launchAngle,
                 distance: distance,
-                profile: profile
+                profile: prof
             )
         }
 
-        // Filter by tracking confidence (debounce low-quality frames)
+        // Debounce low-quality tracking frames
         let credibleFaults = faults.filter { $0.confidence >= 0.60 }
-        if credibleFaults.isEmpty { return "Clean rep — lock this feeling in." }
+        if credibleFaults.isEmpty {
+            return """
+            ✅ Clean rep — every key metric is inside an effective range for your level.
+            What went right: arm extension, \(hitType == "Spike" ? "downward attack angle" : "serve trajectory"), and power transfer all look efficient.
+            Lock this feeling in: repeat 5 more reps at this same tempo, then film one to compare against future swings.
+            """
+        }
 
-        let sessionHits = sessionHits ?? []
-        let intelligence = SessionAnalyzer.intelligence(profile: profile, sessionHits: sessionHits)
-
+        let intel = SessionAnalyzer.intelligence(profile: prof, sessionHits: sessionHits ?? [])
         return formatEnhancedFeedback(
             faults: credibleFaults,
-            profile: profile,
-            intelligence: intelligence,
-            hitType: hitType
+            profile: prof,
+            intelligence: intel,
+            hitType: hitType,
+            metrics: (armAngle, jumpHeight, ballSpeed, launchAngle, distance)
         )
     }
 
     // -------------------------------------------------------------------
-    // Legacy compatibility bridge (older call sites)
-    // -------------------------------------------------------------------
-    private static func generateLegacyFeedback(
-        hitType: String,
-        armAngle: Double,
-        jumpHeight: Double,
-        ballSpeed: Double,
-        launchAngle: Double,
-        distance: Double
-    ) -> String {
-        let components = hitType == "Spike"
-            ? analyzeSpikeLegacy(armAngle: armAngle, jumpHeight: jumpHeight, ballSpeed: ballSpeed, launchAngle: launchAngle, distance: distance)
-            : analyzeServeLegacy(armAngle: armAngle, ballSpeed: ballSpeed, launchAngle: launchAngle, distance: distance)
-        return formatLegacyFeedback(components: components, hitType: hitType)
-    }
-
-    private struct LegacyComponent {
-        let severity: Int
-        let category: String
-        let observation: String
-        let prescription: String
-        let drill: String?
-    }
-
-    private static func analyzeSpikeLegacy(armAngle: Double, jumpHeight: Double, ballSpeed: Double, launchAngle: Double, distance: Double) -> [LegacyComponent] {
-        var items: [LegacyComponent] = []
-        if armAngle < 130 { items.append(LegacyComponent(severity: 3, category: "Arm Action", observation: "Your hitting elbow is dropping well below ideal contact height (\(Int(armAngle))° extension).", prescription: "Focus on an explosive 'bow-and-arrow' draw: pull your hitting elbow back and high, then drive it upward — not forward — as you initiate the swing. Contact the ball at full arm stretch above your head.", drill: "Wall Shadow Drill: Stand 3 ft from a wall, practice the arm swing slowly, ensuring your elbow brushes past your ear before ball contact."))
-        } else if armAngle < 150 { items.append(LegacyComponent(severity: 2, category: "Arm Action", observation: "Arm extension at \(Int(armAngle))° is slightly below the optimal 160–175° high-point window.", prescription: "Reach higher at contact by delaying your shoulder rotation. Let your arm fully extend before snapping your wrist. Imagine reaching through a second-story window.", drill: "Toss-and-Reach: Toss a ball 2 ft above your max reach, jump and catch it at the highest point, focusing on full arm extension."))
-        } else { items.append(LegacyComponent(severity: 1, category: "Arm Action", observation: "Excellent high-point extension at \(Int(armAngle))°.", prescription: "Maintain this arm drive. Now focus on wrist snap.", drill: nil)) }
-
-        if jumpHeight < 8 { items.append(LegacyComponent(severity: 3, category: "Approach & Jump", observation: "Jump height is very low (\(String(format: "%.1f", jumpHeight)) in) — your approach needs more power generation.", prescription: "Lengthen and accelerate your last two steps. Drive both arms back then swing them forward explosively as you plant.", drill: "3-Step Approach Series: Do 3-step approaches without the ball, focusing on heel-toe plant and arm swing."))
-        } else if jumpHeight < 14 { if ballSpeed > 30 { items.append(LegacyComponent(severity: 2, category: "Approach & Jump", observation: "Moderate jump (\(String(format: "%.1f", jumpHeight)) in). You're generating good arm speed despite limited vert — converting ground force into arm whip could unlock more power.", prescription: "Focus on loading your hips deeper in the penultimate step.", drill: "Box Jump Transitions: From a 12-in box, step off, immediately convert into your 3-step approach."))
-        } else { items.append(LegacyComponent(severity: 2, category: "Approach & Jump", observation: "Jump height is moderate (\(String(format: "%.1f", jumpHeight)) in). Gaining 3–5 more inches would significantly improve your attack angle.", prescription: "Increase penultimate step speed and use both arms aggressively in your countermovement.", drill: "Arm Swing Jumps: Jump as high as you can using only your arm swing.")) }
-        } else { items.append(LegacyComponent(severity: 1, category: "Approach & Jump", observation: "Strong vertical jump (\(String(format: "%.1f", jumpHeight)) in).", prescription: "Excellent. Now focus on timing: your arm swing should reach full extension at the apex of your jump.", drill: nil)) }
-
-        if launchAngle >= 0 { items.append(LegacyComponent(severity: 3, category: "Angle of Attack", observation: "The ball is traveling upward (+\(String(format: "%.1f", launchAngle))°) — for a spike it should always go downward into the court.", prescription: "Contact the ball higher on its back-top hemisphere. Your hand should be on top of the ball with your fingers pointing down after contact.", drill: "Downward Contact Drill: Stand 3 ft from a high wall, toss the ball 1 ft above your max reach, jump and spike it into the ground so it bounces up and hits the wall."))
-        } else if launchAngle > -8 { items.append(LegacyComponent(severity: 2, category: "Angle of Attack", observation: "Downward angle is shallow (\(String(format: "%.1f", launchAngle))°). A steeper trajectory makes blocking harder.", prescription: "Snap your wrist earlier — think of 'breaking' the ball over the net like a tennis serve.", drill: nil))
-        } else { items.append(LegacyComponent(severity: 1, category: "Angle of Attack", observation: "Good downward trajectory (\(String(format: "%.1f", launchAngle))°).", prescription: "You're driving the ball into the court well. Now practice aiming.", drill: nil)) }
-
-        return items.sorted { $0.severity > $1.severity }
-    }
-
-    private static func analyzeServeLegacy(armAngle: Double, ballSpeed: Double, launchAngle: Double, distance: Double) -> [LegacyComponent] {
-        var items: [LegacyComponent] = []
-        if armAngle < 135 { items.append(LegacyComponent(severity: 3, category: "Toss & Reach", observation: "Contact point is very low (\(Int(armAngle))° extension). This severely limits power and forces an upward trajectory.", prescription: "Your toss must be higher and slightly in front of your hitting shoulder.", drill: "Toss-Under-Cone: Place a cone 18 in above your reach. Toss so it barely grazes the cone top."))
-        } else if armAngle < 155 { items.append(LegacyComponent(severity: 2, category: "Toss & Reach", observation: "Contact at \(Int(armAngle))° — good but still 5–15° short of ideal full extension.", prescription: "Reach higher by shifting your toss 2–3 inches more forward.", drill: nil))
-        } else { items.append(LegacyComponent(severity: 1, category: "Toss & Reach", observation: "Full extension at contact (\(Int(armAngle))°).", prescription: "Your reach is excellent. Focus on consistent toss placement.", drill: nil)) }
-
-        if ballSpeed < 25 { items.append(LegacyComponent(severity: 3, category: "Power Generation", observation: "Serve velocity is low (\(String(format: "%.1f", ballSpeed)) mph).", prescription: "Generate power by rotating your core into the shot, not just using your arm.", drill: "Medicine Ball Rotational Toss: Face sideways, rotate through your core and toss the ball against a wall."))
-        } else if ballSpeed < 35 { items.append(LegacyComponent(severity: 2, category: "Power Generation", observation: "Moderate serve speed (\(String(format: "%.1f", ballSpeed)) mph).", prescription: "To add 5–8 mph, focus on a quicker arm swing by loosening your wrist.", drill: "Light Ball Speed Drill: Serve as hard as possible — if the arm is stiff, the ball won't go far."))
-        } else { items.append(LegacyComponent(severity: 1, category: "Power Generation", observation: "Strong serve velocity (\(String(format: "%.1f", ballSpeed)) mph).", prescription: "Now develop a jump serve.", drill: nil)) }
-
-        if launchAngle < 5 { items.append(LegacyComponent(severity: 2, category: "Trajectory", observation: "Launch angle is very low (\(String(format: "%.1f", launchAngle))°) — the ball may not clear the net consistently.", prescription: "Increase your contact height by adjusting your toss higher and more forward.", drill: nil))
-        } else if launchAngle > 25 { items.append(LegacyComponent(severity: 2, category: "Trajectory", observation: "Launch angle is high (\(String(format: "%.1f", launchAngle))°) — the ball will hang in the air, giving the passer time.", prescription: "Drive through the ball more horizontally. Think 'throw your hand at the target'.", drill: "Target Serve: Place a cone in the back third. Serve only to that zone."))
-        } else { items.append(LegacyComponent(severity: 1, category: "Trajectory", observation: "Good launch angle (\(String(format: "%.1f", launchAngle))°).", prescription: "", drill: nil)) }
-
-        return items.sorted { $0.severity > $1.severity }
-    }
-
-    private static func formatLegacyFeedback(components: [LegacyComponent], hitType: String) -> String {
-        guard !components.isEmpty else { return "Looking good! Keep training." }
-        let primary = components.first!
-        var parts: [String] = []
-        parts.append("🎯 \(primary.observation)")
-        if !primary.prescription.isEmpty { parts.append(primary.prescription) }
-        if let drill = primary.drill { parts.append("💪 Drill: \(drill)") }
-        if let sec = components.dropFirst().first {
-            parts.append("📌 Next priority: \(sec.observation)")
-            if let drill = sec.drill { parts.append("   Drill: \(drill)") }
-        }
-        return parts.joined(separator: "\n")
-    }
-
-    // -------------------------------------------------------------------
-    // Enhanced formatter
+    // Thorough, structured formatter
     // -------------------------------------------------------------------
     private static func formatEnhancedFeedback(
         faults: [BiomechanicalFault],
         profile: AthleteProfile,
-        intelligence: SessionIntelligence?,
-        hitType: String
+        intelligence: SessionIntelligence,
+        hitType: String,
+        metrics: (armAngle: Double, jumpHeight: Double, ballSpeed: Double, launchAngle: Double, distance: Double)
     ) -> String {
 
         let primary = faults[0]
-        let secondary = faults.count > 1 ? faults[1] : nil
+        let rest = Array(faults.dropFirst().prefix(2)) // up to 2 secondary issues
         var parts: [String] = []
 
-        // Heading with level and hit type
-        parts.append("\(hitType) Coaching — Level: \(profile.athleteLevel.rawValue) | Score: \(Int(profile.recentFormScore))")
+        // Header
+        parts.append("🏐 \(hitType) Coaching Report")
+        parts.append("Level: \(profile.athleteLevel.rawValue)  •  Score: \(Int(profile.recentFormScore))")
+        parts.append("Measured: arm \(Int(metrics.armAngle))° · jump \(String(format: "%.1f", metrics.jumpHeight))″ · speed \(Int(metrics.ballSpeed)) mph · launch \(String(format: "%.1f", metrics.launchAngle))°" + (metrics.distance > 0 ? " · depth \(String(format: "%.1f", metrics.distance)) ft" : ""))
         parts.append("")
 
-        // Primary
-        parts.append("🎯 \(primary.observation)")
+        // Primary focus block
+        parts.append("🎯 PRIMARY FOCUS — \(primary.category) (\(primary.severityLabel))")
+        parts.append(primary.observation)
+        parts.append("Why it matters: \(primary.whyItMatters)")
+        parts.append("Root cause: \(primary.rootCause)")
+        parts.append("How to fix:")
+        for (i, step) in primary.fixSteps.enumerated() {
+            parts.append("   \(i + 1). \(step)")
+        }
         if !primary.microCue.isEmpty {
             parts.append("⚡ Real-time cue: \"\(primary.microCue)\"")
         }
-        parts.append("")
-        parts.append(primary.rootCause)
-        parts.append("")
-        parts.append(primary.drill.description)
-        parts.append("   Sets x Reps: \(primary.drill.sets) x \(primary.drill.reps) | Rest: \(primary.drill.restSeconds)s")
+        parts.append("💪 Recommended drill: \(primary.drill.name)")
+        parts.append("   \(primary.drill.description)")
+        parts.append("   Protocol: \(primary.drill.sets) sets × \(primary.drill.reps) reps · rest \(primary.drill.restSeconds)s")
         if let hint = primary.drill.progressionHint {
-            parts.append("   Next step: \(hint)")
+            parts.append("   Progress when ready: \(hint)")
         }
 
-        // Secondary
-        if let s = secondary {
+        // Secondary focus blocks (condensed)
+        for s in rest {
             parts.append("")
-            parts.append("📌 Next: \(s.observation)")
-            if !s.microCue.isEmpty { parts.append("   Cue: \"\(s.microCue)\"") }
-            parts.append(s.drill.description)
-            parts.append("   Sets x Reps: \(s.drill.sets) x \(s.drill.reps) | Rest: \(s.drill.restSeconds)s")
+            parts.append("📌 ALSO WORKING ON — \(s.category) (\(s.severityLabel))")
+            parts.append(s.observation)
+            parts.append("Why: \(s.whyItMatters)")
+            parts.append("Fix: \(s.fixSteps.joined(separator: " "))")
+            parts.append("   Drill: \(s.drill.name) — \(s.drill.sets)×\(s.drill.reps), rest \(s.drill.restSeconds)s")
         }
 
         // Session intelligence
-        if let intel = intelligence, intel.hitCount >= 4 {
+        if intelligence.hitCount >= 4 {
             parts.append("")
-            parts.append("📊 Session (\(intel.hitCount) hits): \(intel.trendDirection.rawValue.capitalized)")
-            parts.append("Consistency: \(Int(intel.consistencyScore * 100))%")
-            if let cat = intel.dominantFaultCategory { parts.append("Leading pattern to fix: \(cat)") }
-            if let rec = intel.recoveryRecommendation { parts.append("🛑 \(rec)") }
-            if let p1 = intel.peakWindowStartIndex, let p2 = intel.peakWindowEndIndex {
-                parts.append("⭐ Peak window: hits \(p1 + 1)–\(p2 + 1)")
+            parts.append("📊 SESSION PULSE (\(intelligence.hitCount) hits)")
+            parts.append("Trend: \(intelligence.trendDirection.rawValue.capitalized) · Consistency: \(Int(intelligence.consistencyScore * 100))%")
+            if let cat = intelligence.dominantFaultCategory { parts.append("Recurring pattern to break: \(cat)") }
+            if let p1 = intelligence.peakWindowStartIndex, let p2 = intelligence.peakWindowEndIndex {
+                parts.append("⭐ Peak window: hits \(p1 + 1)–\(p2 + 1) — this is your ideal rhythm, chase it.")
             }
+            if let rec = intelligence.recoveryRecommendation { parts.append("🛑 \(rec)") }
         }
 
-        // Session recommendation
+        // Practice plan
         let sessionFocus = SessionAnalyzer.recommendedSessionFocus(profile: profile)
         if !sessionFocus.isEmpty {
             parts.append("")
-            parts.append("🗂 Session priorities: \(sessionFocus.joined(separator: ", "))")
+            parts.append("🗂 YOUR PRACTICE PRIORITIES")
+            let labels = sessionFocus.map { focusLabel($0) }
+            parts.append(labels.enumerated().map { "   \($0 + 1). \($1)" }.joined(separator: "\n"))
         }
 
         return parts.joined(separator: "\n")
+    }
+
+    private static func focusLabel(_ focus: String) -> String {
+        switch focus {
+        case "armExtension": return "Arm Extension — reach full high-point contact"
+        case "verticalJump": return "Vertical Jump — load hips, explode up"
+        case "powerTransfer": return "Power Transfer — wrist snap through the ball"
+        case "wristSnap": return "Wrist Snap — late, fast whip over the top"
+        case "explosiveness": return "Explosiveness — approach-to-jump conversion"
+        case "coreRotation": return "Core Rotation — hips lead the torso"
+        case "approachTiming": return "Approach Timing — sync arm swing to plant"
+        case "armSpeed": return "Arm Speed — loose, whippy contact"
+        case "tossConsistency": return "Toss Consistency — same height & spot"
+        case "launchAngle": return "Launch Angle — drive through the equator"
+        case "contactHand": return "Contact Hand — top-back quadrant"
+        case "serveAccuracy": return "Serve Accuracy — cross-body finish"
+        case "contactPoint": return "Contact Point — strike at full reach"
+        case "placement": return "Shot Placement — deep corner targeting"
+        case "elitePowerChain": return "Elite Power Chain — maintain & refine"
+        default: return focus.capitalized
+        }
     }
 }
 
