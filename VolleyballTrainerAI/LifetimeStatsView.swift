@@ -30,11 +30,26 @@ struct LifetimeStatsView: View {
         guard !allHits.isEmpty else { return 0 }
         return allHits.reduce(0) { $0 + $1.ballAngleDegrees } / Double(allHits.count)
     }
+    private var avgContactHeight: Double {
+        guard !allHits.isEmpty else { return 0 }
+        return allHits.reduce(0) { $0 + $1.contactHeightInches } / Double(allHits.count)
+    }
+    private var avgHandSpeed: Double {
+        guard !allHits.isEmpty else { return 0 }
+        return allHits.reduce(0) { $0 + $1.handSpeedMPH } / Double(allHits.count)
+    }
+    private var avgHipShoulderSep: Double {
+        guard !allHits.isEmpty else { return 0 }
+        return allHits.reduce(0) { $0 + $1.hipShoulderSeparation } / Double(allHits.count)
+    }
 
     private var bestBallSpeed: VolleyballHit? { allHits.max(by: { $0.ballSpeedMPH < $1.ballSpeedMPH }) }
     private var bestJumpHeight: VolleyballHit? { allHits.max(by: { $0.jumpHeightInches < $1.jumpHeightInches }) }
     private var bestScore: VolleyballHit? { allHits.max(by: { $0.overallScore < $1.overallScore }) }
     private var bestDistance: VolleyballHit? { allHits.max(by: { $0.ballDistanceFeet < $1.ballDistanceFeet }) }
+    private var bestContactHeight: VolleyballHit? { allHits.max(by: { $0.contactHeightInches < $1.contactHeightInches }) }
+    private var bestHandSpeed: VolleyballHit? { allHits.max(by: { $0.handSpeedMPH < $1.handSpeedMPH }) }
+    private var bestHipShoulderSep: VolleyballHit? { allHits.max(by: { $0.hipShoulderSeparation < $1.hipShoulderSeparation }) }
 
     @Environment(\.dismiss) private var dismiss
     
@@ -116,6 +131,25 @@ struct LifetimeStatsView: View {
                                 StatBox(title: "Launch Angle", value: String(format: "%.1f°", avgLaunchAngle), color: .cyan)
                             }
                             .padding(.horizontal)
+
+                            // Advanced analytics row
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Advanced")
+                                    .font(.headline)
+                                    .foregroundColor(.mint)
+                                    .padding(.horizontal)
+
+                                LazyVGrid(columns: [
+                                    GridItem(.flexible()),
+                                    GridItem(.flexible()),
+                                    GridItem(.flexible())
+                                ], spacing: 10) {
+                                    StatBox(title: "Contact Ht", value: String(format: "%.1f in", avgContactHeight), color: .pink)
+                                    StatBox(title: "Hand Speed", value: String(format: "%.1f mph", avgHandSpeed), color: .red)
+                                    StatBox(title: "Torso Rot", value: String(format: "%.0f°", avgHipShoulderSep), color: .mint)
+                                }
+                                .padding(.horizontal)
+                            }
                         }
 
                         // Personal Bests section

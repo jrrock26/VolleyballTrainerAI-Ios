@@ -163,6 +163,33 @@ struct ChartsView: View {
                                 showAvg: true,
                                 format: { String(format: "%.1f°", $0) }
                             )
+
+                            ChartCard(
+                                title: "Contact Height (in)",
+                                value: { _, hit in hit.contactHeightInches },
+                                color: .pink,
+                                hits: filteredHits,
+                                showAvg: true,
+                                format: { String(format: "%.1f in", $0) }
+                            )
+
+                            ChartCard(
+                                title: "Hand Speed (mph)",
+                                value: { _, hit in hit.handSpeedMPH },
+                                color: .red,
+                                hits: filteredHits,
+                                showAvg: true,
+                                format: { String(format: "%.1f mph", $0) }
+                            )
+
+                            ChartCard(
+                                title: "Hip-Shoulder Sep (°)",
+                                value: { _, hit in hit.hipShoulderSeparation },
+                                color: .mint,
+                                hits: filteredHits,
+                                showAvg: true,
+                                format: { String(format: "%.0f°", $0) }
+                            )
                         }
                         .padding(.vertical)
                     }
