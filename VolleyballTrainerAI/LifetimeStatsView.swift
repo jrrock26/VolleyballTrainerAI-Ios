@@ -164,6 +164,9 @@ struct LifetimeStatsView: View {
                                 BestRow(label: "Highest Jump", value: bestJumpHeight.map { String(format: "%.1f in", $0.jumpHeightInches) } ?? "—", color: .green)
                                 BestRow(label: "Best Score", value: bestScore.map { String(format: "%.0f pts", $0.overallScore) } ?? "—", color: .yellow)
                                 BestRow(label: "Longest Hit", value: bestDistance.map { String(format: "%.1f ft", $0.ballDistanceFeet) } ?? "—", color: .purple)
+                                BestRow(label: "Highest Contact", value: bestContactHeight.map { String(format: "%.1f in", $0.contactHeightInches) } ?? "—", color: .pink)
+                                BestRow(label: "Fastest Hand", value: bestHandSpeed.map { String(format: "%.1f mph", $0.handSpeedMPH) } ?? "—", color: .red)
+                                BestRow(label: "Max Torso Rot", value: bestHipShoulderSep.map { String(format: "%.0f°", $0.hipShoulderSeparation) } ?? "—", color: .mint)
                             }
                             .padding(.horizontal)
                         }
