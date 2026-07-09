@@ -18,7 +18,7 @@ struct SavedHitsListView: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            
+
             Image("background")
                 .resizable()
                 .scaledToFill()
@@ -26,6 +26,8 @@ struct SavedHitsListView: View {
                 .opacity(0.3)
 
             VStack(spacing: 16) {
+
+                // BACK BUTTON
                 HStack {
                     Button(action: { dismiss() }) {
                         HStack(spacing: 6) {
@@ -45,11 +47,12 @@ struct SavedHitsListView: View {
                                 )
                         )
                     }
-                    .buttonStyle(PlainButtonStyle())
+                    .buttonStyle(.plain)
                     Spacer()
                 }
                 .padding(.top, 24)
 
+                // TITLE
                 VStack(spacing: 4) {
                     Text("Saved Hits")
                         .font(.title2)
@@ -61,6 +64,7 @@ struct SavedHitsListView: View {
                 }
                 .padding(.top)
 
+                // EMPTY STATE
                 if allHits.isEmpty {
                     Spacer()
                     VStack(spacing: 12) {
@@ -72,46 +76,72 @@ struct SavedHitsListView: View {
                     }
                     Spacer()
                 } else {
+
+                    // MAIN LIST
                     List {
                         ForEach(groupedSessions, id: \.date) { session in
-                            Section(header: Text(formatSessionDate(session.date)).foregroundColor(.yellow).bold()) {
+                            Section {
+
                                 ForEach(session.hits) { hit in
-                                    HStack(spacing: 12) {
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text("\(hit.hitType) • \(String(format: "%.0f mph", hit.ballSpeedMPH))")
-                                                .font(.subheadline)
-                                                .foregroundColor(.white)
-                                            Text("Score \(String(format: "%.0f", hit.overallScore)) • \(formattedTime(hit.timestamp))")
-                                                .font(.caption)
-                                                .foregroundColor(.gray)
+
+                                    // COMPACT ROW + BACKGROUND GAP
+                                    VStack(spacing: 0) {
+
+                                        HStack(spacing: 12) {
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text("\(hit.hitType) • \(String(format: "%.0f mph", hit.ballSpeedMPH))")
+                                                    .font(.subheadline)
+                                                    .foregroundColor(.white)
+
+                                                Text("Score \(String(format: "%.0f", hit.overallScore)) • \(formattedTime(hit.timestamp))")
+                                                    .font(.caption)
+                                                    .foregroundColor(.gray)
+                                            }
+
+                                            Spacer()
+
+                                            Button(action: { delete(hit) }) {
+                                                Image(systemName: "trash")
+                                                    .font(.caption)
+                                                    .foregroundColor(.red)
+                                            }
                                         }
-                                        Spacer()
-                                        Button(action: {
-                                            delete(hit)
-                                        }) {
-                                            Image(systemName: "trash")
-                                                .font(.caption)
-                                                .foregroundColor(.red)
-                                        }
+                                        .padding(.vertical, 4)
+                                        .padding(.horizontal, 6)
+                                        .background(Color.black.opacity(0.35))
+                                        .cornerRadius(8)
+
+                                        // GAP FOR NEON BACKGROUND
+                                        Rectangle()
+                                            .fill(Color.clear)
+                                            .frame(height: 6)
                                     }
-                                    .padding(.vertical, 8)
-                                    .background(Color(red: 0.14, green: 0.14, blue: 0.16))
-                                    .cornerRadius(10)
                                     .listRowSeparator(.hidden)
+                                    .listRowBackground(Color.clear)
+                                    .listRowInsets(.init())
                                 }
+
+                            } header: {
+                                Text(formatSessionDate(session.date))
+                                    .foregroundColor(.yellow)
+                                    .bold()
+                                    .padding(.vertical, 4)
+                                    .background(Color.clear)
                             }
                         }
                     }
                     .scrollContentBackground(.hidden)
+                    .background(Color.clear)
                     .listStyle(.plain)
-                    .listRowBackground(Color.clear)
+                    .environment(\.defaultMinListRowHeight, 10)
+                    .listSectionSeparator(.hidden)
                     .listRowSeparator(.hidden)
-                    .padding(.horizontal, -20)
+                    .padding(.vertical, -8)
                     .toolbar {
                         ToolbarItem(placement: .primaryAction) {
-                            Button(role: .destructive, action: {
+                            Button(role: .destructive) {
                                 showDeleteAllAlert = true
-                            }) {
+                            } label: {
                                 HStack {
                                     Image(systemName: "trash.fill")
                                     Text("Delete All")
@@ -124,16 +154,12 @@ struct SavedHitsListView: View {
         }
         .alert("Delete all saved hits?", isPresented: $showDeleteAllAlert) {
             Button("Cancel", role: .cancel) {}
-            Button("Delete All", role: .destructive) {
-                deleteAll()
-            }
+            Button("Delete All", role: .destructive) { deleteAll() }
         } message: {
             Text("This will permanently remove all \(allHits.count) saved hits.")
         }
         .navigationBarHidden(true)
-        .onAppear {
-            purgeOldHits()
-        }
+        .onAppear { purgeOldHits() }
     }
 
     private func delete(_ hit: VolleyballHit) {
@@ -142,21 +168,15 @@ struct SavedHitsListView: View {
     }
 
     private func deleteAll() {
-        for hit in allHits {
-            modelContext.delete(hit)
-        }
+        for hit in allHits { modelContext.delete(hit) }
         try? modelContext.save()
     }
 
     private func purgeOldHits() {
         let cutoff = Calendar.current.date(byAdding: .day, value: -40, to: Date()) ?? Date()
         let oldHits = allHits.filter { $0.timestamp < cutoff }
-        for hit in oldHits {
-            modelContext.delete(hit)
-        }
-        if !oldHits.isEmpty {
-            try? modelContext.save()
-        }
+        for hit in oldHits { modelContext.delete(hit) }
+        if !oldHits.isEmpty { try? modelContext.save() }
     }
 
     private func formattedTime(_ date: Date) -> String {
@@ -171,3 +191,4 @@ struct SavedHitsListView: View {
         return formatter.string(from: date)
     }
 }
+

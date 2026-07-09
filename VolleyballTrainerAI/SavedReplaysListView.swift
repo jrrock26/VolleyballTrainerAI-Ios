@@ -80,6 +80,7 @@ struct SavedReplaysListView: View {
                             Button(action: {
                                 selectedReplay = replay
                             }) {
+                                VStack(spacing: 0) {
                                     HStack(spacing: 12) {
                                         Image(systemName: "play.rectangle.fill")
                                             .font(.title2)
@@ -113,10 +114,19 @@ struct SavedReplaysListView: View {
                                             .foregroundColor(.gray)
                                     }
                                     .padding(.vertical, 8)
-                                    .background(Color(red: 0.14, green: 0.14, blue: 0.16))
+                                    .background(Color.black.opacity(0.35))
                                     .cornerRadius(10)
+
+                                    // GAP BETWEEN SLOTS
+                                    Rectangle()
+                                        .fill(Color.clear)
+                                        .frame(height: 6)
+                                }
                             }
                             .buttonStyle(.plain)
+                            .listRowInsets(.init())
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive, action: {
                                     replayToDelete = replay
@@ -128,10 +138,12 @@ struct SavedReplaysListView: View {
                         }
                     }
                     .scrollContentBackground(.hidden)
+                    .background(Color.clear)
                     .listStyle(.plain)
                     .listRowBackground(Color.clear)
+                    .listSectionSeparator(.hidden)
                     .listRowSeparator(.hidden)
-                    .padding(.horizontal, -20)
+                    .padding(.vertical, -8)
                 }
             }
         }

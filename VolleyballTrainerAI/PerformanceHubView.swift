@@ -50,9 +50,9 @@ struct PerformanceHubView: View {
                         .padding(.top, 40)
                         .padding(.leading, 20)
 
-                        // --- BUTTONS BELOW 48% OF SCREEN ---
+                        // --- BUTTONS POSITIONED LIKE HOMESCREEN (SHIFTED DOWN 3/4 BUTTON HEIGHT) ---
                         Spacer()
-                            .frame(height: geo.size.height * 0.48)
+                            .frame(height: geo.size.height * 0.33 + 60)
 
                         VStack(spacing: 20) {
 
@@ -61,6 +61,13 @@ struct PerformanceHubView: View {
                             }
                             .frame(width: geo.size.width * 0.50, height: 60)
                             .font(.custom("Orbitron-Regular", size: 22))
+                            .multilineTextAlignment(.center)
+
+                            CourtPushButton(title: "Saved Replays", icon: "video.badge.plus") {
+                                showSavedReplays = true
+                            }
+                            .frame(width: geo.size.width * 0.50, height: 60)
+                            .font(.custom("Orbitron-Regular", size: 20))
                             .multilineTextAlignment(.center)
 
                             CourtPushButton(title: "Saved Hits", icon: "list.bullet") {
@@ -82,13 +89,6 @@ struct PerformanceHubView: View {
                             }
                             .frame(width: geo.size.width * 0.50, height: 60)
                             .font(.custom("Orbitron-Regular", size: 22))
-                            .multilineTextAlignment(.center)
-
-                            CourtPushButton(title: "Saved Replays", icon: "video.badge.plus") {
-                                showSavedReplays = true
-                            }
-                            .frame(width: geo.size.width * 0.50, height: 60)
-                            .font(.custom("Orbitron-Regular", size: 20))
                             .multilineTextAlignment(.center)
                         }
 

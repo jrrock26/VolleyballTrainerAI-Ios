@@ -28,7 +28,7 @@ class PoseTracker: NSObject, ObservableObject {
     private var baselineFrameCount = 0
     private var isBaselineLocked = false
     private let baselineFramesNeeded = 25
-    private var bodyScaleNorm: Double? = nil
+    private var calibrationInchesPerNorm: Double? = nil
     private var assumedTorsoInches: Double {
         let height = ProfileManager.shared.profile.heightInches
         if height > 0 {
@@ -77,7 +77,7 @@ class PoseTracker: NSObject, ObservableObject {
             self.armExtensionAngle = 0.0
             self.highestJumpPixels = 0.0
             self.hipBaselineY = nil
-            self.bodyScaleNorm = nil
+            self.calibrationInchesPerNorm = nil
             self.baselineFrameCount = 0
             self.isBaselineLocked = false
             self.lastWristYBySide.removeAll()
@@ -187,6 +187,47 @@ class PoseTracker: NSObject, ObservableObject {
 }
 
 extension PoseTracker {
+    /// Derives inches-per-normalized-vertical-unit from the athlete's known profile
+    /// height and the longest reliably visible body segment on screen. Using a long
+    /// segment (full body > leg > torso) minimizes the amplification of per-pixel noise
+    /// that made the old torso-only calibration inaccurate.
+    private func referenceCalibrationInchesPerNorm(for observation: VNHumanBodyPoseObservation, threshold: Float) -> Double? {
+        let heightInches = ProfileManager.shared.profile.heightInches
+        guard heightInches > 0 else { return nil }
+
+        func yFor(_ joint: VNHumanBodyPoseObservation.JointName) -> Double? {
+            guard let p = try? observation.recognizedPoint(joint), p.confidence > threshold else { return nil }
+            return Double(p.location.y) // Vision y-up coordinate space
+        }
+
+        let shoulders = [yFor(.rightShoulder), yFor(.leftShoulder)].compactMap { $0 }
+        let hips = [yFor(.rightHip), yFor(.leftHip)].compactMap { $0 }
+        let ankles = [yFor(.rightAnkle), yFor(.leftAnkle)].compactMap { $0 }
+
+        var candidates: [(norm: Double, inches: Double)] = []
+
+        // Full body: shoulder (top) to ankle (bottom) ~= 0.78 of total height
+        if let top = shoulders.max(), let bottom = ankles.min() {
+            let norm = bottom - top
+            if norm > 0.05 { candidates.append((norm, 0.78 * heightInches)) }
+        }
+        // Leg: hip to ankle ~= 0.49 of total height
+        if let hip = hips.first, let ankle = ankles.min() {
+            let norm = ankle - hip
+            if norm > 0.05 { candidates.append((norm, 0.49 * heightInches)) }
+        }
+        // Torso: shoulder to hip ~= 0.29 of total height
+        if let top = shoulders.max(), let bottom = hips.min() {
+            let norm = top - bottom
+            if norm > 0.03 { candidates.append((norm, 0.29 * heightInches)) }
+        }
+
+        guard let best = candidates.max(by: { $0.norm < $1.norm }) else { return nil }
+        let ipn = best.inches / best.norm
+        guard ipn > 30 && ipn < 160 else { return nil }
+        return ipn
+    }
+
     private func analyzePlayerPose(_ observation: VNHumanBodyPoseObservation, type: String) {
         let isFrontCamera = cameraPosition == .front
         let confidenceThreshold: Float = isFrontCamera ? 0.12 : 0.2
@@ -228,14 +269,15 @@ extension PoseTracker {
                         self.hipBaselineY = hipY
                     }
 
-                    if let sh = shoulder, sh.confidence > confidenceThreshold {
-                        let torso = Double(sh.location.y) - hipY
-                        if torso > 0.01 {
-                            if let existing = self.bodyScaleNorm {
-                                self.bodyScaleNorm = existing * 0.85 + torso * 0.15
-                            } else {
-                                self.bodyScaleNorm = torso
-                            }
+                    // Calibrate the normalized->inches scale using the player's known
+                    // profile height measured against the longest reliably visible body
+                    // segment (full body preferred, then leg, then torso). Using a long
+                    // segment keeps per-pixel noise from being amplified.
+                    if let ipn = self.referenceCalibrationInchesPerNorm(for: observation, threshold: confidenceThreshold) {
+                        if let existing = self.calibrationInchesPerNorm {
+                            self.calibrationInchesPerNorm = existing * 0.85 + ipn * 0.15
+                        } else {
+                            self.calibrationInchesPerNorm = ipn
                         }
                     }
 
@@ -249,13 +291,16 @@ extension PoseTracker {
                     if jumpDelta > self.highestJumpPixels && jumpDelta > 0.004 {
                         self.highestJumpPixels = jumpDelta
                         let inchesPerNorm: Double
-                        if let scale = self.bodyScaleNorm, scale > 0.01 {
-                            inchesPerNorm = max(40, min(140, self.assumedTorsoInches / scale))
+                        if let ipn = self.calibrationInchesPerNorm, ipn > 30, ipn < 160 {
+                            inchesPerNorm = ipn
                         } else {
-                            inchesPerNorm = 90
+                            // Fallback: derive scale purely from profile height assuming a
+                            // typical standing torso proportion on screen.
+                            inchesPerNorm = max(40, min(140, self.assumedTorsoInches / 0.29))
                         }
                         var rawJump = jumpDelta * inchesPerNorm
-                        rawJump = max(0, min(rawJump, 50))
+                        // Physiologically plausible cap (elite verticals rarely exceed ~45")
+                        rawJump = max(0, min(rawJump, 48))
                         self.jumpHeight = rawJump
                     }
                 }
