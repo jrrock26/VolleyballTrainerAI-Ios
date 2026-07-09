@@ -377,7 +377,7 @@ struct TrainingHubView: View {
             GeometryReader { geo in
                 ZStack {
                     Color.black.ignoresSafeArea()
-                    Image("background").resizable().scaledToFill().ignoresSafeArea()
+                    Image("background").resizable().scaledToFill().ignoresSafeArea().opacity(0.3)
                     ScrollView {
                         VStack(alignment: .leading, spacing: 12) {
                             Spacer(minLength: 80)
@@ -723,7 +723,7 @@ struct SavedTrainingsView: View {
         NavigationStack {
             ZStack {
                 Color.black.ignoresSafeArea()
-                Image("background").resizable().scaledToFill().ignoresSafeArea()
+                Image("background").resizable().scaledToFill().ignoresSafeArea().opacity(0.3)
                 VStack(spacing: 12) {
                     HStack {
                         Button(action: { dismiss() }) {
