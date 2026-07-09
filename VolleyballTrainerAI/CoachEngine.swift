@@ -811,6 +811,9 @@ struct CoachEngine {
         ballSpeed: Double,
         launchAngle: Double,
         distance: Double,
+        contactHeight: Double = 0.0,
+        handSpeed: Double = 0.0,
+        hipShoulderSep: Double = 0.0,
         profile: AthleteProfile? = nil,
         sessionHits: [VolleyballHit]? = nil,
         confidence: Double = 1.0

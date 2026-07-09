@@ -17,6 +17,11 @@ final class SavedReplay {
     var ballDistanceFeet: Double
     var coachFeedback: String
 
+    // Advanced biomechanical metrics
+    var contactHeightInches: Double
+    var handSpeedMPH: Double
+    var hipShoulderSeparation: Double
+
     init(
         title: String,
         videoURLString: String,
@@ -28,7 +33,10 @@ final class SavedReplay {
         armAngleDegrees: Double = 0,
         ballAngleDegrees: Double = 0,
         ballDistanceFeet: Double = 0,
-        coachFeedback: String = ""
+        coachFeedback: String = "",
+        contactHeightInches: Double = 0.0,
+        handSpeedMPH: Double = 0.0,
+        hipShoulderSeparation: Double = 0.0
     ) {
         self.id = UUID()
         self.title = title
@@ -43,5 +51,8 @@ final class SavedReplay {
         self.ballAngleDegrees = ballAngleDegrees
         self.ballDistanceFeet = ballDistanceFeet
         self.coachFeedback = coachFeedback
+        self.contactHeightInches = contactHeightInches
+        self.handSpeedMPH = handSpeedMPH
+        self.hipShoulderSeparation = hipShoulderSeparation
     }
 }

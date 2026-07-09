@@ -20,7 +20,7 @@ struct LiveAIView: View {
     @State private var showReplaySummary = false
     @State private var selectedEvaluationType = "Spike"
     @State private var countdownTimer: Timer? = nil
-    @State private var capturedHitMetrics: (jump: Double, arm: Double, speed: Double, launch: Double, distance: Double)? = nil
+    @State private var capturedHitMetrics: (jump: Double, arm: Double, speed: Double, launch: Double, distance: Double, contactHeight: Double, handSpeed: Double, hipSep: Double)? = nil
 
     var body: some View {
         GeometryReader { geo in
@@ -199,10 +199,10 @@ struct LiveAIView: View {
         }
         .onAppear {
             PortraitOrientation.lock()
-            tracker.onSingleHitExtracted = { jump, arm, speed, launch, distance in
+            tracker.onSingleHitExtracted = { jump, arm, speed, launch, distance, contactHeight, handSpeed, hipSep in
                 AudioServicesPlaySystemSound(1519)
                 DispatchQueue.main.async {
-                    self.capturedHitMetrics = (jump, arm, speed, launch, distance)
+                    self.capturedHitMetrics = (jump, arm, speed, launch, distance, contactHeight, handSpeed, hipSep)
                     self.isRecordingHit = false
                 }
             }
@@ -243,7 +243,10 @@ struct LiveAIView: View {
                 arm: self.tracker.armExtensionAngle,
                 speed: self.tracker.computedBallSpeedMPH,
                 launch: self.tracker.computedLaunchAngleDegrees,
-                distance: self.tracker.computedFlightDistanceFeet
+                distance: self.tracker.computedFlightDistanceFeet,
+                contactHeight: self.tracker.computedContactHeightInches,
+                handSpeed: self.tracker.computedHandSpeedMPH,
+                hipSep: self.tracker.computedHipShoulderSeparation
             )
 
             let hitLog = VolleyballHit(
@@ -255,6 +258,9 @@ struct LiveAIView: View {
                 ballAngleDegrees: metrics.launch,
                 ballDistanceFeet: metrics.distance,
                 videoLocalURLString: videoURL.path,
+                contactHeightInches: metrics.contactHeight,
+                handSpeedMPH: metrics.handSpeed,
+                hipShoulderSeparation: metrics.hipSep,
                 profile: self.profile,
                 sessionHits: self.sessionHits
             )

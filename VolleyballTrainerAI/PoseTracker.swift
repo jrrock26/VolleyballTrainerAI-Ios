@@ -63,7 +63,14 @@ class PoseTracker: NSObject, ObservableObject {
     @Published var computedBallSpeedMPH: Double = 0.0
     @Published var computedLaunchAngleDegrees: Double = 0.0
     @Published var computedFlightDistanceFeet: Double = 0.0
-    var onSingleHitExtracted: ((Double, Double, Double, Double, Double) -> Void)?
+
+    // Advanced biomechanical metrics
+    @Published var computedContactHeightInches: Double = 0.0   // hand height at ball contact
+    @Published var computedHandSpeedMPH: Double = 0.0          // peak wrist/arm speed at contact
+    @Published var computedHipShoulderSeparation: Double = 0.0 // torso rotation: shoulder line vs hip line (deg)
+
+    // Tuple order: jump, arm, speed, launch, distance, contactHeight, handSpeed, hipShoulderSep
+    var onSingleHitExtracted: ((Double, Double, Double, Double, Double, Double, Double, Double) -> Void)?
 
     private let overlayJoints: [VNHumanBodyPoseObservation.JointName] = [
         .rightWrist, .rightElbow, .rightShoulder, .leftShoulder,
@@ -94,6 +101,9 @@ class PoseTracker: NSObject, ObservableObject {
             self.computedBallSpeedMPH = 0.0
             self.computedLaunchAngleDegrees = 0.0
             self.computedFlightDistanceFeet = 0.0
+            self.computedContactHeightInches = 0.0
+            self.computedHandSpeedMPH = 0.0
+            self.computedHipShoulderSeparation = 0.0
             self.initialBallContactTime = nil
             self.lastBallTime = nil
             self.lastBallPositionPixels = .zero
@@ -183,6 +193,32 @@ class PoseTracker: NSObject, ObservableObject {
         @unknown default:
             return cameraPosition == .front ? .leftMirrored : .right
         }
+    }
+
+    // MARK: - Advanced metric helpers
+
+    /// Estimated standing reach (fingertip height) from known profile height.
+    private var standingReachInches: Double {
+        let height = ProfileManager.shared.profile.heightInches
+        if height > 0 { return height * 1.30 }
+        return 96.0 // ~8 ft default reach
+    }
+
+    /// Torso rotational separation: the absolute angle difference between the
+    /// shoulder line and the hip line. A larger separation means the shoulders
+    /// are rotated ahead of the hips — the engine that stores and releases
+    /// rotational power in a spike/serve.
+    private func hipShoulderSeparationDegrees(from observation: VNHumanBodyPoseObservation, threshold: Float) -> Double? {
+        guard let rs = try? observation.recognizedPoint(.rightShoulder), rs.confidence > threshold,
+              let ls = try? observation.recognizedPoint(.leftShoulder), ls.confidence > threshold,
+              let rh = try? observation.recognizedPoint(.rightHip), rh.confidence > threshold,
+              let lh = try? observation.recognizedPoint(.leftHip), lh.confidence > threshold else { return nil }
+
+        let shoulderAngle = atan2(Double(ls.location.y - rs.location.y), Double(ls.location.x - rs.location.x)) * 180 / .pi
+        let hipAngle = atan2(Double(lh.location.y - rh.location.y), Double(lh.location.x - rh.location.x)) * 180 / .pi
+        var diff = abs(shoulderAngle - hipAngle)
+        if diff > 180 { diff = 360 - diff }
+        return diff
     }
 }
 
@@ -319,6 +355,11 @@ extension PoseTracker {
                 )
             }
 
+            // Live-update advanced metrics when tracking is healthy
+            if let sep = self.hipShoulderSeparationDegrees(from: observation, threshold: confidenceThreshold) {
+                self.computedHipShoulderSeparation = sep
+            }
+
             if self.isHitCaptured { return }
 
             for isRight in [true, false] {
@@ -368,6 +409,20 @@ extension PoseTracker {
                             instantaneousVelocity
                         )
 
+                        // Convert normalized swing velocity to hand speed (mph).
+                        let ipn = (self.calibrationInchesPerNorm != nil && self.calibrationInchesPerNorm! > 30 && self.calibrationInchesPerNorm! < 160)
+                            ? self.calibrationInchesPerNorm!
+                            : max(40, min(140, self.assumedTorsoInches / 0.29))
+                        let swingInchesPerSec = capturedSwingVelocity * ipn
+                        let handSpeedMPH = swingInchesPerSec * 0.0568182 // in/s -> mph
+                        let clampedHandSpeed = max(0, min(handSpeedMPH, 80))
+
+                        // Contact height = standing reach + vertical jump.
+                        let contactHeight = self.standingReachInches + capturedJump
+
+                        // Torso separation captured at the moment of contact.
+                        let sep = self.hipShoulderSeparationDegrees(from: observation, threshold: confidenceThreshold) ?? self.computedHipShoulderSeparation
+
                         self.applyFallbackPerformanceMetricsIfNeeded(
                             hitType: type,
                             jumpHeight: capturedJump,
@@ -390,7 +445,10 @@ extension PoseTracker {
                                 capturedAngle,
                                 self.computedBallSpeedMPH,
                                 self.computedLaunchAngleDegrees,
-                                self.computedFlightDistanceFeet
+                                self.computedFlightDistanceFeet,
+                                contactHeight,
+                                clampedHandSpeed,
+                                sep
                             )
                         }
                     }

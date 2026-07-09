@@ -189,6 +189,23 @@ struct ReplaySummaryView: View {
                                     color: .blue
                                 )
                             }
+                            HStack(spacing: 6) {
+                                SummaryMetricBox(
+                                    title: "Contact Ht",
+                                    val: String(format: "%.1f In", currentHit.contactHeightInches),
+                                    color: .pink
+                                )
+                                SummaryMetricBox(
+                                    title: "Hand Speed",
+                                    val: String(format: "%.1f mph", currentHit.handSpeedMPH),
+                                    color: .red
+                                )
+                                SummaryMetricBox(
+                                    title: "Torso Rot",
+                                    val: String(format: "%.0f°", currentHit.hipShoulderSeparation),
+                                    color: .mint
+                                )
+                            }
                         }
                         .padding(.horizontal, 12)
 
@@ -300,7 +317,10 @@ struct ReplaySummaryView: View {
                 armAngleDegrees: hit.armAngleDegrees,
                 ballAngleDegrees: hit.ballAngleDegrees,
                 ballDistanceFeet: hit.ballDistanceFeet,
-                coachFeedback: hit.coachFeedback
+                coachFeedback: hit.coachFeedback,
+                contactHeightInches: hit.contactHeightInches,
+                handSpeedMPH: hit.handSpeedMPH,
+                hipShoulderSeparation: hit.hipShoulderSeparation
             )
             modelContext.insert(replay)
             try? modelContext.save()
