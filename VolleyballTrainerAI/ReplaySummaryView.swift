@@ -22,6 +22,7 @@ struct ReplaySummaryView: View {
     @State private var player = AVPlayer()
     @State private var showSaveConfirm = false
     @State private var saveMessage = ""
+    @State private var showFullAssessment = false
     @Environment(\.dismiss) private var dismiss
 
     private let maxReplays = 30
@@ -85,8 +86,6 @@ struct ReplaySummaryView: View {
                                 .cornerRadius(12)
                                 .clipped()
                                 .allowsHitTesting(false)
-                                .scaleEffect(0.70)
-                                .offset(x: 10, y: 0)
 
                                 if let ballRect = tracker.ballBoundingBoxRect {
                                     let scaleX = tracker.videoRect.width
@@ -220,6 +219,11 @@ struct ReplaySummaryView: View {
                                     .foregroundColor(.gray)
                                     .lineLimit(3)
                                     .fixedSize(horizontal: false, vertical: true)
+                                Spacer(minLength: 0)
+                                Image(systemName: "chevron.right.circle.fill")
+                                    .font(.caption)
+                                    .foregroundColor(.yellow)
+                                    .padding(.top, 2)
                             }
                             .padding(10)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -229,6 +233,10 @@ struct ReplaySummaryView: View {
                                 RoundedRectangle(cornerRadius: 10)
                                     .stroke(Color.yellow.opacity(0.3), lineWidth: 1)
                             )
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                showFullAssessment = true
+                            }
 
                             HStack(spacing: 8) {
                                 Button("Save Replay") {
@@ -265,6 +273,9 @@ struct ReplaySummaryView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(saveMessage)
+        }
+        .sheet(isPresented: $showFullAssessment) {
+            FullAssessmentView(hit: sessionHits[selectedHitIndex])
         }
     }
 
@@ -416,27 +427,54 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
             let asset = AVAsset(url: url)
             let playerItem = AVPlayerItem(asset: asset)
 
-            let videoOutput = AVPlayerItemVideoOutput(pixelBufferAttributes: [
-                kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)
-            ])
-            playerItem.add(videoOutput)
-            player.replaceCurrentItem(with: playerItem)
-
             if let track = asset.tracks(withMediaType: .video).first {
                 let natural = track.naturalSize
                 let transform = track.preferredTransform
                 let transformed = natural.applying(transform)
+                let displaySize = CGSize(width: abs(transformed.width), height: abs(transformed.height))
 
-                currentDisplaySize = CGSize(width: abs(transformed.width), height: abs(transformed.height))
-                currentNaturalSize = natural
-                rawBufferOrientation = detectBufferOrientation(from: track)
+                // Normalize every replay to an upright, portrait orientation so it always
+                // plays correctly inside the portrait-locked UI. This also guarantees the
+                // pixel buffers fed to the pose tracker share the same orientation as the
+                // on-screen video, keeping the skeleton overlay aligned (landscape-recorded
+                // clips previously appeared rotated and the skeleton was mis-scaled).
+                let isLandscape = displaySize.width > displaySize.height
+
+                if isLandscape {
+                    let portraitSize = CGSize(width: displaySize.height, height: displaySize.width)
+                    let rot = normalizedTransform(for: track, portraitSize: portraitSize)
+                    let instruction = AVMutableVideoCompositionInstruction()
+                    instruction.timeRange = CMTimeRange(start: .zero, duration: asset.duration)
+                    let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: track)
+                    layerInstruction.setTransform(rot, at: .zero)
+                    instruction.layerInstructions = [layerInstruction]
+
+                    let videoComposition = AVMutableVideoComposition()
+                    videoComposition.renderSize = portraitSize
+                    videoComposition.frameDuration = CMTime(value: 1, timescale: 30)
+                    videoComposition.instructions = [instruction]
+                    playerItem.videoComposition = videoComposition
+
+                    currentDisplaySize = portraitSize
+                    currentNaturalSize = portraitSize
+                } else {
+                    currentDisplaySize = displaySize
+                    currentNaturalSize = natural
+                }
+                rawBufferOrientation = .portrait
             } else {
                 currentDisplaySize = CGSize(width: 720, height: 1280)
                 currentNaturalSize = CGSize(width: 720, height: 1280)
                 rawBufferOrientation = .portrait
             }
 
-            tracker.currentVideoOrientation = rawBufferOrientation
+            let videoOutput = AVPlayerItemVideoOutput(pixelBufferAttributes: [
+                kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)
+            ])
+            playerItem.add(videoOutput)
+            player.replaceCurrentItem(with: playerItem)
+
+            tracker.currentVideoOrientation = .portrait
 
             if let displaySize = currentDisplaySize {
                 let rect = computeVideoRect(
@@ -487,6 +525,30 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
             }
 
             return CGRect(origin: origin, size: size)
+        }
+
+        /// Builds an affine transform that rotates a landscape video track 90° and
+        /// centers it within a portrait `renderSize`, so the output always reads
+        /// upright (phone held vertically) regardless of how the clip was recorded.
+        private func normalizedTransform(for track: AVAssetTrack, portraitSize: CGSize) -> CGAffineTransform {
+            let natural = track.naturalSize
+            let t = track.preferredTransform
+
+            // Handle the four canonical orientations; only landscape ones need rotation.
+            if t.a == 0 && t.b == 1 && t.c == -1 && t.d == 0 {
+                // landscapeLeft -> rotate 90° CW
+                return CGAffineTransform(rotationAngle: .pi / 2)
+                    .translatedBy(x: 0, y: -natural.width)
+            } else if t.a == 0 && t.b == -1 && t.c == 1 && t.d == 0 {
+                // landscapeRight -> rotate 90° CCW
+                return CGAffineTransform(rotationAngle: -.pi / 2)
+                    .translatedBy(x: -natural.height, y: 0)
+            } else {
+                // Already portrait/upright — just center inside the render size.
+                let offsetX = (portraitSize.width - natural.width) / 2
+                let offsetY = (portraitSize.height - natural.height) / 2
+                return CGAffineTransform(translationX: offsetX, y: offsetY)
+            }
         }
 
         func setupTimeObserver(
@@ -544,5 +606,67 @@ struct SummaryMetricBox: View {
         .padding(.vertical, 7)
         .background(Color(red: 0.16, green: 0.16, blue: 0.18))
         .cornerRadius(8)
+    }
+}
+
+/// Full-screen, scrollable view presenting the complete AI coaching assessment
+/// for a single hit. Tapping the compact feedback box in ReplaySummaryView
+/// presents this so the message is never clipped.
+struct FullAssessmentView: View {
+    let hit: VolleyballHit
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 8) {
+                        SummaryMetricBox(title: "Ball Speed", val: String(format: "%.1f MPH", hit.ballSpeedMPH), color: .orange)
+                        SummaryMetricBox(title: "Jump", val: hit.hitType == "Spike" ? String(format: "%.1f In", hit.jumpHeightInches) : "0.0 In", color: .green)
+                        SummaryMetricBox(title: "Score", val: String(format: "%.0f Pts", hit.overallScore), color: .yellow)
+                    }
+
+                    HStack(spacing: 8) {
+                        SummaryMetricBox(title: "Launch", val: String(format: "%.1f°", hit.ballAngleDegrees), color: .cyan)
+                        SummaryMetricBox(title: "Distance", val: String(format: "%.1f Ft", hit.ballDistanceFeet), color: .purple)
+                        SummaryMetricBox(title: "Arm", val: String(format: "%.0f°", hit.armAngleDegrees), color: .blue)
+                    }
+
+                    HStack(spacing: 8) {
+                        SummaryMetricBox(title: "Contact Ht", val: String(format: "%.1f In", hit.contactHeightInches), color: .pink)
+                        SummaryMetricBox(title: "Hand Speed", val: String(format: "%.1f mph", hit.handSpeedMPH), color: .red)
+                        SummaryMetricBox(title: "Torso Rot", val: String(format: "%.0f°", hit.hipShoulderSeparation), color: .mint)
+                    }
+
+                    Text("Full AI Assessment")
+                        .font(.headline)
+                        .foregroundColor(.yellow)
+                        .padding(.top, 4)
+
+                    Text(hit.coachFeedback)
+                        .font(.system(size: 13))
+                        .foregroundColor(.white)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.yellow.opacity(0.08))
+                        .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.yellow.opacity(0.3), lineWidth: 1)
+                        )
+                }
+                .padding()
+            }
+            .background(Color(red: 0.08, green: 0.08, blue: 0.1).ignoresSafeArea())
+            .navigationTitle("\(hit.hitType) Assessment")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundColor(.yellow)
+                }
+            }
+        }
     }
 }

@@ -18,9 +18,9 @@ final class SavedReplay {
     var coachFeedback: String
 
     // Advanced biomechanical metrics
-    var contactHeightInches: Double
-    var handSpeedMPH: Double
-    var hipShoulderSeparation: Double
+    var contactHeightInches: Double = 0.0
+    var handSpeedMPH: Double = 0.0
+    var hipShoulderSeparation: Double = 0.0
 
     init(
         title: String,
