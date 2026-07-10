@@ -27,6 +27,26 @@ struct ReplaySummaryView: View {
 
     private let maxReplays = 30
 
+    /// Skeleton/overlay scale used so the drawn figure matches the on-screen
+    /// athlete. Landscape clips show a wider frame, so a smaller scale is used
+    /// to keep the skeleton aligned with the user (the portrait 0.70 hack
+    /// overestimates the upper torso in landscape).
+    private var skeletonScale: CGFloat {
+        switch tracker.currentVideoOrientation {
+        case .landscapeLeft, .landscapeRight: return 0.5
+        default: return 0.70
+        }
+    }
+
+    /// Horizontal nudge for the overlay so it lines up with the athlete. The
+    /// portrait value of 10 accounts for the 0.70 scale; landscape needs none.
+    private var skeletonOffsetX: CGFloat {
+        switch tracker.currentVideoOrientation {
+        case .landscapeLeft, .landscapeRight: return 0
+        default: return 10
+        }
+    }
+
     var body: some View {
         GeometryReader { geo in
             let videoHeight = max(280, min(geo.size.height * 0.48, geo.size.width * 1.45))
@@ -86,8 +106,8 @@ struct ReplaySummaryView: View {
                                 .cornerRadius(12)
                                 .clipped()
                                 .allowsHitTesting(false)
-                                .scaleEffect(0.70)
-                                .offset(x: 10, y: 0)
+                                .scaleEffect(skeletonScale)
+                                .offset(x: skeletonOffsetX, y: 0)
 
                                 if let ballRect = tracker.ballBoundingBoxRect {
                                     let scaleX = tracker.videoRect.width
@@ -407,7 +427,6 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
         private var timeObserverToken: Any?
         private var endObserver: NSObjectProtocol?
         var currentDisplaySize: CGSize?
-        private var currentNaturalSize: CGSize = .zero
         private(set) var rawBufferOrientation: AVCaptureVideoOrientation = .portrait
 
         init(player: AVPlayer, tracker: PoseTracker) {
@@ -441,11 +460,9 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
                 let transformed = natural.applying(transform)
 
                 currentDisplaySize = CGSize(width: abs(transformed.width), height: abs(transformed.height))
-                currentNaturalSize = natural
                 rawBufferOrientation = detectBufferOrientation(from: track)
             } else {
                 currentDisplaySize = CGSize(width: 720, height: 1280)
-                currentNaturalSize = CGSize(width: 720, height: 1280)
                 rawBufferOrientation = .portrait
             }
 

@@ -187,9 +187,12 @@ class PoseTracker: NSObject, ObservableObject {
         case .portraitUpsideDown:
             return cameraPosition == .front ? .rightMirrored : .left
         case .landscapeLeft:
-            return cameraPosition == .front ? .downMirrored : .up
+            // A landscape-left encoded buffer must be rotated 90° clockwise to
+            // stand the athlete upright for Vision pose detection.
+            return cameraPosition == .front ? .leftMirrored : .right
         case .landscapeRight:
-            return cameraPosition == .front ? .upMirrored : .down
+            // A landscape-right encoded buffer must be rotated 90° counter-clockwise.
+            return cameraPosition == .front ? .rightMirrored : .left
         @unknown default:
             return cameraPosition == .front ? .leftMirrored : .right
         }
