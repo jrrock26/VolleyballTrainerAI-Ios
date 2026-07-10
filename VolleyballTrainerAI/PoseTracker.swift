@@ -322,27 +322,24 @@ extension PoseTracker {
                     }
                 }
 
-                    if self.isBaselineLocked, let baseline = self.hipBaselineY {
-                        let jumpDelta = hipY - baseline
-                        if jumpDelta > self.highestJumpPixels && jumpDelta > 0.004 {
-                            self.highestJumpPixels = jumpDelta
-                            let inchesPerNorm: Double
-                            if let ipn = self.calibrationInchesPerNorm, ipn > 30, ipn < 160 {
-                                inchesPerNorm = ipn
-                            } else {
-                                // Fallback: derive scale purely from profile height assuming a
-                                // typical standing torso proportion on screen.
-                                inchesPerNorm = max(40, min(140, self.assumedTorsoInches / 0.29))
-                            }
-                            // Empirically the hip-normalized delta over-estimates true vertical
-                            // rise (the hip point drifts with body sway / arm swing). Apply a
-                            // correction so a real ~8" jump reads as ~8" rather than ~13".
-                            var rawJump = jumpDelta * inchesPerNorm * 0.62
-                            // Physiologically plausible cap (elite verticals rarely exceed ~45")
-                            rawJump = max(0, min(rawJump, 48))
-                            self.jumpHeight = rawJump
+                if self.isBaselineLocked, let baseline = self.hipBaselineY {
+                    let jumpDelta = hipY - baseline
+                    if jumpDelta > self.highestJumpPixels && jumpDelta > 0.004 {
+                        self.highestJumpPixels = jumpDelta
+                        let inchesPerNorm: Double
+                        if let ipn = self.calibrationInchesPerNorm, ipn > 30, ipn < 160 {
+                            inchesPerNorm = ipn
+                        } else {
+                            // Fallback: derive scale purely from profile height assuming a
+                            // typical standing torso proportion on screen.
+                            inchesPerNorm = max(40, min(140, self.assumedTorsoInches / 0.29))
                         }
+                        var rawJump = jumpDelta * inchesPerNorm
+                        // Physiologically plausible cap (elite verticals rarely exceed ~45")
+                        rawJump = max(0, min(rawJump, 48))
+                        self.jumpHeight = rawJump
                     }
+                }
             } else if type != "Spike" {
                 self.jumpHeight = 0.0
             }
@@ -364,9 +361,6 @@ extension PoseTracker {
             }
 
             if self.isHitCaptured { return }
-
-            // Lower, more forgiving gate so consistent reps reliably register.
-            let hitVelocityThreshold: Double = isFrontCamera ? 0.55 : 0.7
 
             for isRight in [true, false] {
                 guard let armWrist = isRight ? rightWrist : leftWrist,
@@ -397,21 +391,13 @@ extension PoseTracker {
                         )
                     }
 
-                    // Mark "arm raised" once the wrist rises to/above shoulder height
-                    // (Vision y-up space: wrist above shoulder => wrist.y > shoulder.y).
-                    if currentWristY >= armShoulder.location.y {
+                    if currentWristY > armShoulder.location.y {
                         self.ascendingBySide[isRight] = true
                     }
 
-                    // A hit is registered when the arm has been raised and then whips
-                    // downward fast. We also allow a direct fast swing (downward or
-                    // across) even without the explicit "raised" flag so reps that
-                    // start near contact height still register reliably.
-                    let swungDownward = (self.ascendingBySide[isRight] ?? false) && yDelta < 0
-                    let fastDownwardSwing = yDelta < 0 && instantaneousVelocity > hitVelocityThreshold
-                    let fastAnySwing = fullSwingVelocity > hitVelocityThreshold * 1.4
-
-                    if (swungDownward && instantaneousVelocity > hitVelocityThreshold) || fastDownwardSwing || fastAnySwing {
+                    if (self.ascendingBySide[isRight] ?? false)
+                        && yDelta < 0
+                        && instantaneousVelocity > velocityThreshold {
                         self.isHitCaptured = true
                         self.initialBallContactTime = Date()
 
@@ -490,23 +476,20 @@ extension PoseTracker {
 
         guard needsSpeed || needsDistance || needsLaunch else { return }
 
-        // Clamp the swing contribution to a tight, realistic band so that
-        // frame-to-frame noise in the raw normalized velocity does NOT blow the
-        // estimated speed from ~40 to ~70 mph for what is actually the same rep.
-        let clampedSwing = max(1.0, min(swingVelocityNormPerSecond, 4.5))
-        let armQuality = max(0.85, min(1.1, armAngle / 160.0))
-        let jumpBonus = hitType == "Spike" ? min(jumpHeight * 0.15, 5.0) : 0.0
+        let clampedSwing = max(0.6, min(swingVelocityNormPerSecond, 8.5))
+        let armQuality = max(0.75, min(1.15, armAngle / 160.0))
+        let jumpBonus = hitType == "Spike" ? min(jumpHeight * 0.22, 7.0) : 0.0
 
         let estimatedSpeed: Double
         if hitType == "Serve" {
-            estimatedSpeed = max(22.0, min(58.0, 26.0 + clampedSwing * 4.5 * armQuality))
+            estimatedSpeed = max(18.0, min(72.0, 20.0 + clampedSwing * 6.2 * armQuality))
         } else {
-            estimatedSpeed = max(20.0, min(54.0, 23.0 + clampedSwing * 4.0 * armQuality + jumpBonus))
+            estimatedSpeed = max(16.0, min(68.0, 17.0 + clampedSwing * 5.4 * armQuality + jumpBonus))
         }
 
         let estimatedLaunch = hitType == "Serve"
-            ? max(6.0, min(22.0, 9.0 + clampedSwing * 1.0))
-            : max(8.0, min(20.0, 11.0 + jumpHeight * 0.18))
+            ? max(6.0, min(24.0, 10.0 + clampedSwing * 1.3))
+            : max(8.0, min(22.0, 11.0 + jumpHeight * 0.18))
 
         let estimatedDistance: Double
         if hitType == "Serve" {

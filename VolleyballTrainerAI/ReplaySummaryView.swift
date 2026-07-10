@@ -86,6 +86,8 @@ struct ReplaySummaryView: View {
                                 .cornerRadius(12)
                                 .clipped()
                                 .allowsHitTesting(false)
+                                .scaleEffect(0.70)
+                                .offset(x: 10, y: 0)
 
                                 if let ballRect = tracker.ballBoundingBoxRect {
                                     let scaleX = tracker.videoRect.width
@@ -427,54 +429,27 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
             let asset = AVAsset(url: url)
             let playerItem = AVPlayerItem(asset: asset)
 
-            if let track = asset.tracks(withMediaType: .video).first {
-                let natural = track.naturalSize
-                let transform = track.preferredTransform
-                let transformed = natural.applying(transform)
-                let displaySize = CGSize(width: abs(transformed.width), height: abs(transformed.height))
-
-                // Normalize every replay to an upright, portrait orientation so it always
-                // plays correctly inside the portrait-locked UI. This also guarantees the
-                // pixel buffers fed to the pose tracker share the same orientation as the
-                // on-screen video, keeping the skeleton overlay aligned (landscape-recorded
-                // clips previously appeared rotated and the skeleton was mis-scaled).
-                let isLandscape = displaySize.width > displaySize.height
-
-                if isLandscape {
-                    let portraitSize = CGSize(width: displaySize.height, height: displaySize.width)
-                    let rot = normalizedTransform(for: track, portraitSize: portraitSize)
-                    let instruction = AVMutableVideoCompositionInstruction()
-                    instruction.timeRange = CMTimeRange(start: .zero, duration: asset.duration)
-                    let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: track)
-                    layerInstruction.setTransform(rot, at: .zero)
-                    instruction.layerInstructions = [layerInstruction]
-
-                    let videoComposition = AVMutableVideoComposition()
-                    videoComposition.renderSize = portraitSize
-                    videoComposition.frameDuration = CMTime(value: 1, timescale: 30)
-                    videoComposition.instructions = [instruction]
-                    playerItem.videoComposition = videoComposition
-
-                    currentDisplaySize = portraitSize
-                    currentNaturalSize = portraitSize
-                } else {
-                    currentDisplaySize = displaySize
-                    currentNaturalSize = natural
-                }
-                rawBufferOrientation = .portrait
-            } else {
-                currentDisplaySize = CGSize(width: 720, height: 1280)
-                currentNaturalSize = CGSize(width: 720, height: 1280)
-                rawBufferOrientation = .portrait
-            }
-
             let videoOutput = AVPlayerItemVideoOutput(pixelBufferAttributes: [
                 kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)
             ])
             playerItem.add(videoOutput)
             player.replaceCurrentItem(with: playerItem)
 
-            tracker.currentVideoOrientation = .portrait
+            if let track = asset.tracks(withMediaType: .video).first {
+                let natural = track.naturalSize
+                let transform = track.preferredTransform
+                let transformed = natural.applying(transform)
+
+                currentDisplaySize = CGSize(width: abs(transformed.width), height: abs(transformed.height))
+                currentNaturalSize = natural
+                rawBufferOrientation = detectBufferOrientation(from: track)
+            } else {
+                currentDisplaySize = CGSize(width: 720, height: 1280)
+                currentNaturalSize = CGSize(width: 720, height: 1280)
+                rawBufferOrientation = .portrait
+            }
+
+            tracker.currentVideoOrientation = rawBufferOrientation
 
             if let displaySize = currentDisplaySize {
                 let rect = computeVideoRect(
@@ -525,30 +500,6 @@ struct AVPlayerVideoWithOverlayView: UIViewRepresentable {
             }
 
             return CGRect(origin: origin, size: size)
-        }
-
-        /// Builds an affine transform that rotates a landscape video track 90° and
-        /// centers it within a portrait `renderSize`, so the output always reads
-        /// upright (phone held vertically) regardless of how the clip was recorded.
-        private func normalizedTransform(for track: AVAssetTrack, portraitSize: CGSize) -> CGAffineTransform {
-            let natural = track.naturalSize
-            let t = track.preferredTransform
-
-            // Handle the four canonical orientations; only landscape ones need rotation.
-            if t.a == 0 && t.b == 1 && t.c == -1 && t.d == 0 {
-                // landscapeLeft -> rotate 90° CW
-                return CGAffineTransform(rotationAngle: .pi / 2)
-                    .translatedBy(x: 0, y: -natural.width)
-            } else if t.a == 0 && t.b == -1 && t.c == 1 && t.d == 0 {
-                // landscapeRight -> rotate 90° CCW
-                return CGAffineTransform(rotationAngle: -.pi / 2)
-                    .translatedBy(x: -natural.height, y: 0)
-            } else {
-                // Already portrait/upright — just center inside the render size.
-                let offsetX = (portraitSize.width - natural.width) / 2
-                let offsetY = (portraitSize.height - natural.height) / 2
-                return CGAffineTransform(translationX: offsetX, y: offsetY)
-            }
         }
 
         func setupTimeObserver(
