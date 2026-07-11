@@ -392,7 +392,7 @@ struct TrainingHubView: View {
                                     .background(RoundedRectangle(cornerRadius: 10).fill(Color.black.opacity(0.4))
                                         .background(RoundedRectangle(cornerRadius: 10).stroke(Color.pink.opacity(0.5), lineWidth: 1)))
                                 }.buttonStyle(PlainButtonStyle()); Spacer()
-                            }.padding(.top, 16)
+                            }.padding(.top, 50)
                             header
                             Spacer(minLength: 120)
                             PinkSegmentedPicker(selection: $mode, options: TrainingGenerationMode.allCases)
@@ -633,6 +633,8 @@ struct TrainingScheduleView: View {
     @State private var showSaveConfirm = false
     @State private var timers: [UUID: Int] = [:]
     @State private var running: Set<UUID> = []
+    @State private var showShareSheet = false
+    @State private var pdfData: Data?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -655,8 +657,13 @@ struct TrainingScheduleView: View {
                 }
                 HStack {
                     Button("Save") { showSaveSheet() }.buttonStyle(TrainingButtonStyle(color: .cyan, foreground: .black))
-                    ShareLink(item: shareText) { Text("Share") }.buttonStyle(TrainingButtonStyle(color: .yellow, foreground: .black))
+                    Button("Export PDF") { exportPDF() }.buttonStyle(TrainingButtonStyle(color: .yellow, foreground: .black))
                 }.padding(.horizontal).padding(.bottom, 8)
+                .sheet(isPresented: $showShareSheet) {
+                    if let data = pdfData {
+                        ActivityView(activityItems: [data])
+                    }
+                }
             }
         }
         .navigationTitle("Training Schedule").navigationBarTitleDisplayMode(.inline)
@@ -685,7 +692,25 @@ struct TrainingScheduleView: View {
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(red: 1.0, green: 0.08, blue: 0.58), lineWidth: 1))
     }
 
-    private var shareText: String { ([plan.name, "Total: \(plan.totalMinutes) min", "Focus: \(plan.focus)"] + plan.blocks.map { "• \($0.name) - \($0.durationMinutes) min" }).joined(separator: "\n") }
+    private func exportPDF() {
+        let blocks: [ScheduleBlockInfo] = plan.blocks.map { sb in
+            ScheduleBlockInfo(
+                name: sb.name,
+                durationMinutes: sb.durationMinutes,
+                categoryName: sb.category.rawValue,
+                color: UIColor(sb.category.color),
+                isWaterBreak: sb.category == .waterBreak
+            )
+        }
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        pdfData = SchedulePDFGenerator.generate(
+            title: plan.name,
+            subtitle: "Training Plan • Focus: \(plan.focus.capitalized) • Generated \(formatter.string(from: plan.createdAt))",
+            blocks: blocks
+        )
+        showShareSheet = true
+    }
 
     private func resetTimersIfNeeded() { guard timers.isEmpty else { return }; for block in plan.blocks where block.category != .waterBreak { timers[block.id] = block.durationMinutes * 60 } }
 

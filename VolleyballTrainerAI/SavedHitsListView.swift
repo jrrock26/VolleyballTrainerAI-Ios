@@ -6,6 +6,9 @@ struct SavedHitsListView: View {
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \VolleyballHit.timestamp, order: .reverse) private var allHits: [VolleyballHit]
     @State private var showDeleteAllAlert = false
+    @State private var selectedHit: VolleyballHit? = nil
+    @State private var showDeleteAlert = false
+    @State private var hitToDelete: VolleyballHit? = nil
 
     private var groupedSessions: [(date: Date, hits: [VolleyballHit])] {
         let dictionary = Dictionary(grouping: allHits) { hit in
@@ -88,19 +91,26 @@ struct SavedHitsListView: View {
                                     VStack(spacing: 0) {
 
                                         HStack(spacing: 12) {
-                                            VStack(alignment: .leading, spacing: 2) {
-                                                Text("\(hit.hitType) • \(String(format: "%.0f mph", hit.ballSpeedMPH))")
-                                                    .font(.subheadline)
-                                                    .foregroundColor(.white)
+                                            Button(action: { selectedHit = hit }) {
+                                                VStack(alignment: .leading, spacing: 2) {
+                                                    Text("\(hit.hitType) • \(String(format: "%.0f mph", hit.ballSpeedMPH))")
+                                                        .font(.subheadline)
+                                                        .foregroundColor(.white)
 
-                                                Text("Score \(String(format: "%.0f", hit.overallScore)) • \(formattedTime(hit.timestamp))")
-                                                    .font(.caption)
-                                                    .foregroundColor(.gray)
+                                                    Text("Score \(String(format: "%.0f", hit.overallScore)) • \(formattedTime(hit.timestamp))")
+                                                        .font(.caption)
+                                                        .foregroundColor(.gray)
+                                                }
+                                                .frame(maxWidth: .infinity, alignment: .leading)
                                             }
+                                            .buttonStyle(.plain)
 
                                             Spacer()
 
-                                            Button(action: { delete(hit) }) {
+                                            Button(action: {
+                                                hitToDelete = hit
+                                                showDeleteAlert = true
+                                            }) {
                                                 Image(systemName: "trash")
                                                     .font(.caption)
                                                     .foregroundColor(.red)
@@ -160,6 +170,24 @@ struct SavedHitsListView: View {
         }
         .navigationBarHidden(true)
         .onAppear { purgeOldHits() }
+        .fullScreenCover(item: $selectedHit) { hit in
+            CoachFeedbackView(
+                title: "\(hit.hitType) Feedback",
+                hitType: hit.hitType,
+                ballSpeedMPH: hit.ballSpeedMPH,
+                overallScore: hit.overallScore,
+                jumpHeightInches: hit.jumpHeightInches,
+                coachFeedback: hit.coachFeedback
+            )
+        }
+        .alert("Delete this hit?", isPresented: $showDeleteAlert) {
+            Button("Cancel", role: .cancel) { hitToDelete = nil }
+            Button("Delete", role: .destructive) {
+                if let hit = hitToDelete { delete(hit) }
+            }
+        } message: {
+            Text("This will permanently remove the saved hit.")
+        }
     }
 
     private func delete(_ hit: VolleyballHit) {

@@ -7,6 +7,7 @@ struct SavedReplaysListView: View {
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \SavedReplay.createdAt, order: .reverse) private var savedReplays: [SavedReplay]
     @State private var selectedReplay: SavedReplay? = nil
+    @State private var feedbackReplay: SavedReplay? = nil
     @State private var showDeleteAlert = false
     @State private var replayToDelete: SavedReplay? = nil
     @State private var showLimitAlert = false
@@ -150,6 +151,16 @@ struct SavedReplaysListView: View {
         .fullScreenCover(item: $selectedReplay) { replay in
             SavedReplayPlaybackView(replay: replay)
         }
+        .fullScreenCover(item: $feedbackReplay) { replay in
+            CoachFeedbackView(
+                title: "\(replay.title)",
+                hitType: replay.hitType,
+                ballSpeedMPH: replay.ballSpeedMPH,
+                overallScore: replay.overallScore,
+                jumpHeightInches: replay.jumpHeightInches,
+                coachFeedback: replay.coachFeedback
+            )
+        }
         .alert("Delete this replay?", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) {
                 replayToDelete = nil
@@ -187,6 +198,7 @@ struct SavedReplayPlaybackView: View {
     @StateObject private var tracker = PoseTracker()
     @State private var player = AVPlayer()
     @State private var slowMotionEnabled = true
+    @State private var feedbackReplay: SavedReplay? = nil
 
     var body: some View {
         ZStack {
@@ -345,6 +357,40 @@ struct SavedReplayPlaybackView: View {
                     .padding(.top, 40)
                 }
 
+                // Tap coach feedback to read full AI feedback
+                if !replay.coachFeedback.isEmpty {
+                    Button(action: {
+                        feedbackReplay = replay
+                    }) {
+                        HStack(alignment: .top, spacing: 6) {
+                            Image(systemName: "lightbulb.fill")
+                                .font(.caption)
+                                .foregroundColor(.yellow)
+                                .padding(.top, 2)
+                            Text(replay.coachFeedback)
+                                .font(.system(size: 11))
+                                .foregroundColor(.gray)
+                                .lineLimit(3)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption2)
+                                .foregroundColor(.yellow)
+                                .padding(.top, 2)
+                        }
+                        .padding(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.yellow.opacity(0.1))
+                        .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.yellow.opacity(0.3), lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 12)
+                }
+
                 // Stats section
                 VStack(spacing: 8) {
                     HStack(spacing: 6) {
@@ -362,34 +408,21 @@ struct SavedReplayPlaybackView: View {
                 }
                 .padding(.horizontal, 12)
 
-                if !replay.coachFeedback.isEmpty {
-                    HStack(alignment: .top, spacing: 6) {
-                        Image(systemName: "lightbulb.fill")
-                            .font(.caption)
-                            .foregroundColor(.yellow)
-                            .padding(.top, 2)
-                        Text(replay.coachFeedback)
-                            .font(.system(size: 11))
-                            .foregroundColor(.gray)
-                            .lineLimit(3)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .padding(10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.yellow.opacity(0.1))
-                    .cornerRadius(10)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(Color.yellow.opacity(0.3), lineWidth: 1)
-                    )
-                    .padding(.horizontal, 12)
-                }
-
                 Spacer()
             }
         }
         .onAppear {
             PortraitOrientation.lock()
+        }
+        .fullScreenCover(item: $feedbackReplay) { replay in
+            CoachFeedbackView(
+                title: "\(replay.title)",
+                hitType: replay.hitType,
+                ballSpeedMPH: replay.ballSpeedMPH,
+                overallScore: replay.overallScore,
+                jumpHeightInches: replay.jumpHeightInches,
+                coachFeedback: replay.coachFeedback
+            )
         }
     }
 }

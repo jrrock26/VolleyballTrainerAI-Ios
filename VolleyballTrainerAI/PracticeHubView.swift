@@ -1004,9 +1004,9 @@ struct PracticeHubView: View {
                                         .background(RoundedRectangle(cornerRadius: 10).stroke(Color.pink.opacity(0.5), lineWidth: 1)))
                                 }.buttonStyle(PlainButtonStyle())
                                 Spacer()
-                            }.padding(.top, 16)
-                            
-                            Text("Generate workouts from AI coach feedback, category focus, or build your own custom routine.")
+                            }.padding(.top, 50)
+
+                            Text("Build a practice for your team. Select focus categories for the system to generate a plan, or custom build your own session.")
                                 .font(.subheadline)
                                 .foregroundColor(.white)
                             
@@ -1159,6 +1159,8 @@ struct PracticeRunView: View {
     @State private var timers: [UUID: Int] = [:]
     @State private var running: Set<UUID> = []
     @State private var currentBlockIndex: Int = 0
+    @State private var showShareSheet = false
+    @State private var pdfData: Data?
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -1188,7 +1190,13 @@ struct PracticeRunView: View {
                 
                 HStack {
                     Button("Save") { showSaveSheet() }.buttonStyle(PracticeButtonStyle(color: .cyan, foreground: .black))
+                    Button("Export PDF") { exportPDF() }.buttonStyle(PracticeButtonStyle(color: .yellow, foreground: .black))
                 }.padding(.horizontal).padding(.bottom, 8)
+                .sheet(isPresented: $showShareSheet) {
+                    if let data = pdfData {
+                        ActivityView(activityItems: [data])
+                    }
+                }
             }
         }
         .navigationTitle("Practice Session").navigationBarTitleDisplayMode(.inline)
@@ -1253,6 +1261,27 @@ struct PracticeRunView: View {
         lastSavedName = saveName
         showSaveConfirm = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) { showSaveConfirm = false }
+    }
+
+    private func exportPDF() {
+        let blocks: [ScheduleBlockInfo] = practice.blocks.map { pb in
+            let isWB = pb.name == "Water Break"
+            return ScheduleBlockInfo(
+                name: pb.name,
+                durationMinutes: pb.durationMinutes,
+                categoryName: isWB ? "Water Break" : pb.category.rawValue,
+                color: UIColor(pb.category.color),
+                isWaterBreak: isWB
+            )
+        }
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        pdfData = SchedulePDFGenerator.generate(
+            title: practice.name,
+            subtitle: "Practice Plan • Focus: \(practice.focus.capitalized) • Generated \(formatter.string(from: practice.createdAt))",
+            blocks: blocks
+        )
+        showShareSheet = true
     }
 }
 
