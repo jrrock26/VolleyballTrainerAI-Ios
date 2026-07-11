@@ -634,7 +634,7 @@ struct TrainingScheduleView: View {
     @State private var timers: [UUID: Int] = [:]
     @State private var running: Set<UUID> = []
     @State private var showShareSheet = false
-    @State private var pdfData: Data?
+    @State private var pdfURL: URL?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -660,8 +660,8 @@ struct TrainingScheduleView: View {
                     Button("Export PDF") { exportPDF() }.buttonStyle(TrainingButtonStyle(color: .yellow, foreground: .black))
                 }.padding(.horizontal).padding(.bottom, 8)
                 .sheet(isPresented: $showShareSheet) {
-                    if let data = pdfData {
-                        ActivityView(activityItems: [data])
+                    if let url = pdfURL {
+                        ActivityView(activityItems: [url])
                     }
                 }
             }
@@ -704,11 +704,15 @@ struct TrainingScheduleView: View {
         }
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
-        pdfData = SchedulePDFGenerator.generate(
+        let data = SchedulePDFGenerator.generate(
             title: plan.name,
             subtitle: "Training Plan • Focus: \(plan.focus.capitalized) • Generated \(formatter.string(from: plan.createdAt))",
             blocks: blocks
         )
+        let fileName = plan.name.replacingOccurrences(of: "/", with: "-") + ".pdf"
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        try? data.write(to: tempURL)
+        pdfURL = tempURL
         showShareSheet = true
     }
 
