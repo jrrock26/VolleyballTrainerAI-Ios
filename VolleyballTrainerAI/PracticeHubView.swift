@@ -1159,8 +1159,7 @@ struct PracticeRunView: View {
     @State private var timers: [UUID: Int] = [:]
     @State private var running: Set<UUID> = []
     @State private var currentBlockIndex: Int = 0
-    @State private var showShareSheet = false
-    @State private var pdfURL: URL?
+    @State private var previewData: SchedulePreviewData?
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -1190,12 +1189,10 @@ struct PracticeRunView: View {
                 
                 HStack {
                     Button("Save") { showSaveSheet() }.buttonStyle(PracticeButtonStyle(color: .cyan, foreground: .black))
-                    Button("Export PDF") { exportPDF() }.buttonStyle(PracticeButtonStyle(color: .yellow, foreground: .black))
+                    Button("Export Schedule") { exportPDF() }.buttonStyle(PracticeButtonStyle(color: .yellow, foreground: .black))
                 }.padding(.horizontal).padding(.bottom, 8)
-                .sheet(isPresented: $showShareSheet) {
-                    if let url = pdfURL {
-                        ActivityView(activityItems: [url])
-                    }
+                .sheet(item: $previewData) { data in
+                    SchedulePreview(title: data.title, subtitle: data.subtitle, blocks: data.blocks)
                 }
             }
         }
@@ -1276,16 +1273,8 @@ struct PracticeRunView: View {
         }
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
-        let data = SchedulePDFGenerator.generate(
-            title: practice.name,
-            subtitle: "Practice Plan • Focus: \(practice.focus.capitalized) • Generated \(formatter.string(from: practice.createdAt))",
-            blocks: blocks
-        )
-        let fileName = practice.name.replacingOccurrences(of: "/", with: "-") + ".pdf"
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
-        try? data.write(to: tempURL)
-        pdfURL = tempURL
-        showShareSheet = true
+        let subtitle = "Practice Plan • Focus: \(practice.focus.capitalized) • Generated \(formatter.string(from: practice.createdAt))"
+        previewData = SchedulePreviewData(title: practice.name, subtitle: subtitle, blocks: blocks)
     }
 }
 

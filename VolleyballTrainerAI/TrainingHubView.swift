@@ -633,8 +633,7 @@ struct TrainingScheduleView: View {
     @State private var showSaveConfirm = false
     @State private var timers: [UUID: Int] = [:]
     @State private var running: Set<UUID> = []
-    @State private var showShareSheet = false
-    @State private var pdfURL: URL?
+    @State private var previewData: SchedulePreviewData?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -657,12 +656,10 @@ struct TrainingScheduleView: View {
                 }
                 HStack {
                     Button("Save") { showSaveSheet() }.buttonStyle(TrainingButtonStyle(color: .cyan, foreground: .black))
-                    Button("Export PDF") { exportPDF() }.buttonStyle(TrainingButtonStyle(color: .yellow, foreground: .black))
+                    Button("Export Schedule") { exportPDF() }.buttonStyle(TrainingButtonStyle(color: .yellow, foreground: .black))
                 }.padding(.horizontal).padding(.bottom, 8)
-                .sheet(isPresented: $showShareSheet) {
-                    if let url = pdfURL {
-                        ActivityView(activityItems: [url])
-                    }
+                .sheet(item: $previewData) { data in
+                    SchedulePreview(title: data.title, subtitle: data.subtitle, blocks: data.blocks)
                 }
             }
         }
@@ -704,16 +701,8 @@ struct TrainingScheduleView: View {
         }
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
-        let data = SchedulePDFGenerator.generate(
-            title: plan.name,
-            subtitle: "Training Plan • Focus: \(plan.focus.capitalized) • Generated \(formatter.string(from: plan.createdAt))",
-            blocks: blocks
-        )
-        let fileName = plan.name.replacingOccurrences(of: "/", with: "-") + ".pdf"
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
-        try? data.write(to: tempURL)
-        pdfURL = tempURL
-        showShareSheet = true
+        let subtitle = "Training Plan • Focus: \(plan.focus.capitalized) • Generated \(formatter.string(from: plan.createdAt))"
+        previewData = SchedulePreviewData(title: plan.name, subtitle: subtitle, blocks: blocks)
     }
 
     private func resetTimersIfNeeded() { guard timers.isEmpty else { return }; for block in plan.blocks where block.category != .waterBreak { timers[block.id] = block.durationMinutes * 60 } }
