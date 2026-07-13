@@ -92,6 +92,53 @@ struct PracticePlan: Identifiable, Hashable, Codable {
 
 // MARK: - Practice Library
 enum VolleyballPracticeLibrary {
+    static let stretches: [PracticeBlock] = [
+        PracticeBlock(name: "Dynamic Full Body Stretch Flow", category: .warmup, durationMinutes: 4, type: "both", difficulty: "beginner", imageName: "warmup", instructions: [
+            "Move through continuous dynamic stretches to prepare muscles and joints.",
+            "Focus on controlled movements, not bouncing or forcing stretches.",
+            "Breathe deeply and move through full ranges of motion.",
+            "Keep core engaged and posture tall throughout."
+        ], steps: [
+            "Perform arm circles forward and backward for 30 seconds.",
+            "Walk forward with knee hugs for 30 seconds.",
+            "Perform walking lunges with torso rotation for 30 seconds.",
+            "Complete leg swings forward and lateral for 30 seconds each."
+        ]),
+        PracticeBlock(name: "Hip and Shoulder Mobility", category: .warmup, durationMinutes: 4, type: "both", difficulty: "beginner", imageName: "warmup", instructions: [
+            "Target the hips and shoulders — key areas for volleyball performance.",
+            "Focus on controlled, deliberate movements.",
+            "Do not force any stretch beyond comfortable range.",
+            "Maintain steady breathing through each stretch."
+        ], steps: [
+            "Perform hip circles: 10 in each direction.",
+            "Complete deep lunge with rotation: 5 per side.",
+            "Do shoulder pass-throughs with a stick or band: 10 reps.",
+            "Finish with cat-cow spinal mobility: 8 slow cycles."
+        ]),
+        PracticeBlock(name: "Lower Body Activation", category: .warmup, durationMinutes: 4, type: "individual", difficulty: "beginner", imageName: "warmup", instructions: [
+            "Activate the legs and hips for explosive movement.",
+            "Focus on proper form and controlled tempo.",
+            "Feel the muscles engage with each movement.",
+            "Keep the core braced throughout the sequence."
+        ], steps: [
+            "Perform bodyweight squats: 10 slow reps with 2-second hold at bottom.",
+            "Complete walking hamstring sweeps: 8 per leg.",
+            "Do lateral lunges: 8 per side.",
+            "Finish with standing quad stretches: 20 seconds each leg."
+        ]),
+        PracticeBlock(name: "Upper Body Stretch Series", category: .warmup, durationMinutes: 3, type: "individual", difficulty: "beginner", imageName: "warmup", instructions: [
+            "Prepare the shoulders, arms, and upper back for hitting and serving.",
+            "Keep movements slow and controlled.",
+            "Focus on full range of motion.",
+            "Do not rush through the stretches."
+        ], steps: [
+            "Cross-body shoulder stretch: 20 seconds each arm.",
+            "Triceps stretch overhead: 15 seconds each arm.",
+            "Open-book thoracic rotations: 5 per side.",
+            "Finish with wrist and forearm flexor stretch: 15 seconds each side."
+        ])
+    ]
+    
     static let warmups: [PracticeBlock] = [
         PracticeBlock(name: "Dynamic Full-Body Warm-Up", category: .warmup, durationMinutes: 5, type: "both", difficulty: "beginner", imageName: "warmup", instructions: [
             "Use continuous movement to gradually elevate heart rate.",
@@ -820,7 +867,10 @@ enum VolleyballPracticeLibrary {
         let categorySet = Set(categories)
         var planBlocks: [PracticeBlock] = []
         
-        // Always start with at least 1 warmup and 1 stretch if available
+        // Always start with 1 stretching exercise, then 1 warmup
+        if !stretches.isEmpty {
+            planBlocks.append(stretches.randomElement()!)
+        }
         let warmupDrills = warmups.filter { $0.category == .warmup }
         if !warmupDrills.isEmpty {
             planBlocks.append(warmupDrills.randomElement()!)
