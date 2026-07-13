@@ -228,7 +228,15 @@ enum VolleyballTrainingLibrary {
 
         let warmupBlocks = warmups.filter { $0.category != .stretching }
         let stretchBlocks = warmups.filter { $0.category == .stretching }
-        var planBlocks = Array((stretchBlocks + warmupBlocks).prefix(3))
+        // Always include at least 1 stretching block, then fill remaining with warmups up to 3 total
+        var planBlocks: [TrainingBlock] = []
+        if let firstStretch = stretchBlocks.randomElement() {
+            planBlocks.append(firstStretch)
+        }
+        let remainingSlots = 3 - planBlocks.count
+        if remainingSlots > 0 {
+            planBlocks += Array(warmupBlocks.shuffled().prefix(remainingSlots))
+        }
         var candidates = drills.filter { block in !Set(block.focusTags).isDisjoint(with: Set(tags)) }
         if candidates.count < 5 { candidates += drills.filter { !candidates.contains($0) } }
 
