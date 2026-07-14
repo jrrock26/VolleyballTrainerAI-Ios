@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import AudioToolbox
+import AVFoundation
 
 // MARK: - Practice Models
 enum PracticeCategory: String, Codable, CaseIterable, Identifiable {
@@ -1208,8 +1209,11 @@ struct PracticeRunView: View {
     @State private var showSaveConfirm = false
     @State private var timers: [UUID: Int] = [:]
     @State private var running: Set<UUID> = []
+    @State private var completedBlocks: Set<UUID> = []
+    @State private var allBlocksCompleted = false
     @State private var currentBlockIndex: Int = 0
     @State private var previewData: SchedulePreviewData?
+    @State private var showHistory = false
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -1224,25 +1228,33 @@ struct PracticeRunView: View {
                             if block.name == "Water Break" {
                                 waterBreakRow(block)
                             } else {
-                                PracticeScheduleRow(block: block, seconds: timers[block.id] ?? block.durationMinutes * 60, isRunning: running.contains(block.id),
+                                let isCompleted = completedBlocks.contains(block.id)
+                                PracticeScheduleRow(block: block, seconds: timers[block.id] ?? block.durationMinutes * 60,
+                                    isRunning: running.contains(block.id), isCompleted: isCompleted,
                                     onTap: { selectedBlock = block },
                                     onPlay: { running.insert(block.id) },
                                     onPause: { running.remove(block.id) },
                                     onReset: {
                                         timers[block.id] = block.durationMinutes * 60
                                         running.remove(block.id)
+                                        completedBlocks.remove(block.id)
                                     })
                             }
                         }
                     }.padding(.horizontal)
                 }
                 
-                HStack {
+                HStack(spacing: 10) {
                     Button("Save") { showSaveSheet() }.buttonStyle(PracticeButtonStyle(color: .cyan, foreground: .black))
                     Button("Export Schedule") { exportPDF() }.buttonStyle(PracticeButtonStyle(color: .yellow, foreground: .black))
+                    Button("History") { showHistory = true }
+                        .buttonStyle(PracticeButtonStyle(color: .pink, foreground: .white))
                 }.padding(.horizontal).padding(.bottom, 8)
                 .sheet(item: $previewData) { data in
                     SchedulePreview(title: data.title, subtitle: data.subtitle, blocks: data.blocks)
+                }
+                .sheet(isPresented: $showHistory) {
+                    SessionHistoryView()
                 }
             }
         }
@@ -1290,12 +1302,35 @@ struct PracticeRunView: View {
             timers[id] = value - 1
             if value - 1 == 0 {
                 running.remove(id)
-                AudioServicesPlaySystemSound(1519)
+                completedBlocks.insert(id)
+                AlarmHelper.playAlarm()
                 if let currentIndex = practice.blocks.firstIndex(where: { $0.id == id }),
                    currentIndex < practice.blocks.count - 1 {
                     currentBlockIndex = currentIndex + 1
                 }
+                checkAllComplete()
             }
+        }
+    }
+    
+    private func checkAllComplete() {
+        let nonWaterBlocks = practice.blocks.filter { $0.name != "Water Break" }
+        let allDone = nonWaterBlocks.allSatisfy { completedBlocks.contains($0.id) }
+        if allDone && !allBlocksCompleted {
+            allBlocksCompleted = true
+            let completedSession = CompletedSession(
+                id: UUID(),
+                type: .practice,
+                name: practice.name,
+                focus: practice.focus,
+                completedDate: Date(),
+                totalMinutes: practice.totalMinutes,
+                blocks: practice.blocks.filter { $0.name != "Water Break" }.map {
+                    CompletedBlock(id: $0.id, name: $0.name, category: $0.category.rawValue, durationMinutes: $0.durationMinutes, completedAt: Date())
+                },
+                categories: Array(Set(practice.blocks.filter { $0.name != "Water Break" }.map { $0.category.rawValue }))
+            )
+            SessionHistoryManager.saveSession(completedSession)
         }
     }
     
@@ -1331,16 +1366,30 @@ struct PracticeRunView: View {
 struct PracticeScheduleRow: View {
     let block: PracticeBlock; let seconds: Int; let isRunning: Bool
     let onTap: () -> Void; let onPlay: () -> Void; let onPause: () -> Void; let onReset: () -> Void
+    var isCompleted: Bool = false
     var body: some View {
         HStack(spacing: 10) {
             Button(action: onTap) { PracticeBlockRow(block: block, compact: false) }.buttonStyle(.plain)
-            VStack(spacing: 4) {
-                Text(format(seconds)).font(.headline.monospacedDigit()).foregroundColor(Color(red: 1.0, green: 0.08, blue: 0.58))
-                HStack(spacing: 8) { Button("Play", action: onPlay); Button("Pause", action: onPause); Button("Reset", action: onReset) }
+            Spacer(minLength: 4)
+            if isCompleted {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.title3)
+                    .foregroundColor(.green)
+            } else {
+                VStack(spacing: 4) {
+                    Text(format(seconds)).font(.headline.monospacedDigit()).foregroundColor(Color(red: 1.0, green: 0.08, blue: 0.58))
+                    HStack(spacing: 8) {
+                        Button("Play", action: onPlay).disabled(isRunning)
+                        Button("Pause", action: onPause).disabled(!isRunning)
+                        Button("Reset", action: onReset)
+                    }
                     .font(.caption.bold()).foregroundColor(.white)
+                }
             }
         }.padding(10).background(Color.white.opacity(0.08)).cornerRadius(12)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(block.category.color.opacity(isRunning ? 1 : 0.45), lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(
+            isCompleted ? Color.green : block.category.color.opacity(isRunning ? 1 : 0.45),
+            lineWidth: isCompleted ? 2 : 1))
     }
     private func format(_ seconds: Int) -> String { "\(seconds / 60):\(String(format: "%02d", seconds % 60))" }
 }

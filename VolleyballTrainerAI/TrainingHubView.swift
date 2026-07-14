@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import AudioToolbox
+import AVFoundation
 
 enum TrainingCategory: String, Codable, CaseIterable, Identifiable {
     case warmup = "Warmup"
@@ -228,7 +229,6 @@ enum VolleyballTrainingLibrary {
 
         let warmupBlocks = warmups.filter { $0.category != .stretching }
         let stretchBlocks = warmups.filter { $0.category == .stretching }
-        // Always include at least 1 stretching block, then fill remaining with warmups up to 3 total
         var planBlocks: [TrainingBlock] = []
         if let firstStretch = stretchBlocks.randomElement() {
             planBlocks.append(firstStretch)
@@ -263,7 +263,6 @@ enum VolleyballTrainingLibrary {
         let categorySet = Set(categories)
         let warmupBlocks = warmups.filter { $0.category != .stretching }
         let stretchBlocks = warmups.filter { $0.category == .stretching }
-        // Always include at least 1 stretching block, then fill remaining with warmups up to 3 total
         var planBlocks: [TrainingBlock] = []
         if let firstStretch = stretchBlocks.randomElement() {
             planBlocks.append(firstStretch)
@@ -653,7 +652,10 @@ struct TrainingScheduleView: View {
     @State private var showSaveConfirm = false
     @State private var timers: [UUID: Int] = [:]
     @State private var running: Set<UUID> = []
+    @State private var completedBlocks: Set<UUID> = []
+    @State private var allBlocksCompleted = false
     @State private var previewData: SchedulePreviewData?
+    @State private var showHistory = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -667,19 +669,28 @@ struct TrainingScheduleView: View {
                             if block.category == .waterBreak {
                                 waterBreakRow(block)
                             } else {
-                                TrainingScheduleRow(block: block, seconds: timers[block.id] ?? block.durationMinutes * 60, isRunning: running.contains(block.id),
-                                    onTap: { selectedBlock = block }, onPlay: { running.insert(block.id) }, onPause: { running.remove(block.id) },
-                                    onReset: { timers[block.id] = block.durationMinutes * 60; running.remove(block.id) })
+                                let isCompleted = completedBlocks.contains(block.id)
+                                TrainingScheduleRow(block: block, seconds: timers[block.id] ?? block.durationMinutes * 60,
+                                    isRunning: running.contains(block.id), isCompleted: isCompleted,
+                                    onTap: { selectedBlock = block },
+                                    onPlay: { running.insert(block.id) },
+                                    onPause: { running.remove(block.id) },
+                                    onReset: { timers[block.id] = block.durationMinutes * 60; running.remove(block.id); completedBlocks.remove(block.id) })
                             }
                         }
                     }.padding(.horizontal)
                 }
-                HStack {
+                HStack(spacing: 10) {
                     Button("Save") { showSaveSheet() }.buttonStyle(TrainingButtonStyle(color: .cyan, foreground: .black))
                     Button("Export Schedule") { exportPDF() }.buttonStyle(TrainingButtonStyle(color: .yellow, foreground: .black))
+                    Button("History") { showHistory = true }
+                        .buttonStyle(TrainingButtonStyle(color: .pink, foreground: .white))
                 }.padding(.horizontal).padding(.bottom, 8)
                 .sheet(item: $previewData) { data in
                     SchedulePreview(title: data.title, subtitle: data.subtitle, blocks: data.blocks)
+                }
+                .sheet(isPresented: $showHistory) {
+                    SessionHistoryView()
                 }
             }
         }
@@ -731,7 +742,33 @@ struct TrainingScheduleView: View {
         for id in running {
             guard let value = timers[id], value > 0 else { continue }
             timers[id] = value - 1
-            if value - 1 == 0 { running.remove(id); AudioServicesPlaySystemSound(1519) }
+            if value - 1 == 0 {
+                running.remove(id)
+                completedBlocks.insert(id)
+                AlarmHelper.playAlarm()
+                checkAllComplete()
+            }
+        }
+    }
+    
+    private func checkAllComplete() {
+        let nonWaterBlocks = plan.blocks.filter { $0.category != .waterBreak }
+        let allDone = nonWaterBlocks.allSatisfy { completedBlocks.contains($0.id) }
+        if allDone && !allBlocksCompleted {
+            allBlocksCompleted = true
+            let completedSession = CompletedSession(
+                id: UUID(),
+                type: .training,
+                name: plan.name,
+                focus: plan.focus,
+                completedDate: Date(),
+                totalMinutes: plan.totalMinutes,
+                blocks: plan.blocks.filter { $0.category != .waterBreak }.map {
+                    CompletedBlock(id: $0.id, name: $0.name, category: $0.category.rawValue, durationMinutes: $0.durationMinutes, completedAt: Date())
+                },
+                categories: Array(Set(plan.blocks.filter { $0.category != .waterBreak }.map { $0.category.rawValue }))
+            )
+            SessionHistoryManager.saveSession(completedSession)
         }
     }
 
@@ -859,16 +896,34 @@ struct SavedTrainingsView: View {
 struct TrainingScheduleRow: View {
     let block: TrainingBlock; let seconds: Int; let isRunning: Bool
     let onTap: () -> Void; let onPlay: () -> Void; let onPause: () -> Void; let onReset: () -> Void
+    var isCompleted: Bool = false
+    
     var body: some View {
         HStack(spacing: 10) {
             Button(action: onTap) { TrainingBlockRow(block: block, compact: false) }.buttonStyle(.plain)
-            VStack(spacing: 4) {
-                Text(format(seconds)).font(.headline.monospacedDigit()).foregroundColor(Color(red: 1.0, green: 0.08, blue: 0.58))
-                HStack(spacing: 8) { Button("Play", action: onPlay); Button("Pause", action: onPause); Button("Reset", action: onReset) }
+            Spacer(minLength: 4)
+            if isCompleted {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.title3)
+                    .foregroundColor(.green)
+            } else {
+                VStack(spacing: 4) {
+                    Text(format(seconds)).font(.headline.monospacedDigit()).foregroundColor(Color(red: 1.0, green: 0.08, blue: 0.58))
+                    HStack(spacing: 8) {
+                        Button("Play", action: onPlay).disabled(isRunning)
+                        Button("Pause", action: onPause).disabled(!isRunning)
+                        Button("Reset", action: onReset)
+                    }
                     .font(.caption.bold()).foregroundColor(.white)
+                }
             }
-        }.padding(10).background(Color.white.opacity(0.08)).cornerRadius(12)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(block.category.color.opacity(isRunning ? 1 : 0.45), lineWidth: 1))
+        }
+        .padding(10)
+        .background(Color.white.opacity(0.08))
+        .cornerRadius(12)
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(
+            isCompleted ? Color.green : block.category.color.opacity(isRunning ? 1 : 0.45),
+            lineWidth: isCompleted ? 2 : 1))
     }
     private func format(_ seconds: Int) -> String { "\(seconds / 60):\(String(format: "%02d", seconds % 60))" }
 }
