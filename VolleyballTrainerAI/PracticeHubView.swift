@@ -1253,7 +1253,7 @@ struct PracticeRunView: View {
     private func blockRow(_ block: PracticeBlock) -> some View {
         let isCompleted = completedBlocks.contains(block.id)
         return PracticeScheduleRow(block: block, seconds: timers[block.id] ?? block.durationMinutes * 60,
-            isRunning: running.contains(block.id), isCompleted: isCompleted,
+            isRunning: running.contains(block.id),
             onTap: { selectedBlock = block },
             onPlay: { running.insert(block.id) },
             onPause: { running.remove(block.id) },
@@ -1261,7 +1261,8 @@ struct PracticeRunView: View {
                 timers[block.id] = block.durationMinutes * 60
                 running.remove(block.id)
                 completedBlocks.remove(block.id)
-            })
+            },
+            isCompleted: isCompleted)
     }
     
     @ViewBuilder private var actionButtons: some View {
