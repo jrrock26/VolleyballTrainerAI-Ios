@@ -1219,56 +1219,72 @@ struct PracticeRunView: View {
     var body: some View {
         ZStack {
             Color(red: 0.07, green: 0.07, blue: 0.09).ignoresSafeArea()
-            VStack(spacing: 12) {
-                summary
-                
-                ScrollView {
-                    LazyVStack(spacing: 10) {
-                        ForEach(Array(practice.blocks.enumerated()), id: \.element.id) { index, block in
-                            if block.name == "Water Break" {
-                                waterBreakRow(block)
-                            } else {
-                                let isCompleted = completedBlocks.contains(block.id)
-                                PracticeScheduleRow(block: block, seconds: timers[block.id] ?? block.durationMinutes * 60,
-                                    isRunning: running.contains(block.id), isCompleted: isCompleted,
-                                    onTap: { selectedBlock = block },
-                                    onPlay: { running.insert(block.id) },
-                                    onPause: { running.remove(block.id) },
-                                    onReset: {
-                                        timers[block.id] = block.durationMinutes * 60
-                                        running.remove(block.id)
-                                        completedBlocks.remove(block.id)
-                                    })
-                            }
-                        }
-                    }.padding(.horizontal)
-                }
-                
-                HStack(spacing: 10) {
-                    Button("Save") { showSaveSheet() }.buttonStyle(PracticeButtonStyle(color: .cyan, foreground: .black))
-                    Button("Export Schedule") { exportPDF() }.buttonStyle(PracticeButtonStyle(color: .yellow, foreground: .black))
-                    Button("History") { showHistory = true }
-                        .buttonStyle(PracticeButtonStyle(color: .pink, foreground: .white))
-                }.padding(.horizontal).padding(.bottom, 8)
-                .sheet(item: $previewData) { data in
-                    SchedulePreview(title: data.title, subtitle: data.subtitle, blocks: data.blocks)
-                }
-                .sheet(isPresented: $showHistory) {
-                    SessionHistoryView()
-                }
-            }
+            mainContent
         }
         .navigationTitle("Practice Session").navigationBarTitleDisplayMode(.inline)
         .onAppear { resetTimers() }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in tickTimers() }
         .sheet(item: $selectedBlock) { block in PracticeBlockDetailView(block: block) }
-        .overlay(Group {
-            if showSaveConfirm, let name = lastSavedName {
-                VStack { Spacer(); Text("✓ Saved: \(name)").font(.caption.bold()).foregroundColor(.green).padding().background(.black.opacity(0.8)).cornerRadius(12).padding(.bottom, 60) }
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .animation(.easeInOut, value: showSaveConfirm)
-            }
-        })
+        .overlay(saveConfirmationOverlay)
+    }
+    
+    @ViewBuilder private var mainContent: some View {
+        VStack(spacing: 12) {
+            summary
+            blocksList
+            actionButtons
+        }
+    }
+    
+    @ViewBuilder private var blocksList: some View {
+        ScrollView {
+            LazyVStack(spacing: 10) {
+                ForEach(Array(practice.blocks.enumerated()), id: \.element.id) { index, block in
+                    if block.name == "Water Break" {
+                        waterBreakRow(block)
+                    } else {
+                        blockRow(block)
+                    }
+                }
+            }.padding(.horizontal)
+        }
+    }
+    
+    private func blockRow(_ block: PracticeBlock) -> some View {
+        let isCompleted = completedBlocks.contains(block.id)
+        return PracticeScheduleRow(block: block, seconds: timers[block.id] ?? block.durationMinutes * 60,
+            isRunning: running.contains(block.id), isCompleted: isCompleted,
+            onTap: { selectedBlock = block },
+            onPlay: { running.insert(block.id) },
+            onPause: { running.remove(block.id) },
+            onReset: {
+                timers[block.id] = block.durationMinutes * 60
+                running.remove(block.id)
+                completedBlocks.remove(block.id)
+            })
+    }
+    
+    @ViewBuilder private var actionButtons: some View {
+        HStack(spacing: 10) {
+            Button("Save") { showSaveSheet() }.buttonStyle(PracticeButtonStyle(color: .cyan, foreground: .black))
+            Button("Export Schedule") { exportPDF() }.buttonStyle(PracticeButtonStyle(color: .yellow, foreground: .black))
+            Button("History") { showHistory = true }
+                .buttonStyle(PracticeButtonStyle(color: .pink, foreground: .white))
+        }.padding(.horizontal).padding(.bottom, 8)
+        .sheet(item: $previewData) { data in
+            SchedulePreview(title: data.title, subtitle: data.subtitle, blocks: data.blocks)
+        }
+        .sheet(isPresented: $showHistory) {
+            SessionHistoryView()
+        }
+    }
+    
+    @ViewBuilder private var saveConfirmationOverlay: some View {
+        if showSaveConfirm, let name = lastSavedName {
+            VStack { Spacer(); Text("✓ Saved: \(name)").font(.caption.bold()).foregroundColor(.green).padding().background(.black.opacity(0.8)).cornerRadius(12).padding(.bottom, 60) }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.easeInOut, value: showSaveConfirm)
+        }
     }
     
     private var summary: some View {
