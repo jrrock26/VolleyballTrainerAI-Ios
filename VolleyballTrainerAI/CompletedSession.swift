@@ -63,7 +63,7 @@ struct SessionHistoryManager {
         persistSessions([])
     }
     
-    private static func persistSessions(_ sessions: [CompletedSession]) {
+    static func persistSessions(_ sessions: [CompletedSession]) {
         let data = (try? JSONEncoder().encode(sessions)) ?? Data()
         UserDefaults.standard.set(data, forKey: storageKey)
     }

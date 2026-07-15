@@ -656,6 +656,8 @@ struct TrainingScheduleView: View {
     @State private var allBlocksCompleted = false
     @State private var previewData: SchedulePreviewData?
     @State private var showHistory = false
+    @State private var sessionId: UUID = UUID()
+    @State private var savedCompletedBlocks: [CompletedBlock] = []
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -765,9 +767,34 @@ struct TrainingScheduleView: View {
                 running.remove(id)
                 completedBlocks.insert(id)
                 AlarmHelper.playAlarm()
+                saveCompletedBlock(id)
                 checkAllComplete()
             }
         }
+    }
+    
+    private func saveCompletedBlock(_ blockId: UUID) {
+        guard let block = plan.blocks.first(where: { $0.id == blockId }), block.category != .waterBreak else { return }
+        let completedBlock = CompletedBlock(id: block.id, name: block.name, category: block.category.rawValue, durationMinutes: block.durationMinutes, completedAt: Date())
+        savedCompletedBlocks.append(completedBlock)
+        // Save incremental session so each completed block is filed to history
+        let allCategories = Array(Set(savedCompletedBlocks.map { $0.category }))
+        let totalSoFar = savedCompletedBlocks.reduce(0) { $0 + $1.durationMinutes }
+        let session = CompletedSession(
+            id: sessionId,
+            type: .training,
+            name: plan.name,
+            focus: plan.focus,
+            completedDate: Date(),
+            totalMinutes: totalSoFar,
+            blocks: savedCompletedBlocks,
+            categories: allCategories
+        )
+        // Remove previous save of this session and replace with updated one
+        var allSessions = SessionHistoryManager.loadSessions()
+        allSessions.removeAll { $0.id == sessionId }
+        allSessions.append(session)
+        SessionHistoryManager.persistSessions(allSessions)
     }
     
     private func checkAllComplete() {
@@ -775,19 +802,6 @@ struct TrainingScheduleView: View {
         let allDone = nonWaterBlocks.allSatisfy { completedBlocks.contains($0.id) }
         if allDone && !allBlocksCompleted {
             allBlocksCompleted = true
-            let completedSession = CompletedSession(
-                id: UUID(),
-                type: .training,
-                name: plan.name,
-                focus: plan.focus,
-                completedDate: Date(),
-                totalMinutes: plan.totalMinutes,
-                blocks: plan.blocks.filter { $0.category != .waterBreak }.map {
-                    CompletedBlock(id: $0.id, name: $0.name, category: $0.category.rawValue, durationMinutes: $0.durationMinutes, completedAt: Date())
-                },
-                categories: Array(Set(plan.blocks.filter { $0.category != .waterBreak }.map { $0.category.rawValue }))
-            )
-            SessionHistoryManager.saveSession(completedSession)
         }
     }
 
@@ -962,16 +976,21 @@ struct TrainingBlockRow: View {
 
 struct TrainingBlockDetailView: View {
     let block: TrainingBlock; @Environment(\.dismiss) private var dismiss
+    @State private var showImageZoom = false
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 Image(block.imageName).resizable().scaledToFit().frame(maxWidth: .infinity).frame(height: 240).background(Color.black.opacity(0.08)).cornerRadius(16)
+                    .onTapGesture { showImageZoom = true }
                 Text(block.name).font(.title2.bold())
                 Text("\(block.durationMinutes) min • \(block.category.rawValue) • \(block.intensity.rawValue.uppercased())").foregroundColor(.secondary)
                 Text("Instructions").font(.headline)
                 ForEach(block.instructions, id: \.self) { line in Text("• \(line)").frame(maxWidth: .infinity, alignment: .leading) }
                 Button("Close") { dismiss() }.buttonStyle(TrainingButtonStyle(color: Color(red: 1.0, green: 0.08, blue: 0.58), foreground: .white))
             }.padding()
+        }
+        .fullScreenCover(isPresented: $showImageZoom) {
+            ZoomableImageView(imageName: block.imageName)
         }
     }
 }
@@ -983,5 +1002,74 @@ struct TrainingButtonStyle: ButtonStyle {
             .font(.caption.bold()).foregroundColor(foreground)
             .padding(.horizontal, 14).padding(.vertical, 10)
             .background(color.opacity(configuration.isPressed ? 0.75 : 1.0)).cornerRadius(10)
+    }
+}
+
+// MARK: - Zoomable Image View
+struct ZoomableImageView: View {
+    let imageName: String
+    @Environment(\.dismiss) private var dismiss
+    @State private var scale: CGFloat = 1.0
+    @State private var lastScale: CGFloat = 1.0
+    @State private var offset: CGSize = .zero
+    @State private var lastOffset: CGSize = .zero
+    
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+            
+            Image(imageName)
+                .resizable()
+                .scaledToFit()
+                .scaleEffect(scale)
+                .offset(offset)
+                .gesture(
+                    MagnificationGesture()
+                        .onChanged { value in
+                            let delta = value / lastScale
+                            lastScale = value
+                            scale = min(max(scale * delta, 1.0), 4.0)
+                        }
+                        .onEnded { _ in
+                            lastScale = 1.0
+                        }
+                )
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            offset = CGSize(
+                                width: lastOffset.width + value.translation.width,
+                                height: lastOffset.height + value.translation.height
+                            )
+                        }
+                        .onEnded { _ in
+                            lastOffset = offset
+                        }
+                )
+                .onTapGesture(count: 2) {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        if scale > 1.0 {
+                            scale = 1.0
+                            offset = .zero
+                            lastOffset = .zero
+                        } else {
+                            scale = 2.5
+                        }
+                    }
+                }
+            
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title)
+                            .foregroundColor(.white.opacity(0.8))
+                            .padding()
+                    }
+                }
+                Spacer()
+            }
+        }
     }
 }

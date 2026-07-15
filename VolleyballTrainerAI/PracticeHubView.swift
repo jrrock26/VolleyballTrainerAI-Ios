@@ -1214,6 +1214,8 @@ struct PracticeRunView: View {
     @State private var currentBlockIndex: Int = 0
     @State private var previewData: SchedulePreviewData?
     @State private var showHistory = false
+    @State private var sessionId: UUID = UUID()
+    @State private var savedCompletedBlocks: [CompletedBlock] = []
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -1325,9 +1327,32 @@ struct PracticeRunView: View {
                    currentIndex < practice.blocks.count - 1 {
                     currentBlockIndex = currentIndex + 1
                 }
+                saveCompletedBlock(id)
                 checkAllComplete()
             }
         }
+    }
+    
+    private func saveCompletedBlock(_ blockId: UUID) {
+        guard let block = practice.blocks.first(where: { $0.id == blockId }), block.name != "Water Break" else { return }
+        let completedBlock = CompletedBlock(id: block.id, name: block.name, category: block.category.rawValue, durationMinutes: block.durationMinutes, completedAt: Date())
+        savedCompletedBlocks.append(completedBlock)
+        let allCategories = Array(Set(savedCompletedBlocks.map { $0.category }))
+        let totalSoFar = savedCompletedBlocks.reduce(0) { $0 + $1.durationMinutes }
+        let session = CompletedSession(
+            id: sessionId,
+            type: .practice,
+            name: practice.name,
+            focus: practice.focus,
+            completedDate: Date(),
+            totalMinutes: totalSoFar,
+            blocks: savedCompletedBlocks,
+            categories: allCategories
+        )
+        var allSessions = SessionHistoryManager.loadSessions()
+        allSessions.removeAll { $0.id == sessionId }
+        allSessions.append(session)
+        SessionHistoryManager.persistSessions(allSessions)
     }
     
     private func checkAllComplete() {
@@ -1335,19 +1360,6 @@ struct PracticeRunView: View {
         let allDone = nonWaterBlocks.allSatisfy { completedBlocks.contains($0.id) }
         if allDone && !allBlocksCompleted {
             allBlocksCompleted = true
-            let completedSession = CompletedSession(
-                id: UUID(),
-                type: .practice,
-                name: practice.name,
-                focus: practice.focus,
-                completedDate: Date(),
-                totalMinutes: practice.totalMinutes,
-                blocks: practice.blocks.filter { $0.name != "Water Break" }.map {
-                    CompletedBlock(id: $0.id, name: $0.name, category: $0.category.rawValue, durationMinutes: $0.durationMinutes, completedAt: Date())
-                },
-                categories: Array(Set(practice.blocks.filter { $0.name != "Water Break" }.map { $0.category.rawValue }))
-            )
-            SessionHistoryManager.saveSession(completedSession)
         }
     }
     
@@ -1427,11 +1439,13 @@ struct PracticeBlockRow: View {
 struct PracticeBlockDetailView: View {
     let block: PracticeBlock
     @Environment(\.dismiss) private var dismiss
+    @State private var showImageZoom = false
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 Image(block.imageName).resizable().scaledToFit().frame(maxWidth: .infinity).frame(height: 240).background(Color.black.opacity(0.08)).cornerRadius(16)
+                    .onTapGesture { showImageZoom = true }
                 Text(block.name).font(.title2.bold())
                 HStack(spacing: 12) {
                     Text("\(block.durationMinutes) min").foregroundColor(.cyan)
@@ -1448,6 +1462,9 @@ struct PracticeBlockDetailView: View {
                 }
                 Button("Close") { dismiss() }.buttonStyle(PracticeButtonStyle(color: Color(red: 1.0, green: 0.08, blue: 0.58), foreground: .white))
             }.padding()
+        }
+        .fullScreenCover(isPresented: $showImageZoom) {
+            ZoomableImageView(imageName: block.imageName)
         }
     }
 }
