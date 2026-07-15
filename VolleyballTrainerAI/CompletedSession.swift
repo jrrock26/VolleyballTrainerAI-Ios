@@ -103,7 +103,7 @@ struct SessionHistoryManager {
 }
 
 struct WeekSummary: Identifiable {
-    let id: String { weekIdentifier }
+    var id: String { weekIdentifier }
     let weekIdentifier: String
     let totalSessions: Int
     let totalMinutes: Int
