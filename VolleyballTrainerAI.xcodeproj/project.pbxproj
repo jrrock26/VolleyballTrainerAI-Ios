@@ -29,15 +29,15 @@
 		96A000052FE8B0000012345A /* SavedHitsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A000152FE8B0000012345A /* SavedHitsListView.swift */; };
 		96A000062FE8B0000012345B /* PlayDesignerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A000162FE8B0000012345B /* PlayDesignerView.swift */; };
 		96A000072FE8B0000012345C /* RotationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A000172FE8B0000012345C /* RotationsView.swift */; };
+		96A000182FE8B0000012345D /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A0001B2FE8B0000012345D /* ActivityView.swift */; };
+		96A000192FE8B0000012345E /* SchedulePDFGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A0001C2FE8B0000012345E /* SchedulePDFGenerator.swift */; };
+		96A0001A2FE8B0000012345F /* CoachFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A0001D2FE8B0000012345F /* CoachFeedbackView.swift */; };
 		98A000012FE8B0000012345B /* PlayHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A000112FE8B0000012345B /* PlayHubView.swift */; };
 		98A000022FE8B0000012345C /* PracticeHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A000122FE8B0000012345C /* PracticeHubView.swift */; };
 		AD0000012FE8B0000012345D /* ScreenCaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0000022FE8B0000012345D /* ScreenCaptureManager.swift */; };
 		CD0000012FE8B0000012345E /* PlayerProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD0000022FE8B0000012345E /* PlayerProfileView.swift */; };
 		D60000032FE8B00000123461 /* SavedReplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60000012FE8B0000012345F /* SavedReplay.swift */; };
 		D60000042FE8B00000123462 /* SavedReplaysListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60000022FE8B00000123460 /* SavedReplaysListView.swift */; };
-		96A000182FE8B0000012345D /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A0001B2FE8B0000012345D /* ActivityView.swift */; };
-		96A000192FE8B0000012345E /* SchedulePDFGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A0001C2FE8B0000012345E /* SchedulePDFGenerator.swift */; };
-		96A0001A2FE8B0000012345F /* CoachFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A0001D2FE8B0000012345F /* CoachFeedbackView.swift */; };
 		E70000032FE8C000001234 /* CompletedSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70000012FE8C000001234 /* CompletedSession.swift */; };
 		E70000042FE8C000001235 /* SessionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70000022FE8C000001235 /* SessionHistoryView.swift */; };
 /* End PBXBuildFile section */
@@ -71,15 +71,15 @@
 		96A000152FE8B0000012345A /* SavedHitsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedHitsListView.swift; sourceTree = "<group>"; };
 		96A000162FE8B0000012345B /* PlayDesignerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayDesignerView.swift; sourceTree = "<group>"; };
 		96A000172FE8B0000012345C /* RotationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RotationsView.swift; sourceTree = "<group>"; };
+		96A0001B2FE8B0000012345D /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
+		96A0001C2FE8B0000012345E /* SchedulePDFGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulePDFGenerator.swift; sourceTree = "<group>"; };
+		96A0001D2FE8B0000012345F /* CoachFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachFeedbackView.swift; sourceTree = "<group>"; };
 		98A000112FE8B0000012345B /* PlayHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayHubView.swift; sourceTree = "<group>"; };
 		98A000122FE8B0000012345C /* PracticeHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeHubView.swift; sourceTree = "<group>"; };
 		AD0000022FE8B0000012345D /* ScreenCaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureManager.swift; sourceTree = "<group>"; };
 		CD0000022FE8B0000012345E /* PlayerProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerProfileView.swift; sourceTree = "<group>"; };
 		D60000012FE8B0000012345F /* SavedReplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedReplay.swift; sourceTree = "<group>"; };
 		D60000022FE8B00000123460 /* SavedReplaysListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedReplaysListView.swift; sourceTree = "<group>"; };
-		96A0001B2FE8B0000012345D /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
-		96A0001C2FE8B0000012345E /* SchedulePDFGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulePDFGenerator.swift; sourceTree = "<group>"; };
-		96A0001D2FE8B0000012345F /* CoachFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachFeedbackView.swift; sourceTree = "<group>"; };
 		E70000012FE8C000001234 /* CompletedSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedSession.swift; sourceTree = "<group>"; };
 		E70000022FE8C000001235 /* SessionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionHistoryView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -421,8 +421,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
-				INFOPLIST_KEY_CFBundleDisplayName = "";
-				INFOPLIST_KEY_LSApplicationCategoryType = "";
+				INFOPLIST_KEY_CFBundleDisplayName = "Volleyball Trainer AI";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
 				INFOPLIST_KEY_NSCameraUsageDescription = "VolleyballTrainerAI requires live camera access to compute real-time skeleton point mapping and ball tracking paths.\n";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "VolleyballTrainerAI requires microphone access to measure structural audio spike impacts.\n";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "VolleyballTrainerAI needs access to save screen recordings to your camera roll.\n";
@@ -457,8 +457,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
-				INFOPLIST_KEY_CFBundleDisplayName = "";
-				INFOPLIST_KEY_LSApplicationCategoryType = "";
+				INFOPLIST_KEY_CFBundleDisplayName = "Volleyball Trainer AI";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
 				INFOPLIST_KEY_NSCameraUsageDescription = "VolleyballTrainerAI requires live camera access to compute real-time skeleton point mapping and ball tracking paths.\n";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "VolleyballTrainerAI requires microphone access to measure structural audio spike impacts.\n";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "VolleyballTrainerAI needs access to save screen recordings to your camera roll.\n";
