@@ -3,10 +3,52 @@ import AVFoundation
 
 // MARK: - Session History View
 struct SessionHistoryView: View {
+    let filter: SessionType?
     @State private var sessions: [CompletedSession] = []
     @State private var selectedWeek: WeekSummary?
     @State private var showDeleteAllAlert = false
     @Environment(\.dismiss) private var dismiss
+
+    init(filter: SessionType? = nil) {
+        self.filter = filter
+    }
+
+    private var displayedSessions: [CompletedSession] {
+        guard let filter else { return sessions }
+        return sessions.filter { $0.type == filter }
+    }
+
+    private var title: String {
+        switch filter {
+        case .training: return "Training History"
+        case .practice: return "Practice History"
+        case nil: return "Session History"
+        }
+    }
+
+    private var emptyTitle: String {
+        switch filter {
+        case .training: return "No completed trainings yet."
+        case .practice: return "No completed practices yet."
+        case nil: return "No completed sessions yet."
+        }
+    }
+
+    private var emptySubtitle: String {
+        switch filter {
+        case .training: return "Complete a training session to see it here."
+        case .practice: return "Complete a practice session to see it here."
+        case nil: return "Complete a training or practice session to see it here."
+        }
+    }
+
+    private var accentColor: Color {
+        switch filter {
+        case .training: return .orange
+        case .practice: return .purple
+        case nil: return .pink
+        }
+    }
     
     var body: some View {
         NavigationStack {
@@ -22,10 +64,10 @@ struct SessionHistoryView: View {
                                 Image(systemName: "chevron.left"); Text("Back")
                             }
                             .font(.system(size: 16, weight: .semibold, design: .rounded))
-                            .foregroundColor(.pink)
+                            .foregroundColor(accentColor)
                             .padding(.horizontal, 12).padding(.vertical, 8)
                             .background(RoundedRectangle(cornerRadius: 10).fill(Color.black.opacity(0.4))
-                                .background(RoundedRectangle(cornerRadius: 10).stroke(Color.pink.opacity(0.5), lineWidth: 1)))
+                                .background(RoundedRectangle(cornerRadius: 10).stroke(accentColor.opacity(0.5), lineWidth: 1)))
                         }.buttonStyle(PlainButtonStyle())
                         Spacer()
                     }
@@ -33,22 +75,22 @@ struct SessionHistoryView: View {
                     .padding(.horizontal, 24)
                     
                     // Header
-                    Text("Session History")
+                    Text(title)
                         .font(.title2.bold())
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 24)
                     
-                    if sessions.isEmpty {
+                    if displayedSessions.isEmpty {
                         Spacer()
                         VStack(spacing: 12) {
                             Image(systemName: "checkmark.circle")
                                 .font(.system(size: 50))
                                 .foregroundColor(.gray)
-                            Text("No completed sessions yet.")
+                            Text(emptyTitle)
                                 .foregroundColor(.gray)
                                 .font(.headline)
-                            Text("Complete a training or practice session to see it here.")
+                            Text(emptySubtitle)
                                 .foregroundColor(.gray.opacity(0.7))
                                 .font(.caption)
                                 .multilineTextAlignment(.center)
@@ -61,7 +103,7 @@ struct SessionHistoryView: View {
                                 overallStatsCard
                                 
                                 // Weekly Summaries
-                                let summaries = SessionHistoryManager.weeklySummaries(from: sessions)
+                                let summaries = SessionHistoryManager.weeklySummaries(from: displayedSessions)
                                 ForEach(summaries) { summary in
                                     WeekSummaryCard(summary: summary)
                                 }
@@ -77,11 +119,17 @@ struct SessionHistoryView: View {
             .alert("Delete All History?", isPresented: $showDeleteAllAlert) {
                 Button("Cancel", role: .cancel) {}
                 Button("Delete All", role: .destructive) {
-                    SessionHistoryManager.deleteAll()
-                    sessions = []
+                    var remaining = SessionHistoryManager.loadSessions()
+                    remaining.removeAll { $0.type == (filter ?? $0.type) }
+                    if filter == nil {
+                        SessionHistoryManager.deleteAll()
+                    } else {
+                        SessionHistoryManager.persistSessions(remaining)
+                    }
+                    sessions = SessionHistoryManager.loadSessions()
                 }
             } message: {
-                Text("This will permanently remove all \(sessions.count) completed sessions.")
+                Text("This will permanently remove all \(displayedSessions.count) \(filter == nil ? "completed sessions" : "\(title.lowercased()) entries").")
             }
         }
     }
@@ -90,16 +138,18 @@ struct SessionHistoryView: View {
         VStack(spacing: 12) {
             Text("Overall Progress")
                 .font(.headline)
-                .foregroundColor(.pink)
+                .foregroundColor(accentColor)
             
             HStack(spacing: 20) {
-                statItem(value: "\(sessions.count)", label: "Sessions", color: .cyan)
-                statItem(value: "\(sessions.filter { $0.type == .practice }.count)", label: "Practices", color: .purple)
-                statItem(value: "\(sessions.filter { $0.type == .training }.count)", label: "Trainings", color: .orange)
+                statItem(value: "\(displayedSessions.count)", label: "Sessions", color: .cyan)
+                if filter == nil {
+                    statItem(value: "\(displayedSessions.filter { $0.type == .practice }.count)", label: "Practices", color: .purple)
+                    statItem(value: "\(displayedSessions.filter { $0.type == .training }.count)", label: "Trainings", color: .orange)
+                }
                 statItem(value: "\(totalMinutes)", label: "Minutes", color: .green)
             }
             
-            if !sessions.isEmpty {
+            if !displayedSessions.isEmpty {
                 Button(role: .destructive) {
                     showDeleteAllAlert = true
                 } label: {
@@ -120,7 +170,7 @@ struct SessionHistoryView: View {
     }
     
     private var totalMinutes: Int {
-        sessions.reduce(0) { $0 + $1.totalMinutes }
+        displayedSessions.reduce(0) { $0 + $1.totalMinutes }
     }
     
     private func statItem(value: String, label: String, color: Color) -> some View {
