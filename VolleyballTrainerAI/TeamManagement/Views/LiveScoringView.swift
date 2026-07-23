@@ -380,33 +380,17 @@ struct LiveScoringView: View {
                 HStack(spacing: 6) {
                     ForEach(row, id: \.self) { posID in
                         let player = positions[posID] ?? CourtPlayer(positionID: posID, side: side)
-                        Button {
-                            assignSide = side
-                            assignPosition = posID
-                            showPlayerAssignSheet = true
-                        } label: {
-                            VStack(spacing: 2) {
-                                Image(systemName: "person.circle.fill")
-                                    .font(.system(size: 18))
-                                    .foregroundColor(player.isEmpty ? .gray.opacity(0.5) : (side == "home" ? .pink : .blue))
-                                Text(player.isEmpty ? posID : player.displayName)
-                                    .font(.system(size: 9, design: .rounded))
-                                    .foregroundColor(player.isEmpty ? .gray : .white)
-                                    .lineLimit(1)
+                        CourtPlayerCell(
+                            player: player,
+                            side: side,
+                            posID: posID,
+                            isServing: engine.servingPlayerID == player.playerID,
+                            onTap: {
+                                assignSide = side
+                                assignPosition = posID
+                                showPlayerAssignSheet = true
                             }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 52)
-                            .background(player.isEmpty ? Color.white.opacity(0.03) : (side == "home" ? Color.pink.opacity(0.2) : Color.blue.opacity(0.2)))
-                            .cornerRadius(8)
-                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(player.isEmpty ? Color.white.opacity(0.1) : (side == "home" ? Color.pink.opacity(0.4) : Color.blue.opacity(0.4)), lineWidth: 1))
-                            .overlay(Group {
-                                if engine.servingPlayerID == player.playerID {
-                                    Circle().fill(Color.green).frame(width: 8, height: 8)
-                                        .offset(x: 18, y: -20)
-                                }
-                            })
-                        }
-                        .buttonStyle(.plain)
+                        )
                     }
                 }
             }
@@ -773,6 +757,57 @@ struct StatBadge: View {
 extension Array {
     subscript(safe index: Int) -> Element? {
         indices.contains(index) ? self[index] : nil
+    }
+}
+
+// MARK: - Court Player Cell
+struct CourtPlayerCell: View {
+    let player: CourtPlayer
+    let side: String
+    let posID: String
+    let isServing: Bool
+    let onTap: () -> Void
+
+    private var sideColor: Color { side == "home" ? .pink : .blue }
+    private var bgColor: Color {
+        player.isEmpty ? Color.white.opacity(0.03) : sideColor.opacity(0.2)
+    }
+    private var borderColor: Color {
+        player.isEmpty ? Color.white.opacity(0.1) : sideColor.opacity(0.4)
+    }
+    private var iconColor: Color {
+        player.isEmpty ? .gray.opacity(0.5) : sideColor
+    }
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(spacing: 2) {
+                Image(systemName: "person.circle.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(iconColor)
+                Text(player.isEmpty ? posID : player.displayName)
+                    .font(.system(size: 9, design: .rounded))
+                    .foregroundColor(player.isEmpty ? .gray : .white)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .background(bgColor)
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(borderColor, lineWidth: 1)
+            )
+            .overlay(Group {
+                if isServing {
+                    Circle()
+                        .fill(Color.green)
+                        .frame(width: 8, height: 8)
+                        .offset(x: 18, y: -20)
+                }
+            })
+        }
+        .buttonStyle(.plain)
     }
 }
 
