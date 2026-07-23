@@ -139,16 +139,6 @@ enum SkillLevel: String, Codable, CaseIterable {
     }
 }
 
-enum PlayerPosition: String, Codable, CaseIterable {
-    case all = "All"
-    case outsideHitter = "Outside Hitter"
-    case middleBlocker = "Middle Blocker"
-    case oppositeHitter = "Opposite Hitter"
-    case setter = "Setter"
-    case libero = "Libero"
-    case defensiveSpecialist = "Defensive Specialist"
-}
-
 // MARK: - Enhanced Athlete Profile
 
 struct HitMetricSnapshot: Codable, Equatable {

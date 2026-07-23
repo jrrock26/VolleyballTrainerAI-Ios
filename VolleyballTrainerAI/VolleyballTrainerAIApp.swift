@@ -21,6 +21,28 @@ struct VolleyballTrainerAIApp: App {
         let schema = Schema([
             VolleyballHit.self,
             SavedReplay.self,
+            // Team Management Models
+            TeamModel.self,
+            TeamMember.self,
+            TeamSeason.self,
+            MatchModel.self,
+            SetModel.self,
+            PlayEvent.self,
+            RotationRecord.self,
+            PlayerMatchStats.self,
+            CalendarEvent.self,
+            RSVPResponse.self,
+            TravelDetail.self,
+            AttendanceRecord.self,
+            ChatRoom.self,
+            ChatRoomMember.self,
+            ChatMessage.self,
+            MessageReadReceipt.self,
+            MessageReaction.self,
+            NotificationTemplate.self,
+            NotificationLog.self,
+            PaperworkRequirement.self,
+            PaperworkSubmission.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

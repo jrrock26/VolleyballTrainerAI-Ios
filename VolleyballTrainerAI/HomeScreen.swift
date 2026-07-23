@@ -55,6 +55,13 @@ struct HomeScreen: View {
                             .frame(width: geo.size.width * 0.50, height: 60)
                             .font(.custom("Orbitron-Regular", size: 22))
                             .multilineTextAlignment(.center)
+
+                            CourtPushButton(title: "Team Management", icon: "person.3.fill") {
+                                navigateTo = "TeamManagement"
+                            }
+                            .frame(width: geo.size.width * 0.50, height: 60)
+                            .font(.custom("Orbitron-Regular", size: 22))
+                            .multilineTextAlignment(.center)
                         }
 
                         Spacer()
@@ -64,6 +71,7 @@ struct HomeScreen: View {
             }
 
             // Navigation destinations
+            .navigationDestination(isPresented: Binding(get: { navigateTo == "TeamManagement" }, set: { if !$0 { navigateTo = nil } })) { TeamManagementHubView() }
             .navigationDestination(isPresented: Binding(get: { navigateTo == "PlayHub" }, set: { if !$0 { navigateTo = nil } })) { PlayHubView() }
             .navigationDestination(isPresented: Binding(get: { navigateTo == "PracticeHub" }, set: { if !$0 { navigateTo = nil } })) { PracticeHubView() }
             .navigationDestination(isPresented: Binding(get: { navigateTo == "TrainingHub" }, set: { if !$0 { navigateTo = nil } })) { TrainingHubView() }
