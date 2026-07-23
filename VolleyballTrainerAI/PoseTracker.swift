@@ -5,6 +5,11 @@ import CoreGraphics
 import UIKit
 
 class PoseTracker: NSObject, ObservableObject {
+
+    // MARK: - Motion Metrics Engine (Enhanced Accuracy)
+    /// Integrated motion‑metrics engine. Set by LiveAIView; nil = legacy mode.
+    var metricsEngine: MotionMetricsEngine? = nil
+
     // Metric Fields
     @Published var jumpHeight: Double = 0.0
     @Published var armExtensionAngle: Double = 0.0
@@ -116,7 +121,13 @@ class PoseTracker: NSObject, ObservableObject {
         processRawPixelBuffer(pixelBuffer, hitType: hitType)
     }
 
+    /// Holds the most recent pixel buffer so the metrics engine can access it
+    /// during async pose analysis completion.
+    private var latestPixelBuffer: CVPixelBuffer?
+
     func processRawPixelBuffer(_ pixelBuffer: CVPixelBuffer, hitType: String) {
+        latestPixelBuffer = pixelBuffer
+
         let poseRequest = VNDetectHumanBodyPoseRequest { [weak self] request, error in
             guard let self = self,
                   let results = request.results as? [VNHumanBodyPoseObservation],
@@ -127,7 +138,7 @@ class PoseTracker: NSObject, ObservableObject {
             }
 
             if let hitter = primaryHitter {
-                self.analyzePlayerPose(hitter, type: hitType)
+                self.analyzePlayerPose(hitter, type: hitType, pixelBuffer: pixelBuffer)
             }
         }
 
@@ -267,7 +278,7 @@ extension PoseTracker {
         return ipn
     }
 
-    private func analyzePlayerPose(_ observation: VNHumanBodyPoseObservation, type: String) {
+    private func analyzePlayerPose(_ observation: VNHumanBodyPoseObservation, type: String, pixelBuffer: CVPixelBuffer? = nil) {
         let isFrontCamera = cameraPosition == .front
         let confidenceThreshold: Float = isFrontCamera ? 0.12 : 0.2
         let velocityThreshold: Double = isFrontCamera ? 0.8 : 1.2
@@ -293,8 +304,42 @@ extension PoseTracker {
         let currentHipY = averageHipY(leftHip: leftHip, rightHip: rightHip, threshold: hipThreshold)
 
         let now = Date()
+        let timestamp = now.timeIntervalSince1970
         let timeDelta = now.timeIntervalSince(lastFrameTime)
         lastFrameTime = now
+
+        // --- Feed the enhanced MotionMetrics engine with raw frame data ---
+        // This runs synchronously on the Vision callback queue so the engine
+        // gets every frame with pose + ball data fused together.
+        if let engine = metricsEngine {
+            // Extract ball pixel position and bounding box from the latest ball detection
+            var ballPixelPos: CGPoint? = nil
+            var ballBox: CGRect? = nil
+            if let buf = pixelBuffer ?? latestPixelBuffer {
+                let (pos, box) = extractBallMetricsFromPixelBuffer(buf)
+                ballPixelPos = pos
+                ballBox = box
+            }
+            // Extract wrist position for spike speed analyzer
+            var wristPixelPos: CGPoint? = nil
+            if let wristPoint = wrist, wristPoint.confidence > confidenceThreshold {
+                wristPixelPos = wristPoint.location
+            }
+
+            engine.processFrame(
+                poseObservation: observation,
+                pixelBuffer: pixelBuffer ?? latestPixelBuffer ?? {
+                    // Create a dummy 1x1 buffer as last resort (engine handles nil gracefully)
+                    var dummy: CVPixelBuffer?
+                    CVPixelBufferCreate(nil, 1, 1, kCVPixelFormatType_32BGRA, nil, &dummy)
+                    return dummy!
+                }(),
+                timestamp: timestamp,
+                ballPixelPosition: ballPixelPos,
+                ballBoundingBox: ballBox,
+                wristPixelPosition: wristPixelPos
+            )
+        }
 
         DispatchQueue.main.async {
             self.updateSmoothedJoints(from: observation)
@@ -322,6 +367,33 @@ extension PoseTracker {
 
                     if self.baselineFrameCount >= self.baselineFramesNeeded {
                         self.isBaselineLocked = true
+
+                        // Bridge calibration into the enhanced MotionMetrics engine
+                        // so all sub-analyzers use the athlete-height-based scale.
+                        if let ipn = self.calibrationInchesPerNorm, let engine = self.metricsEngine {
+                            let heightInches = ProfileManager.shared.profile.heightInches
+                            if heightInches > 0 {
+                                // Convert inches-per-norm to pixels-per-meter for the engine.
+                                // ipn = inches per normalized Y unit.
+                                // At 720p, 1 normalized unit ≈ 720 pixels, so:
+                                //   pixels per inch = 720 / ipn
+                                //   pixels per meter = pixels per inch * 39.3701
+                                let approxPixelsPerNorm: Double = 720.0
+                                let pixelsPerInch = approxPixelsPerNorm / ipn
+                                let ppm = pixelsPerInch * 39.3701
+                                engine.calibration.calibrateFromAthlete(
+                                    athleteHeightInches: heightInches,
+                                    observedSegmentPixels: approxPixelsPerNorm,
+                                    observedSegmentNorm: 1.0
+                                )
+                                // Also feed the engine a refined pixelsPerMeter directly
+                                _ = engine.calibration.calibrateFromAthlete(
+                                    athleteHeightInches: heightInches,
+                                    observedSegmentPixels: ppm,
+                                    observedSegmentNorm: 1.0
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -403,6 +475,21 @@ extension PoseTracker {
                         && instantaneousVelocity > velocityThreshold {
                         self.isHitCaptured = true
                         self.initialBallContactTime = Date()
+
+                        // Notify MotionMetrics engine of contact event
+                        let contactTimestamp = Date().timeIntervalSince1970
+                        if type == "Spike" {
+                            self.metricsEngine?.markSpikeContact(
+                                timestamp: contactTimestamp,
+                                handPosition: currentWristPoint
+                            )
+                        } else if type == "Serve" {
+                            self.metricsEngine?.markServeContact(
+                                timestamp: contactTimestamp,
+                                ballPosition: currentWristPoint,
+                                boundingBox: self.ballBoundingBoxRect ?? .zero
+                            )
+                        }
 
                         let capturedJump = self.jumpHeight
                         let capturedAngle = self.armExtensionAngle
@@ -689,5 +776,85 @@ extension PoseTracker {
         var degree = abs(angle * 180.0 / .pi)
         if degree > 180.0 { degree = 360.0 - degree }
         return degree
+    }
+
+    // MARK: - Ball Pixel Metrics Extraction (for MotionMetricsEngine)
+
+    /// Extracts the ball's pixel center position and normalized bounding box
+    /// from a raw pixel buffer. Uses the same color-blob detection logic as
+    /// `extractBallBoundingBox` but returns the metrics synchronously.
+    /// - Returns: Tuple of (pixelCenter: CGPoint?, normalizedBoundingBox: CGRect?)
+    private func extractBallMetricsFromPixelBuffer(_ pixelBuffer: CVPixelBuffer) -> (CGPoint?, CGRect?) {
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
+
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+
+        guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else { return (nil, nil) }
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+        let buffer = baseAddress.assumingMemoryBound(to: UInt8.self)
+
+        var matchXSum = 0
+        var matchYSum = 0
+        var matchCount = 0
+        var minX = width
+        var maxX = 0
+        var minY = height
+        var maxY = 0
+
+        let step = 3
+        for y in stride(from: 0, to: height, by: step) {
+            for x in stride(from: 0, to: width, by: step) {
+                let pixelOffset = y * bytesPerRow + x * 4
+                let b = buffer[pixelOffset]
+                let g = buffer[pixelOffset + 1]
+                let r = buffer[pixelOffset + 2]
+
+                let maxC = max(r, max(g, b))
+                let minC = min(r, min(g, b))
+                let range = maxC - minC
+                if maxC > 90 && range > 35 {
+                    matchXSum += x
+                    matchYSum += y
+                    matchCount += 1
+                    if x < minX { minX = x }
+                    if x > maxX { maxX = x }
+                    if y < minY { minY = y }
+                    if y > maxY { maxY = y }
+                }
+            }
+        }
+
+        guard matchCount > 12 else { return (nil, nil) }
+
+        let centerX = CGFloat(matchXSum) / CGFloat(matchCount)
+        let centerY = CGFloat(matchYSum) / CGFloat(matchCount)
+        let pixelCenter = CGPoint(x: centerX, y: centerY)
+
+        let boxW = CGFloat(maxX - minX) / CGFloat(width)
+        let boxH = CGFloat(maxY - minY) / CGFloat(height)
+        let aspect = boxW / max(boxH, 0.001)
+        let boxArea = CGFloat(maxX - minX) * CGFloat(maxY - minY)
+        let density = CGFloat(matchCount) / max(boxArea, 1.0)
+        let normY = centerY / CGFloat(height)
+
+        let inPlayerZone = normY > 0.28 && normY < 0.92
+
+        guard aspect > 0.45 && aspect < 2.2 && density > 0.15 && boxW > 0.006 && boxW < 0.22 && boxH > 0.006 && boxH < 0.22 && inPlayerZone else {
+            return (nil, nil)
+        }
+
+        let paddedW = max(0.04, boxW * 1.15)
+        let paddedH = max(0.04, boxH * 1.15)
+        let normX = centerX / CGFloat(width)
+        let box = CGRect(
+            x: normX - paddedW / 2,
+            y: 1.0 - normY - paddedH / 2,
+            width: paddedW,
+            height: paddedH
+        )
+
+        return (pixelCenter, box)
     }
 }

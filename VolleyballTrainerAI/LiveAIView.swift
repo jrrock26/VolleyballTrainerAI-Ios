@@ -9,6 +9,7 @@ struct LiveAIView: View {
     @Environment(\.dismiss) private var dismiss
 
     @StateObject private var tracker = PoseTracker()
+    @StateObject private var metricsEngine = MotionMetricsEngine()
     @State private var sessionID = UUID()
     @State private var sessionHits: [VolleyballHit] = []
     @State private var profile = AthleteProfile()
@@ -199,6 +200,10 @@ struct LiveAIView: View {
         }
         .onAppear {
             PortraitOrientation.lock()
+            // Wire the enhanced metrics engine into the PoseTracker pipeline
+            tracker.metricsEngine = metricsEngine
+            metricsEngine.attach(to: tracker)
+            // Legacy callback — enhanced metrics engine hooks into it automatically
             tracker.onSingleHitExtracted = { jump, arm, speed, launch, distance, contactHeight, handSpeed, hipSep in
                 AudioServicesPlaySystemSound(1519)
                 DispatchQueue.main.async {
@@ -206,6 +211,9 @@ struct LiveAIView: View {
                     self.isRecordingHit = false
                 }
             }
+        }
+        .onDisappear {
+            metricsEngine.detach()
         }
         .onChange(of: isRecordingHit) { _, recording in
             guard recording else { return }
@@ -223,6 +231,7 @@ struct LiveAIView: View {
     private func triggerPrepCountdownSequence() {
         capturedHitMetrics = nil
         tracker.resetTrackingTokens()
+        metricsEngine.resetForNextHit()
         countdownRemaining = 5
         isCountingDown = true
         countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
@@ -249,17 +258,68 @@ struct LiveAIView: View {
                 hipSep: self.tracker.computedHipShoulderSeparation
             )
 
+            // Blend enhanced metrics from the MotionMetricsEngine where
+            // confidence indicates real measurements were captured.
+            let e = self.metricsEngine
+
+            // Ball speed: prefer enhanced BallSpeedTracker if it received
+            // enough real ball position data. Fall back to legacy tracker.
+            let finalSpeed: Double
+            if e.ballSpeedConfidence > 0.25 && e.ballSpeedMPH > 5.0 {
+                finalSpeed = e.ballSpeedMPH
+            } else if metrics.speed > 5.0 {
+                finalSpeed = metrics.speed
+            } else {
+                finalSpeed = e.ballSpeedMPH > 0 ? e.ballSpeedMPH : metrics.speed
+            }
+
+            // Jump height: prefer enhanced analyzer if it saw pelvis movement.
+            let finalJump: Double
+            if e.jumpHeightConfidence > 0.2 && e.jumpHeightInches > 1.0 {
+                finalJump = e.jumpHeightInches
+            } else {
+                finalJump = metrics.jump
+            }
+
+            // Launch angle: prefer serve analyzer if it detected real angle.
+            let finalLaunch: Double
+            if abs(e.launchAngleDegrees) > 0.5 && e.serveSpeedConfidence > 0.2 {
+                finalLaunch = e.launchAngleDegrees
+            } else if abs(metrics.launch) > 0.5 {
+                finalLaunch = metrics.launch
+            } else {
+                finalLaunch = abs(e.launchAngleDegrees) > 0.1 ? e.launchAngleDegrees : metrics.launch
+            }
+
+            // Flight distance: trajectory predictor takes priority when confident.
+            let finalDistance: Double
+            if e.trajectoryFitQuality > 0.5 && e.flightDistanceFeet > 5.0 {
+                finalDistance = e.flightDistanceFeet
+            } else if metrics.distance > 3.0 {
+                finalDistance = metrics.distance
+            } else {
+                finalDistance = e.flightDistanceFeet > 0 ? e.flightDistanceFeet : metrics.distance
+            }
+
+            // Hand speed: spike analyzer computes from real hand+ball fusion.
+            let finalHandSpeed: Double
+            if e.spikeSpeedConfidence > 0.2 && e.spikeSpeedMPH > 5.0 {
+                finalHandSpeed = e.spikeSpeedMPH
+            } else {
+                finalHandSpeed = metrics.handSpeed
+            }
+
             let hitLog = VolleyballHit(
                 sessionID: self.sessionID,
                 hitType: self.selectedEvaluationType,
-                jumpHeightInches: metrics.jump,
+                jumpHeightInches: finalJump,
                 armAngleDegrees: metrics.arm,
-                ballSpeedMPH: metrics.speed,
-                ballAngleDegrees: metrics.launch,
-                ballDistanceFeet: metrics.distance,
+                ballSpeedMPH: finalSpeed,
+                ballAngleDegrees: finalLaunch,
+                ballDistanceFeet: finalDistance,
                 videoLocalURLString: videoURL.path,
                 contactHeightInches: metrics.contactHeight,
-                handSpeedMPH: metrics.handSpeed,
+                handSpeedMPH: finalHandSpeed,
                 hipShoulderSeparation: metrics.hipSep,
                 profile: self.profile,
                 sessionHits: self.sessionHits
