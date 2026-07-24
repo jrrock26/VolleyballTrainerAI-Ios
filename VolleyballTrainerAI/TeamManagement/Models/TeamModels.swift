@@ -5,23 +5,23 @@ import Foundation
 // MARK: - Enums
 
 enum PlayLevel: String, Codable, CaseIterable {
-    case youth = "Youth"
-    case middleSchool = "Middle School"
-    case highSchool = "High School"
+    case jrHigh = "Jr. High"
+    case juniorVarsity = "Junior Varsity"
+    case varsity = "Varsity"
     case club = "Club"
-    case travel = "Travel"
-    case college = "College"
+    case travelTeam = "Travel Team"
+    case collegiate = "Collegiate"
     case professional = "Professional"
     
     var iconName: String {
         switch self {
-        case .youth: return "figure.child"
-        case .middleSchool: return "building.columns"
-        case .highSchool: return "flag.checkered"
+        case .jrHigh: return "building.columns"
+        case .juniorVarsity: return "flag.checkered"
+        case .varsity: return "trophy"
         case .club: return "star.circle"
-        case .travel: return "airplane"
-        case .college: return "graduationcap"
-        case .professional: return "trophy"
+        case .travelTeam: return "airplane"
+        case .collegiate: return "graduationcap"
+        case .professional: return "crown.fill"
         }
     }
 }

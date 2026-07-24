@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		01E3CB1BE2F340F8B1B74376 /* LiveScoringEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D946AADCDCC245508D918623 /* LiveScoringEngine.swift */; };
+		2C53EC602682438C85062ABC /* ScheduleModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CAED7F92D8B4D32BA81A74E /* ScheduleModels.swift */; };
+		2F45643571154C629CF1EA7D /* TeamManagementHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BC03E5EB8624B8692D6C454 /* TeamManagementHubView.swift */; };
+		39ECD5FF8277405EAE6BFC06 /* StatsEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74D02414886D40B482C36756 /* StatsEngine.swift */; };
+		425C97C3D49E4EB0BEFEC1D1 /* ChatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19D19138965446A0A9599FBD /* ChatModels.swift */; };
+		44B980DCA7E64955B94B2A3B /* SubViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD23791FF20847BBB274D4BA /* SubViews.swift */; };
 		963E76DA2FE4477500590BC2 /* VolleyballTrainerAIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 963E76D92FE4477500590BC2 /* VolleyballTrainerAIApp.swift */; };
 		963E76DC2FE4477500590BC2 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 963E76DB2FE4477500590BC2 /* ContentView.swift */; };
 		963E76E02FE4477800590BC2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 963E76DF2FE4477800590BC2 /* Assets.xcassets */; };
@@ -32,30 +38,45 @@
 		96A000182FE8B0000012345D /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A0001B2FE8B0000012345D /* ActivityView.swift */; };
 		96A000192FE8B0000012345E /* SchedulePDFGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A0001C2FE8B0000012345E /* SchedulePDFGenerator.swift */; };
 		96A0001A2FE8B0000012345F /* CoachFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A0001D2FE8B0000012345F /* CoachFeedbackView.swift */; };
+		96E742363012575900E182E5 /* MotionMetrics in Resources */ = {isa = PBXBuildFile; fileRef = 96E742353012575900E182E5 /* MotionMetrics */; };
 		98A000012FE8B0000012345B /* PlayHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A000112FE8B0000012345B /* PlayHubView.swift */; };
 		98A000022FE8B0000012345C /* PracticeHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A000122FE8B0000012345C /* PracticeHubView.swift */; };
+		A8C7832DB33C46BDB5CDF70D /* TeamManagementViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A4F84D96314DA28096F92A /* TeamManagementViewModel.swift */; };
+		AA72D5CB41E64232BB3539F5 /* MoreViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 583E85309F4D448FB1070EED /* MoreViews.swift */; };
 		AD0000012FE8B0000012345D /* ScreenCaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0000022FE8B0000012345D /* ScreenCaptureManager.swift */; };
+		AEEC9B5FC13A40E8BC4E6F75 /* PaperworkModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E37212D9EFCA450CAFB90E1F /* PaperworkModels.swift */; };
+		B9394B7AAE01453EA49EC6E0 /* FormViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2624EA536C6400B932C3DFE /* FormViews.swift */; };
 		CD0000012FE8B0000012345E /* PlayerProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD0000022FE8B0000012345E /* PlayerProfileView.swift */; };
 		D60000032FE8B00000123461 /* SavedReplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60000012FE8B0000012345F /* SavedReplay.swift */; };
 		D60000042FE8B00000123462 /* SavedReplaysListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60000022FE8B00000123460 /* SavedReplaysListView.swift */; };
+		DDA1011E4E084510A92AC1F3 /* MatchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92344B0BC2AD4848B29E58EB /* MatchModels.swift */; };
+		E58761CFE9EB4C4183569045 /* TeamModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83C617EC774D490792625674 /* TeamModels.swift */; };
 		E70000032FE8C000001234 /* CompletedSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70000012FE8C000001234 /* CompletedSession.swift */; };
 		E70000042FE8C000001235 /* SessionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70000022FE8C000001235 /* SessionHistoryView.swift */; };
-		E58761CFE9EB4C4183569045 /* TeamModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83C617EC774D490792625674 /* TeamModels.swift */; };
-		DDA1011E4E084510A92AC1F3 /* MatchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92344B0BC2AD4848B29E58EB /* MatchModels.swift */; };
-		2C53EC602682438C85062ABC /* ScheduleModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CAED7F92D8B4D32BA81A74E /* ScheduleModels.swift */; };
-		425C97C3D49E4EB0BEFEC1D1 /* ChatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19D19138965446A0A9599FBD /* ChatModels.swift */; };
-		AEEC9B5FC13A40E8BC4E6F75 /* PaperworkModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E37212D9EFCA450CAFB90E1F /* PaperworkModels.swift */; };
-		01E3CB1BE2F340F8B1B74376 /* LiveScoringEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D946AADCDCC245508D918623 /* LiveScoringEngine.swift */; };
-		39ECD5FF8277405EAE6BFC06 /* StatsEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74D02414886D40B482C36756 /* StatsEngine.swift */; };
-		A8C7832DB33C46BDB5CDF70D /* TeamManagementViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A4F84D96314DA28096F92A /* TeamManagementViewModel.swift */; };
-		2F45643571154C629CF1EA7D /* TeamManagementHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BC03E5EB8624B8692D6C454 /* TeamManagementHubView.swift */; };
-		44B980DCA7E64955B94B2A3B /* SubViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD23791FF20847BBB274D4BA /* SubViews.swift */; };
 		ED3E35C36F14481E8F49108A /* LiveScoringView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71BBEBF981914B72B75CFA9E /* LiveScoringView.swift */; };
-		AA72D5CB41E64232BB3539F5 /* MoreViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 583E85309F4D448FB1070EED /* MoreViews.swift */; };
-		B9394B7AAE01453EA49EC6E0 /* FormViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2624EA536C6400B932C3DFE /* FormViews.swift */; };
+		MM01A0012FF0000000100001 /* KalmanFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = MM01F0012FF0000000100001 /* KalmanFilter.swift */; };
+		MM01A0022FF0000000100002 /* SmoothingUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = MM01F0022FF0000000100002 /* SmoothingUtils.swift */; };
+		MM01A0032FF0000000100003 /* CalibrationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = MM01F0032FF0000000100003 /* CalibrationManager.swift */; };
+		MM01A0042FF0000000100004 /* SensorFusionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = MM01F0042FF0000000100004 /* SensorFusionManager.swift */; };
+		MM01A0052FF0000000100005 /* BallSpeedTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = MM01F0052FF0000000100005 /* BallSpeedTracker.swift */; };
+		MM01A0062FF0000000100006 /* JumpHeightAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = MM01F0062FF0000000100006 /* JumpHeightAnalyzer.swift */; };
+		MM01A0072FF0000000100007 /* MovementDistanceAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = MM01F0072FF0000000100007 /* MovementDistanceAnalyzer.swift */; };
+		MM01A0082FF0000000100008 /* SpikeSpeedAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = MM01F0082FF0000000100008 /* SpikeSpeedAnalyzer.swift */; };
+		MM01A0092FF0000000100009 /* ServeSpeedAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = MM01F0092FF0000000100009 /* ServeSpeedAnalyzer.swift */; };
+		MM01A00A2FF000000010000A /* TrajectoryPredictor.swift in Sources */ = {isa = PBXBuildFile; fileRef = MM01F00A2FF000000010000A /* TrajectoryPredictor.swift */; };
+		MM01A00B2FF000000010000B /* MotionMetricsEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = MM01F00B2FF000000010000B /* MotionMetricsEngine.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		19D19138965446A0A9599FBD /* ChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModels.swift; sourceTree = "<group>"; };
+		583E85309F4D448FB1070EED /* MoreViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreViews.swift; sourceTree = "<group>"; };
+		68A4F84D96314DA28096F92A /* TeamManagementViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamManagementViewModel.swift; sourceTree = "<group>"; };
+		71BBEBF981914B72B75CFA9E /* LiveScoringView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveScoringView.swift; sourceTree = "<group>"; };
+		74D02414886D40B482C36756 /* StatsEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsEngine.swift; sourceTree = "<group>"; };
+		7BC03E5EB8624B8692D6C454 /* TeamManagementHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamManagementHubView.swift; sourceTree = "<group>"; };
+		7CAED7F92D8B4D32BA81A74E /* ScheduleModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleModels.swift; sourceTree = "<group>"; };
+		83C617EC774D490792625674 /* TeamModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamModels.swift; sourceTree = "<group>"; };
+		92344B0BC2AD4848B29E58EB /* MatchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchModels.swift; sourceTree = "<group>"; };
 		963E76D62FE4477500590BC2 /* VolleyballTrainerAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VolleyballTrainerAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		963E76D92FE4477500590BC2 /* VolleyballTrainerAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolleyballTrainerAIApp.swift; sourceTree = "<group>"; };
 		963E76DB2FE4477500590BC2 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -87,27 +108,30 @@
 		96A0001B2FE8B0000012345D /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
 		96A0001C2FE8B0000012345E /* SchedulePDFGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulePDFGenerator.swift; sourceTree = "<group>"; };
 		96A0001D2FE8B0000012345F /* CoachFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachFeedbackView.swift; sourceTree = "<group>"; };
+		96E742353012575900E182E5 /* MotionMetrics */ = {isa = PBXFileReference; lastKnownFileType = folder; name = MotionMetrics; path = VolleyballTrainerAI/MotionMetrics; sourceTree = "<group>"; };
 		98A000112FE8B0000012345B /* PlayHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayHubView.swift; sourceTree = "<group>"; };
 		98A000122FE8B0000012345C /* PracticeHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeHubView.swift; sourceTree = "<group>"; };
+		A2624EA536C6400B932C3DFE /* FormViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormViews.swift; sourceTree = "<group>"; };
 		AD0000022FE8B0000012345D /* ScreenCaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureManager.swift; sourceTree = "<group>"; };
 		CD0000022FE8B0000012345E /* PlayerProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerProfileView.swift; sourceTree = "<group>"; };
+		CD23791FF20847BBB274D4BA /* SubViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubViews.swift; sourceTree = "<group>"; };
 		D60000012FE8B0000012345F /* SavedReplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedReplay.swift; sourceTree = "<group>"; };
 		D60000022FE8B00000123460 /* SavedReplaysListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedReplaysListView.swift; sourceTree = "<group>"; };
+		D946AADCDCC245508D918623 /* LiveScoringEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveScoringEngine.swift; sourceTree = "<group>"; };
+		E37212D9EFCA450CAFB90E1F /* PaperworkModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperworkModels.swift; sourceTree = "<group>"; };
 		E70000012FE8C000001234 /* CompletedSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedSession.swift; sourceTree = "<group>"; };
 		E70000022FE8C000001235 /* SessionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionHistoryView.swift; sourceTree = "<group>"; };
-		83C617EC774D490792625674 /* TeamModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamModels.swift; sourceTree = "<group>"; };
-		92344B0BC2AD4848B29E58EB /* MatchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchModels.swift; sourceTree = "<group>"; };
-		7CAED7F92D8B4D32BA81A74E /* ScheduleModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleModels.swift; sourceTree = "<group>"; };
-		19D19138965446A0A9599FBD /* ChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModels.swift; sourceTree = "<group>"; };
-		E37212D9EFCA450CAFB90E1F /* PaperworkModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperworkModels.swift; sourceTree = "<group>"; };
-		D946AADCDCC245508D918623 /* LiveScoringEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveScoringEngine.swift; sourceTree = "<group>"; };
-		74D02414886D40B482C36756 /* StatsEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsEngine.swift; sourceTree = "<group>"; };
-		68A4F84D96314DA28096F92A /* TeamManagementViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamManagementViewModel.swift; sourceTree = "<group>"; };
-		7BC03E5EB8624B8692D6C454 /* TeamManagementHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamManagementHubView.swift; sourceTree = "<group>"; };
-		CD23791FF20847BBB274D4BA /* SubViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubViews.swift; sourceTree = "<group>"; };
-		71BBEBF981914B72B75CFA9E /* LiveScoringView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveScoringView.swift; sourceTree = "<group>"; };
-		583E85309F4D448FB1070EED /* MoreViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreViews.swift; sourceTree = "<group>"; };
-		A2624EA536C6400B932C3DFE /* FormViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormViews.swift; sourceTree = "<group>"; };
+		MM01F0012FF0000000100001 /* KalmanFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KalmanFilter.swift; sourceTree = "<group>"; };
+		MM01F0022FF0000000100002 /* SmoothingUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmoothingUtils.swift; sourceTree = "<group>"; };
+		MM01F0032FF0000000100003 /* CalibrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationManager.swift; sourceTree = "<group>"; };
+		MM01F0042FF0000000100004 /* SensorFusionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorFusionManager.swift; sourceTree = "<group>"; };
+		MM01F0052FF0000000100005 /* BallSpeedTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BallSpeedTracker.swift; sourceTree = "<group>"; };
+		MM01F0062FF0000000100006 /* JumpHeightAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JumpHeightAnalyzer.swift; sourceTree = "<group>"; };
+		MM01F0072FF0000000100007 /* MovementDistanceAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovementDistanceAnalyzer.swift; sourceTree = "<group>"; };
+		MM01F0082FF0000000100008 /* SpikeSpeedAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpikeSpeedAnalyzer.swift; sourceTree = "<group>"; };
+		MM01F0092FF0000000100009 /* ServeSpeedAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServeSpeedAnalyzer.swift; sourceTree = "<group>"; };
+		MM01F00A2FF000000010000A /* TrajectoryPredictor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrajectoryPredictor.swift; sourceTree = "<group>"; };
+		MM01F00B2FF000000010000B /* MotionMetricsEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionMetricsEngine.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -121,9 +145,39 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		1D354FC327EF422C81E3AE76 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				68A4F84D96314DA28096F92A /* TeamManagementViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		3A4C137060A94E07955D7512 /* Engine */ = {
+			isa = PBXGroup;
+			children = (
+				D946AADCDCC245508D918623 /* LiveScoringEngine.swift */,
+				74D02414886D40B482C36756 /* StatsEngine.swift */,
+			);
+			path = Engine;
+			sourceTree = "<group>";
+		};
+		5309F8AD25C34FED99E4EA30 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				83C617EC774D490792625674 /* TeamModels.swift */,
+				92344B0BC2AD4848B29E58EB /* MatchModels.swift */,
+				7CAED7F92D8B4D32BA81A74E /* ScheduleModels.swift */,
+				19D19138965446A0A9599FBD /* ChatModels.swift */,
+				E37212D9EFCA450CAFB90E1F /* PaperworkModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
 		963E76CD2FE4477400590BC2 = {
 			isa = PBXGroup;
 			children = (
+				96E742353012575900E182E5 /* MotionMetrics */,
 				963E76D82FE4477500590BC2 /* VolleyballTrainerAI */,
 				963E76EB2FE4477800590BC2 /* VolleyballTrainerAITests */,
 				963E76F52FE4477900590BC2 /* VolleyballTrainerAIUITests */,
@@ -178,6 +232,7 @@
 				E70000012FE8C000001234 /* CompletedSession.swift */,
 				E70000022FE8C000001235 /* SessionHistoryView.swift */,
 				A9E75051D50046D6810B78AF /* TeamManagement */,
+				MM0100012FF0000000100000 /* MotionMetrics */,
 			);
 			path = VolleyballTrainerAI;
 			sourceTree = "<group>";
@@ -207,7 +262,6 @@
 			path = VolleyballTrainerAIUITests;
 			sourceTree = "<group>";
 		};
-
 		A9E75051D50046D6810B78AF /* TeamManagement */ = {
 			isa = PBXGroup;
 			children = (
@@ -217,35 +271,6 @@
 				D6BFE026FA754E6DAFC895F4 /* Views */,
 			);
 			path = TeamManagement;
-			sourceTree = "<group>";
-		};
-		5309F8AD25C34FED99E4EA30 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				83C617EC774D490792625674 /* TeamModels.swift */,
-				92344B0BC2AD4848B29E58EB /* MatchModels.swift */,
-				7CAED7F92D8B4D32BA81A74E /* ScheduleModels.swift */,
-				19D19138965446A0A9599FBD /* ChatModels.swift */,
-				E37212D9EFCA450CAFB90E1F /* PaperworkModels.swift */,
-			);
-			path = Models;
-			sourceTree = "<group>";
-		};
-		3A4C137060A94E07955D7512 /* Engine */ = {
-			isa = PBXGroup;
-			children = (
-				D946AADCDCC245508D918623 /* LiveScoringEngine.swift */,
-				74D02414886D40B482C36756 /* StatsEngine.swift */,
-			);
-			path = Engine;
-			sourceTree = "<group>";
-		};
-		1D354FC327EF422C81E3AE76 /* ViewModels */ = {
-			isa = PBXGroup;
-			children = (
-				68A4F84D96314DA28096F92A /* TeamManagementViewModel.swift */,
-			);
-			path = ViewModels;
 			sourceTree = "<group>";
 		};
 		D6BFE026FA754E6DAFC895F4 /* Views */ = {
@@ -258,6 +283,24 @@
 				A2624EA536C6400B932C3DFE /* FormViews.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		MM0100012FF0000000100000 /* MotionMetrics */ = {
+			isa = PBXGroup;
+			children = (
+				MM01F0012FF0000000100001 /* KalmanFilter.swift */,
+				MM01F0022FF0000000100002 /* SmoothingUtils.swift */,
+				MM01F0032FF0000000100003 /* CalibrationManager.swift */,
+				MM01F0042FF0000000100004 /* SensorFusionManager.swift */,
+				MM01F0052FF0000000100005 /* BallSpeedTracker.swift */,
+				MM01F0062FF0000000100006 /* JumpHeightAnalyzer.swift */,
+				MM01F0072FF0000000100007 /* MovementDistanceAnalyzer.swift */,
+				MM01F0082FF0000000100008 /* SpikeSpeedAnalyzer.swift */,
+				MM01F0092FF0000000100009 /* ServeSpeedAnalyzer.swift */,
+				MM01F00A2FF000000010000A /* TrajectoryPredictor.swift */,
+				MM01F00B2FF000000010000B /* MotionMetricsEngine.swift */,
+			);
+			path = MotionMetrics;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -320,6 +363,7 @@
 			files = (
 				963E76E32FE4477800590BC2 /* Preview Assets.xcassets in Resources */,
 				963E76E02FE4477800590BC2 /* Assets.xcassets in Resources */,
+				96E742363012575900E182E5 /* MotionMetrics in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -374,6 +418,17 @@
 				ED3E35C36F14481E8F49108A /* LiveScoringView.swift in Sources */,
 				AA72D5CB41E64232BB3539F5 /* MoreViews.swift in Sources */,
 				B9394B7AAE01453EA49EC6E0 /* FormViews.swift in Sources */,
+				MM01A0012FF0000000100001 /* KalmanFilter.swift in Sources */,
+				MM01A0022FF0000000100002 /* SmoothingUtils.swift in Sources */,
+				MM01A0032FF0000000100003 /* CalibrationManager.swift in Sources */,
+				MM01A0042FF0000000100004 /* SensorFusionManager.swift in Sources */,
+				MM01A0052FF0000000100005 /* BallSpeedTracker.swift in Sources */,
+				MM01A0062FF0000000100006 /* JumpHeightAnalyzer.swift in Sources */,
+				MM01A0072FF0000000100007 /* MovementDistanceAnalyzer.swift in Sources */,
+				MM01A0082FF0000000100008 /* SpikeSpeedAnalyzer.swift in Sources */,
+				MM01A0092FF0000000100009 /* ServeSpeedAnalyzer.swift in Sources */,
+				MM01A00A2FF000000010000A /* TrajectoryPredictor.swift in Sources */,
+				MM01A00B2FF000000010000B /* MotionMetricsEngine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

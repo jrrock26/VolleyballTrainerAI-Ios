@@ -337,7 +337,7 @@ struct DetectSpike {
         if armAngle < targetAngle - 20 {
             faults.append(BiomechanicalFault(
                 category: "Arm Action", phase: .contact, severity: .critical,
-                observation: "Your arm reached only \(Int(armAngle))° of extension versus a \(Int(targetAngle))° target — you're contacting well below the high point.",
+                observation: "Arm only \(Int(armAngle))° vs \(Int(targetAngle))° target — low contact point.",
                 whyItMatters: "Every degree of lost extension lowers your contact height. Blockers read a lower ball easily, and you sacrifice the steep downward window that makes spikes unreturnable.",
                 rootCause: "The hitting shoulder rotates open too early, pulling the elbow forward and down before the arm fully stretches overhead.",
                 fixSteps: [
@@ -354,7 +354,7 @@ struct DetectSpike {
         } else if armAngle < targetAngle - 5 {
             faults.append(BiomechanicalFault(
                 category: "Arm Action", phase: .contact, severity: .medium,
-                observation: "Arm extension is \(Int(targetAngle - armAngle))° short of your \(Int(targetAngle))° target — close, but leaving power on the table.",
+                observation: "Arm \(Int(targetAngle - armAngle))° below \(Int(targetAngle))° target — cost 2–4 mph.",
                 whyItMatters: "A slightly low contact point flattens your possible trajectory and costs 2–4 mph of downward drive.",
                 rootCause: "A late elbow drop or insufficient upward arm-drive momentum before rotation.",
                 fixSteps: [
@@ -373,7 +373,7 @@ struct DetectSpike {
         if armAngle >= targetAngle - 5 && ballSpeed < targetSpeed * 0.75 {
             faults.append(BiomechanicalFault(
                 category: "Power Transfer", phase: .contact, severity: .medium,
-                observation: "Arm extension looks right, but ball speed (\(Int(ballSpeed)) mph) is well under your \(Int(targetSpeed)) mph target — the wrist isn't converting arm speed into the ball.",
+                observation: "Good arm but only \(Int(ballSpeed)) mph (target \(Int(targetSpeed))) — wrist snap missing.",
                 whyItMatters: "A flat, paddle-like hand 'pushes' the ball instead of whipping it, bleeding 30–40% of available power.",
                 rootCause: "The hand contacts as a rigid plate; fingers don't wrap and snap over the top-back of the ball.",
                 fixSteps: [
@@ -392,7 +392,7 @@ struct DetectSpike {
         if jumpHeight < targetJump - 4 {
             faults.append(BiomechanicalFault(
                 category: "Approach & Jump", phase: .blockJump, severity: .critical,
-                observation: "Jump height is \(String(format: "%.1f", jumpHeight)) in versus a \(String(format: "%.1f", targetJump)) in target — your attack angle is severely compromised.",
+                observation: "Jump \(String(format: "%.1f", jumpHeight))″ vs \(String(format: "%.1f", targetJump))″ target — attack angle compromised.",
                 whyItMatters: "Lower jumps mean a lower contact point. You're forced to hit flatter, giving blockers and diggers an easy read.",
                 rootCause: "The penultimate step is too vertical and the hips never load back-and-down, so you can't convert horizontal speed into vertical lift.",
                 fixSteps: [
@@ -409,7 +409,7 @@ struct DetectSpike {
         } else if jumpHeight < targetJump {
             faults.append(BiomechanicalFault(
                 category: "Approach & Jump", phase: .blockJump, severity: .low,
-                observation: "Vertical is \(String(format: "%.1f", jumpHeight)) in — within range but a 2–3 in gain would open more attacking angles.",
+                observation: "Jump \(String(format: "%.1f", jumpHeight))″ — close to \(String(format: "%.1f", targetJump))″ but 2–3″ more opens angles.",
                 whyItMatters: "Small jump gains create valuable air space that forces blockers to commit earlier.",
                 rootCause: "Slight mismatch between arm-swing timing and the plant moment.",
                 fixSteps: [
@@ -427,7 +427,7 @@ struct DetectSpike {
         if launchAngle >= 0 {
             faults.append(BiomechanicalFault(
                 category: "Angle of Attack", phase: .contact, severity: .critical,
-                observation: "Ball left at +\(Int(launchAngle))° — it's going UP, not down. A spike must always drive into the court.",
+                observation: "Launch +\(Int(launchAngle))° — ball went UP. Spike must drive down.",
                 whyItMatters: "An upward spike sails long or into the block. It's the single most common reason a swing gets stuffed or goes out.",
                 rootCause: "Contact point is too low on the ball; the palm pushes the underside instead of topping it.",
                 fixSteps: [
@@ -443,7 +443,7 @@ struct DetectSpike {
         } else if launchAngle > -6 {
             faults.append(BiomechanicalFault(
                 category: "Angle of Attack", phase: .followThrough, severity: .medium,
-                observation: "Downward angle is shallow (\(String(format: "%.1f", launchAngle))°). Blockers feast on a flat trajectory.",
+                observation: "Shallow \(-Int(launchAngle))° downward — easy for blockers to read.",
                 whyItMatters: "A shallow angle is easy to read and dig; steeper angles disappear below the blocker's hands.",
                 rootCause: "The wrist isn't snapping OVER the ball; the hand finishes forward rather than downward.",
                 fixSteps: [
@@ -462,7 +462,7 @@ struct DetectSpike {
         if ballSpeed < targetSpeed * 0.6 && armAngle >= targetAngle - 5 {
             faults.append(BiomechanicalFault(
                 category: "Power Transfer", phase: .contact, severity: .medium,
-                observation: "Arm extension is correct yet speed is only \(Int(ballSpeed)) mph (target \(Int(targetSpeed))). Power is leaking somewhere in the chain.",
+                observation: "Good form but only \(Int(ballSpeed)) mph (target \(Int(targetSpeed))) — power leaking.",
                 whyItMatters: "You're doing the shape right but not transferring force — the ball comes off soft.",
                 rootCause: "Gripping the ball too tightly or bracing the wrist decelerates the arm right before contact.",
                 fixSteps: [
@@ -481,7 +481,7 @@ struct DetectSpike {
         if distance > 0 && distance < 18 {
             faults.append(BiomechanicalFault(
                 category: "Shot Placement", phase: .followThrough, severity: .low,
-                observation: "Landing point is \(String(format: "%.1f", distance)) ft from the net — a short tip that a middle blocker digs easily.",
+                observation: "Landed \(String(format: "%.0f", distance))ft from net — too short, easy dig.",
                 whyItMatters: "Short landings let the defense transition and reset instead of being scored on.",
                 rootCause: "Contact happens slightly behind the body so the ball is pushed, not driven deep.",
                 fixSteps: [
@@ -857,7 +857,7 @@ struct CoachEngine {
     }
 
     // -------------------------------------------------------------------
-    // Thorough, structured formatter
+    // Compact replay‑friendly formatter (concise, scannable, actionable)
     // -------------------------------------------------------------------
     private static func formatEnhancedFeedback(
         faults: [BiomechanicalFault],
@@ -868,63 +868,40 @@ struct CoachEngine {
     ) -> String {
 
         let primary = faults[0]
-        let rest = Array(faults.dropFirst().prefix(2)) // up to 2 secondary issues
+        let rest = Array(faults.dropFirst().prefix(1)) // only 1 secondary
         var parts: [String] = []
 
-        // Header
-        parts.append("🏐 \(hitType) Coaching Report")
-        parts.append("Level: \(profile.athleteLevel.rawValue)  •  Score: \(Int(profile.recentFormScore))")
-        parts.append("Measured: arm \(Int(metrics.armAngle))° · jump \(String(format: "%.1f", metrics.jumpHeight))″ · speed \(Int(metrics.ballSpeed)) mph · launch \(String(format: "%.1f", metrics.launchAngle))°" + (metrics.distance > 0 ? " · depth \(String(format: "%.1f", metrics.distance)) ft" : ""))
+        // Compact 1‑line header
+        let distStr = metrics.distance > 0 ? " · depth \(String(format: "%.0f", metrics.distance))ft" : ""
+        parts.append("🏐 \(hitType)  |  arm \(Int(metrics.armAngle))°  jump \(String(format: "%.1f", metrics.jumpHeight))″  speed \(Int(metrics.ballSpeed)) mph  launch \(String(format: "%.0f", metrics.launchAngle))°\(distStr)  |  \(profile.athleteLevel.rawValue) · \(Int(profile.recentFormScore)) pts")
+
+        // Primary: just the observation, micro‑cue, and drill (no verbose backstory)
         parts.append("")
-
-        // Primary focus block
-        parts.append("🎯 PRIMARY FOCUS — \(primary.category) (\(primary.severityLabel))")
-        parts.append(primary.observation)
-        parts.append("Why it matters: \(primary.whyItMatters)")
-        parts.append("Root cause: \(primary.rootCause)")
-        parts.append("How to fix:")
-        for (i, step) in primary.fixSteps.enumerated() {
-            parts.append("   \(i + 1). \(step)")
-        }
+        parts.append("⚠️  \(primary.observation)")
         if !primary.microCue.isEmpty {
-            parts.append("⚡ Real-time cue: \"\(primary.microCue)\"")
+            parts.append("    🗣 \(primary.microCue)")
         }
-        parts.append("💪 Recommended drill: \(primary.drill.name)")
-        parts.append("   \(primary.drill.description)")
-        parts.append("   Protocol: \(primary.drill.sets) sets × \(primary.drill.reps) reps · rest \(primary.drill.restSeconds)s")
-        if let hint = primary.drill.progressionHint {
-            parts.append("   Progress when ready: \(hint)")
-        }
+        parts.append("    🔧 \(primary.drill.name) — \(primary.drill.sets)×\(primary.drill.reps) · rest \(primary.drill.restSeconds)s")
 
-        // Secondary focus blocks (condensed)
-        for s in rest {
+        // Secondary (condensed to 1 line)
+        if let s = rest.first {
             parts.append("")
-            parts.append("📌 ALSO WORKING ON — \(s.category) (\(s.severityLabel))")
-            parts.append(s.observation)
-            parts.append("Why: \(s.whyItMatters)")
-            parts.append("Fix: \(s.fixSteps.joined(separator: " "))")
-            parts.append("   Drill: \(s.drill.name) — \(s.drill.sets)×\(s.drill.reps), rest \(s.drill.restSeconds)s")
-        }
-
-        // Session intelligence
-        if intelligence.hitCount >= 4 {
-            parts.append("")
-            parts.append("📊 SESSION PULSE (\(intelligence.hitCount) hits)")
-            parts.append("Trend: \(intelligence.trendDirection.rawValue.capitalized) · Consistency: \(Int(intelligence.consistencyScore * 100))%")
-            if let cat = intelligence.dominantFaultCategory { parts.append("Recurring pattern to break: \(cat)") }
-            if let p1 = intelligence.peakWindowStartIndex, let p2 = intelligence.peakWindowEndIndex {
-                parts.append("⭐ Peak window: hits \(p1 + 1)–\(p2 + 1) — this is your ideal rhythm, chase it.")
+            parts.append("📌 \(s.observation)")
+            if !s.microCue.isEmpty {
+                parts.append("    🗣 \(s.microCue)")
             }
-            if let rec = intelligence.recoveryRecommendation { parts.append("🛑 \(rec)") }
+            parts.append("    🔧 \(s.drill.name) — \(s.drill.sets)×\(s.drill.reps), rest \(s.drill.restSeconds)s")
         }
 
-        // Practice plan
-        let sessionFocus = SessionAnalyzer.recommendedSessionFocus(profile: profile)
-        if !sessionFocus.isEmpty {
+        // Session pulse — 1 line
+        if intelligence.hitCount >= 4 {
+            var pulseLine = "📊 Session: \(intelligence.hitCount) hits · \(intelligence.trendDirection.rawValue.capitalized) · \(Int(intelligence.consistencyScore * 100))% consistent"
+            if let p1 = intelligence.peakWindowStartIndex, let p2 = intelligence.peakWindowEndIndex {
+                pulseLine += " · peak hits \(p1 + 1)–\(p2 + 1)"
+            }
             parts.append("")
-            parts.append("🗂 YOUR PRACTICE PRIORITIES")
-            let labels = sessionFocus.map { focusLabel($0) }
-            parts.append(labels.enumerated().map { "   \($0 + 1). \($1)" }.joined(separator: "\n"))
+            parts.append(pulseLine)
+            if let rec = intelligence.recoveryRecommendation { parts.append("🛑 \(rec)") }
         }
 
         return parts.joined(separator: "\n")

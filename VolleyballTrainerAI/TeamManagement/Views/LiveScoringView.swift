@@ -1,10 +1,11 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - Live Scoring View (GameChanger-Style)
+// MARK: - Live Scoring View (GameChanger-Style Court)
 
 struct LiveScoringView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @ObservedObject var engine: LiveScoringEngine
     let team: TeamModel
     @ObservedObject var viewModel: TeamManagementViewModel
@@ -18,19 +19,27 @@ struct LiveScoringView: View {
     @State private var assignPosition: String = "P1"
     @State private var showSubSheet = false
     @State private var subSide: String = "home"
-    @State private var selectedPlayerForStat: UUID? = nil
-    @State private var showPlayerStatPicker = false
-    @State private var statSide: String = "home"
+    @State private var showLineupSetup = true
+    @State private var showLiveFeedPreview = false
+    @State private var liveFeedURL: String = ""
+    @State private var showShareSheet = false
+    @State private var selectedCourtPlayer: CourtPlayer? = nil
+    @State private var showQuickStatMenu = false
+    @State private var quickStatSide: String = "home"
+    @State private var pendingZoneTap: String? = nil
+    @State private var lastSelectedPlayer: CourtPlayer? = nil
+    @State private var lastSelectedSide: String = "home"
+    @State private var showZonePickerForPlayer = false
 
     enum LiveTab: String, CaseIterable {
-        case score = "Score"
         case court = "Court"
+        case score = "Score"
         case stats = "Stats"
         case playbyplay = "Plays"
         var icon: String {
             switch self {
-            case .score: return "hand.tap.fill"
             case .court: return "sportscourt.fill"
+            case .score: return "hand.tap.fill"
             case .stats: return "chart.bar.fill"
             case .playbyplay: return "list.bullet.rectangle"
             }
@@ -40,31 +49,28 @@ struct LiveScoringView: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            Image("background")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-                .overlay(Color.black.opacity(0.65))
 
             if engine.isMatchOver && showMatchSummary {
                 matchSummaryView
+            } else if showLineupSetup {
+                lineupSetupView
             } else {
                 VStack(spacing: 0) {
                     topBarView
-                    scoreboardView
+                    scoreboardCompactView
 
                     if !engine.isMatchOver {
-                        actionTabBar
+                        tabBarCompact
                         ScrollView {
-                            VStack(spacing: 14) {
+                            VStack(spacing: 12) {
                                 switch LiveTab.allCases[safe: selectedTab] ?? .court {
-                                case .score: scoringActionsPanel
-                                case .court: courtViewPanel
+                                case .court: courtMainView
+                                case .score: quickScoringPanel
                                 case .stats: statsPanel
                                 case .playbyplay: playByPlayPanel
                                 }
                             }
-                            .padding(.horizontal, 12)
+                            .padding(.horizontal, 10)
                             .padding(.bottom, 120)
                         }
                     }
@@ -83,11 +89,11 @@ struct LiveScoringView: View {
         .sheet(isPresented: $showPlayerAssignSheet) {
             playerAssignSheet
         }
-        .sheet(isPresented: $showSubSheet) {
-            substitutionSheet
+        .sheet(isPresented: $showQuickStatMenu) {
+            quickStatMenuSheet
         }
-        .sheet(isPresented: $showPlayerStatPicker) {
-            playerStatSheet
+        .sheet(isPresented: $showLiveFeedPreview) {
+            liveFeedPreviewSheet
         }
     }
 
@@ -116,130 +122,466 @@ struct LiveScoringView: View {
                 }
             }
             Spacer()
-            Menu {
-                Button { showEndMatchAlert = true } label: {
-                    Label("End Match", systemImage: "stop.circle")
+            HStack(spacing: 8) {
+                Button {
+                    showLiveFeedPreview = true
+                } label: {
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                        .font(.caption)
+                        .foregroundColor(.green)
+                        .padding(6)
+                        .background(Circle().fill(Color.green.opacity(0.2)))
                 }
-                Button { engine.undoLastPoint() } label: {
-                    Label("Undo Point", systemImage: "arrow.uturn.backward")
+                Menu {
+                    Button { showEndMatchAlert = true } label: {
+                        Label("End Match", systemImage: "stop.circle")
+                    }
+                    Button { engine.undoLastPoint() } label: {
+                        Label("Undo Point", systemImage: "arrow.uturn.backward")
+                    }
+                    Button { showLineupSetup = true } label: {
+                        Label("Edit Lineup", systemImage: "person.3")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle.fill").font(.title3).foregroundColor(.white)
                 }
-            } label: {
-                Image(systemName: "ellipsis.circle.fill").font(.title3).foregroundColor(.white)
             }
         }
         .padding(.horizontal).padding(.top, 12).padding(.bottom, 6)
         .background(Color.black.opacity(0.85))
     }
 
-    // MARK: - Scoreboard
-    private var scoreboardView: some View {
-        VStack(spacing: 8) {
-            HStack {
-                VStack(spacing: 4) {
-                    Text(team.shortName)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundColor(.pink)
-                    Text("\(engine.homeScore)")
-                        .font(.system(size: 48, weight: .black, design: .monospaced))
-                        .foregroundColor(.white)
-                        .shadow(color: .pink.opacity(0.5), radius: 10)
-                    if engine.isServing == "home" {
-                        HStack(spacing: 2) {
-                            Circle().fill(Color.green).frame(width: 6, height: 6)
-                            Text("SERVING").font(.system(size: 9, weight: .bold, design: .rounded)).foregroundColor(.green)
-                        }
-                    }
-                    Text("Sets: \(engine.homeSetsWon)").font(.caption).foregroundColor(.gray)
+    // MARK: - Compact Scoreboard
+    private var scoreboardCompactView: some View {
+        HStack(spacing: 0) {
+            VStack(spacing: 2) {
+                Text(engine.homeSetsWon > 0 ? "W\(engine.homeSetsWon)" : "")
+                    .font(.caption2).foregroundColor(.pink)
+                Text(team.shortName)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundColor(.pink)
+                Text("\(engine.homeScore)")
+                    .font(.system(size: 38, weight: .black, design: .monospaced))
+                    .foregroundColor(.white)
+                    .shadow(color: .pink.opacity(0.5), radius: 6)
+                if engine.isServing == "home" {
+                    Text("SERVING").font(.system(size: 8, weight: .bold)).foregroundColor(.green)
                 }
-                .frame(maxWidth: .infinity)
-
-                VStack(spacing: 6) {
-                    Text("VS").font(.system(size: 14, weight: .bold, design: .rounded)).foregroundColor(.gray)
-                    Text("Set \(engine.currentSet)")
-                        .font(.system(size: 11, weight: .medium, design: .monospaced)).foregroundColor(.blue)
-                    Text("Best of 5").font(.system(size: 9)).foregroundColor(.gray)
-                    if engine.isTimeoutActive {
-                        Text("TIMEOUT").font(.system(size: 10, weight: .bold)).foregroundColor(.orange)
-                    }
-                }
-                .frame(width: 60)
-
-                VStack(spacing: 4) {
-                    Text("AWAY").font(.system(size: 16, weight: .bold, design: .rounded)).foregroundColor(.blue)
-                    Text("\(engine.awayScore)")
-                        .font(.system(size: 48, weight: .black, design: .monospaced))
-                        .foregroundColor(.white)
-                        .shadow(color: .blue.opacity(0.5), radius: 10)
-                    if engine.isServing == "away" {
-                        HStack(spacing: 2) {
-                            Circle().fill(Color.green).frame(width: 6, height: 6)
-                            Text("SERVING").font(.system(size: 9, weight: .bold, design: .rounded)).foregroundColor(.green)
-                        }
-                    }
-                    Text("Sets: \(engine.awaySetsWon)").font(.caption).foregroundColor(.gray)
-                }
-                .frame(maxWidth: .infinity)
             }
-            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
 
-            if !engine.setHistory.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(engine.setHistory) { set in
-                            HStack(spacing: 4) {
-                                Text("S\(set.setNumber)").font(.caption2).foregroundColor(.gray)
-                                Text("\(set.homeScore)-\(set.awayScore)")
-                                    .font(.system(size: 11, weight: .bold, design: .monospaced))
-                                    .foregroundColor(set.winner == "home" ? .pink : .blue)
-                            }
-                            .padding(.horizontal, 8).padding(.vertical, 4)
-                            .background(RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.black.opacity(0.6))
-                                .overlay(RoundedRectangle(cornerRadius: 6)
-                                    .stroke(set.winner == "home" ? Color.pink.opacity(0.5) : Color.blue.opacity(0.5), lineWidth: 1)))
-                        }
-                    }
-                }.padding(.horizontal)
+            VStack(spacing: 4) {
+                Text("Set \(engine.currentSet)")
+                    .font(.system(size: 12, weight: .bold, design: .monospaced)).foregroundColor(.white)
+                Text("VS")
+                    .font(.system(size: 11, design: .rounded)).foregroundColor(.gray)
+                if engine.isTimeoutActive {
+                    Text("TIMEOUT")
+                        .font(.system(size: 9, weight: .bold)).foregroundColor(.orange)
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(Capsule().fill(Color.orange.opacity(0.3)))
+                }
             }
+            .frame(width: 60)
+
+            VStack(spacing: 2) {
+                Text(engine.awaySetsWon > 0 ? "W\(engine.awaySetsWon)" : "")
+                    .font(.caption2).foregroundColor(.blue)
+                Text("AWAY")
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundColor(.blue)
+                Text("\(engine.awayScore)")
+                    .font(.system(size: 38, weight: .black, design: .monospaced))
+                    .foregroundColor(.white)
+                    .shadow(color: .blue.opacity(0.5), radius: 6)
+                if engine.isServing == "away" {
+                    Text("SERVING").font(.system(size: 8, weight: .bold)).foregroundColor(.green)
+                }
+            }
+            .frame(maxWidth: .infinity)
         }
-        .padding(.vertical, 10).padding(.horizontal)
-        .background(RoundedRectangle(cornerRadius: 18)
-            .fill(Color.black.opacity(0.65))
-            .overlay(RoundedRectangle(cornerRadius: 18)
-                .stroke(NeonGlassStyle.neonGradient(), lineWidth: 2)))
-        .padding(.horizontal, 10)
+        .padding(.vertical, 8).padding(.horizontal)
+        .background(Color.black.opacity(0.55).overlay(
+            Rectangle().fill(NeonGlassStyle.neonGradient()).frame(height: 1.5), alignment: .bottom
+        ))
     }
 
-    // MARK: - Tab Bar
-    private var actionTabBar: some View {
+    // MARK: - Tab Bar Compact
+    private var tabBarCompact: some View {
         HStack(spacing: 0) {
             ForEach(LiveTab.allCases.indices, id: \.self) { i in
                 Button {
                     withAnimation { selectedTab = i }
                 } label: {
-                    VStack(spacing: 4) {
+                    HStack(spacing: 4) {
                         Image(systemName: LiveTab.allCases[i].icon).font(.caption2)
                         Text(LiveTab.allCases[i].rawValue).font(.system(size: 10, design: .rounded))
                     }
                     .foregroundColor(selectedTab == i ? .white : .gray)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
+                    .padding(.vertical, 8)
                     .background(selectedTab == i ? Color.pink.opacity(0.3) : Color.clear)
-                    .cornerRadius(8)
+                    .cornerRadius(6)
                 }
             }
         }
-        .padding(.horizontal, 10)
-        .background(Color.black.opacity(0.7))
+        .padding(.horizontal, 8).padding(.vertical, 4)
+        .background(Color.black.opacity(0.6))
     }
 
-    // MARK: - Scoring Panel
-    private var scoringActionsPanel: some View {
-        VStack(spacing: 14) {
-            // Quick point for HOME
-            VStack(spacing: 8) {
-                Text("HOME (\(team.shortName))").font(.system(size: 12, weight: .semibold, design: .rounded)).foregroundColor(.pink)
-                HStack(spacing: 8) {
+    // MARK: - Main Court View
+    private var courtMainView: some View {
+        VStack(spacing: 10) {
+            // Full volleyball court with players
+            volleyballCourtView
+
+            // Quick action row below court
+            HStack(spacing: 8) {
+                CourtActionButton(title: "Sub", icon: "arrow.triangle.swap", color: .green) {
+                    subSide = engine.isServing; showSubSheet = true
+                }
+                CourtActionButton(title: "Timeout", icon: "timer", color: .orange) {
+                    engine.callTimeout(for: engine.isServing)
+                }
+                CourtActionButton(title: "Rotate", icon: "arrow.clockwise", color: .cyan) {
+                    engine.advanceRotation(for: "home")
+                }
+                CourtActionButton(title: "Undo", icon: "arrow.uturn.backward", color: .gray) {
+                    engine.undoLastPoint()
+                }
+                CourtActionButton(title: "Serve", icon: "hand.raised.fill", color: engine.isServing == "home" ? .pink : .blue) {
+                    engine.switchSides()
+                }
+            }
+        }
+    }
+
+    // MARK: - Volleyball Court
+    private var volleyballCourtView: some View {
+        VStack(spacing: 0) {
+            // Away side (top)
+            VStack(spacing: 0) {
+                Text("AWAY")
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundColor(.blue)
+                    .padding(.vertical, 4)
+                courtPlayerGrid(side: "away", isFlipped: true)
+            }
+            .background(
+                LinearGradient(colors: [Color.blue.opacity(0.12), Color.blue.opacity(0.04)],
+                               startPoint: .bottom, endPoint: .top)
+            )
+
+            // Net
+            ZStack {
+                Rectangle().fill(Color.white.opacity(0.4)).frame(height: 2)
+                HStack {
+                    ForEach(0..<12, id: \.self) { i in
+                        Rectangle()
+                            .fill(Color.white.opacity(0.6))
+                            .frame(width: 3, height: 12)
+                        Spacer()
+                    }
+                }
+                .padding(.horizontal, 8)
+            }
+            .padding(.vertical, 4)
+            .background(Color.black.opacity(0.3))
+
+            // Home side (bottom)
+            VStack(spacing: 0) {
+                courtPlayerGrid(side: "home", isFlipped: false)
+                Text(team.shortName)
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundColor(.pink)
+                    .padding(.vertical, 4)
+            }
+            .background(
+                LinearGradient(colors: [Color.pink.opacity(0.04), Color.pink.opacity(0.12)],
+                               startPoint: .top, endPoint: .bottom)
+            )
+        }
+        .background(Color.black.opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(NeonGlassStyle.neonGradient(), lineWidth: 1.5))
+        .overlay(
+            // Court boundary lines
+            courtBoundaryLines
+        )
+    }
+
+    private var courtBoundaryLines: some View {
+        GeometryReader { geo in
+            ZStack {
+                // Attack line top
+                Rectangle()
+                    .fill(Color.white.opacity(0.2))
+                    .frame(width: geo.size.width * 0.85, height: 1)
+                    .position(x: geo.size.width / 2, y: geo.size.height * 0.29)
+
+                // Attack line bottom
+                Rectangle()
+                    .fill(Color.white.opacity(0.2))
+                    .frame(width: geo.size.width * 0.85, height: 1)
+                    .position(x: geo.size.width / 2, y: geo.size.height * 0.71)
+
+                // Center vertical line
+                Rectangle()
+                    .fill(Color.white.opacity(0.15))
+                    .frame(width: 1, height: geo.size.height * 0.35)
+                    .position(x: geo.size.width / 2, y: geo.size.height * 0.5)
+            }
+        }
+    }
+
+    // MARK: - Court Player Grid
+    private func courtPlayerGrid(side: String, isFlipped: Bool) -> some View {
+        let positions = side == "home" ? engine.homeCourtPositions : engine.awayCourtPositions
+        let frontRow: [String] = isFlipped ? ["P2", "P3", "P4"] : ["P4", "P3", "P2"]
+        let backRow: [String] = isFlipped ? ["P1", "P6", "P5"] : ["P5", "P6", "P1"]
+        let rows = isFlipped ? [frontRow, backRow] : [backRow, frontRow]
+
+        return VStack(spacing: 10) {
+            ForEach(rows, id: \.self) { row in
+                HStack(spacing: 10) {
+                    ForEach(row, id: \.self) { posID in
+                        let player = positions[posID] ?? CourtPlayer(positionID: posID, side: side)
+                        courtPlayerCell(player: player, posID: posID, side: side)
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+        .padding(.vertical, 8)
+    }
+
+    // MARK: - Court Player Cell
+    private func courtPlayerCell(player: CourtPlayer, posID: String, side: String) -> some View {
+        let sideColor = side == "home" ? Color.pink : Color.blue
+        let isServing = engine.servingPlayerID == player.playerID && engine.isServing == side
+
+        return Button {
+            if player.isEmpty {
+                assignSide = side
+                assignPosition = posID
+                showPlayerAssignSheet = true
+            } else {
+                lastSelectedPlayer = player
+                lastSelectedSide = side
+                showQuickStatMenu = true
+            }
+        } label: {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(player.isEmpty ? Color.white.opacity(0.04) : sideColor.opacity(0.18))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(isServing ? Color.green : (player.isEmpty ? Color.white.opacity(0.1) : sideColor.opacity(0.35)), lineWidth: isServing ? 2 : 1)
+                    )
+
+                VStack(spacing: 3) {
+                    ZStack {
+                        Circle()
+                            .fill(player.isEmpty ? Color.clear : sideColor.opacity(0.25))
+                            .frame(width: 32, height: 32)
+                        if player.isEmpty {
+                            Image(systemName: "person.circle")
+                                .font(.system(size: 16))
+                                .foregroundColor(.gray.opacity(0.4))
+                            Text(posID)
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundColor(.gray.opacity(0.5))
+                                .offset(y: 18)
+                        } else {
+                            Text(player.displayName.prefix(2).uppercased())
+                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                        }
+                    }
+
+                    if !player.isEmpty {
+                        Text(player.displayName)
+                            .font(.system(size: 9, design: .rounded))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                        if let pid = player.playerID, let stats = (side == "home" ? engine.homePlayerStats : engine.awayPlayerStats)[pid] {
+                            Text("K:\(stats.kills) B:\(stats.totalBlocks)")
+                                .font(.system(size: 7, design: .monospaced))
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+                .padding(.vertical, 4)
+
+                // Serving indicator
+                if isServing {
+                    Circle()
+                        .fill(Color.green)
+                        .frame(width: 8, height: 8)
+                        .overlay(Circle().stroke(Color.white, lineWidth: 1))
+                        .offset(x: -22, y: -28)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 72)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Quick Stat Menu Sheet
+    private var quickStatMenuSheet: some View {
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                Image("background").resizable().scaledToFill().ignoresSafeArea().overlay(Color.black.opacity(0.7))
+
+                VStack(spacing: 20) {
+                    if let player = lastSelectedPlayer {
+                        // Player info header
+                        VStack(spacing: 6) {
+                            ZStack {
+                                Circle()
+                                    .fill((lastSelectedSide == "home" ? Color.pink : Color.blue).opacity(0.3))
+                                    .frame(width: 60, height: 60)
+                                Text(player.displayName.prefix(2).uppercased())
+                                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+                            }
+                            Text(player.displayName)
+                                .font(.system(size: 18, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                            if let pid = player.playerID, let stats = (lastSelectedSide == "home" ? engine.homePlayerStats : engine.awayPlayerStats)[pid] {
+                                Text("K:\(stats.kills) A:\(stats.aces) B:\(stats.totalBlocks) D:\(stats.digs)")
+                                    .font(.system(size: 13, design: .monospaced))
+                                    .foregroundColor(.gray)
+                            }
+                            Text("\(lastSelectedSide.uppercased()) TEAM")
+                                .font(.caption).foregroundColor(lastSelectedSide == "home" ? .pink : .blue)
+                        }
+
+                        // Zone selection grid (where on court the point was scored)
+                        VStack(spacing: 8) {
+                            Text("Select Zone on Court")
+                                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                .foregroundColor(.white)
+
+                            zoneSelectionGrid
+                        }
+
+                        Divider().background(Color.white.opacity(0.2))
+
+                        // Stat buttons
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                            QuickStatButton(title: "Kill", icon: "flame.fill", color: .orange) {
+                                recordWithZone(eventType: "attack", player: player)
+                            }
+                            QuickStatButton(title: "Ace", icon: "bolt.fill", color: .yellow) {
+                                recordWithZone(eventType: "ace", player: player)
+                            }
+                            QuickStatButton(title: "Block", icon: "hand.raised.fill", color: .purple) {
+                                recordWithZone(eventType: "block", player: player)
+                            }
+                            QuickStatButton(title: "Attack Error", icon: "xmark.circle.fill", color: .red) {
+                                engine.recordError(team: lastSelectedSide, playerID: player.playerID ?? UUID(),
+                                                   playerName: player.displayName, errorType: "attack_error")
+                                showQuickStatMenu = false
+                            }
+                            QuickStatButton(title: "Dig", icon: "arrow.down.to.line", color: .green) {
+                                engine.recordPlay(eventType: "dig", description: "\(player.displayName) dig",
+                                                  scoringTeam: lastSelectedSide, playerID: player.playerID ?? UUID(), playerName: player.displayName)
+                                showQuickStatMenu = false
+                            }
+                            QuickStatButton(title: "Assist", icon: "hand.point.up.fill", color: .cyan) {
+                                engine.recordPlay(eventType: "assist", description: "\(player.displayName) assist",
+                                                  scoringTeam: lastSelectedSide, playerID: player.playerID ?? UUID(), playerName: player.displayName)
+                                showQuickStatMenu = false
+                            }
+                        }
+
+                        Button {
+                            // Set as server
+                            engine.setServer(playerID: player.playerID ?? UUID(), side: lastSelectedSide)
+                            showQuickStatMenu = false
+                        } label: {
+                            Label("Set as Server", systemImage: "hand.raised.fill")
+                                .font(.caption).foregroundColor(.green).padding(.vertical, 8)
+                        }
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("Record Play")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showQuickStatMenu = false } } }
+        }
+    }
+
+    // MARK: - Zone Selection Grid
+    private var zoneSelectionGrid: some View {
+        VStack(spacing: 4) {
+            // Front zones (net side) - Zones 1-6 for front row
+            HStack(spacing: 4) {
+                ForEach(1...6, id: \.self) { i in
+                    zoneCell(zoneID: "Z\(i)", label: "Z\(i)", isSelected: selectedZone == "Z\(i)")
+                }
+            }
+            // Back zones - Zones 7-12
+            HStack(spacing: 4) {
+                ForEach(7...12, id: \.self) { i in
+                    zoneCell(zoneID: "Z\(i)", label: "Z\(i)", isSelected: selectedZone == "Z\(i)")
+                }
+            }
+        }
+    }
+
+    private func zoneCell(zoneID: String, label: String, isSelected: Bool) -> some View {
+        Button {
+            withAnimation { selectedZone = isSelected ? nil : zoneID }
+        } label: {
+            ZStack {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isSelected ? Color.orange.opacity(0.5) : Color.white.opacity(0.08))
+                    .frame(height: 36)
+                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(isSelected ? Color.orange : Color.white.opacity(0.2), lineWidth: 1))
+                VStack(spacing: 1) {
+                    Text(label)
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundColor(isSelected ? .white : .gray)
+                    if let zone = engine.heatmapZones[zoneID] {
+                        Text("\(zone.killCount)K")
+                            .font(.system(size: 7))
+                            .foregroundColor(zone.killCount > 0 ? .green.opacity(0.8) : .gray)
+                    }
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func recordWithZone(eventType: String, player: CourtPlayer) {
+        let zone = selectedZone ?? ""
+        let pid = player.playerID ?? UUID()
+        switch eventType {
+        case "attack":
+            engine.awardPoint(to: lastSelectedSide, playerID: pid, eventType: "attack", zoneID: zone.isEmpty ? nil : zone, playerName: player.displayName)
+        case "ace":
+            engine.awardAce(team: lastSelectedSide, playerID: pid, playerName: player.displayName, zoneID: zone.isEmpty ? nil : zone)
+        case "block":
+            engine.awardPoint(to: lastSelectedSide, playerID: pid, eventType: "block", zoneID: zone.isEmpty ? nil : zone, playerName: player.displayName)
+        default:
+            engine.recordPlay(eventType: eventType, description: "\(player.displayName) \(eventType)",
+                              scoringTeam: lastSelectedSide, playerID: pid, playerName: player.displayName)
+        }
+        selectedZone = nil
+        showQuickStatMenu = false
+    }
+
+    // MARK: - Quick Scoring Panel (tab alternative)
+    private var quickScoringPanel: some View {
+        VStack(spacing: 12) {
+            VStack(spacing: 6) {
+                Text("HOME (\(team.shortName))").font(.system(size: 11, weight: .semibold, design: .rounded)).foregroundColor(.pink)
+                HStack(spacing: 6) {
                     ScoreActionButton(title: "Kill", icon: "flame.fill", color: .pink) {
                         engine.awardPoint(to: "home", playerID: UUID(), eventType: "attack")
                     }
@@ -257,10 +599,9 @@ struct LiveScoringView: View {
             .padding(10)
             .background(RoundedRectangle(cornerRadius: 12).fill(Color.black.opacity(0.55)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.pink.opacity(0.4), lineWidth: 1)))
 
-            // Quick point for AWAY
-            VStack(spacing: 8) {
-                Text("AWAY").font(.system(size: 12, weight: .semibold, design: .rounded)).foregroundColor(.blue)
-                HStack(spacing: 8) {
+            VStack(spacing: 6) {
+                Text("AWAY").font(.system(size: 11, weight: .semibold, design: .rounded)).foregroundColor(.blue)
+                HStack(spacing: 6) {
                     ScoreActionButton(title: "Kill", icon: "flame.fill", color: .blue) {
                         engine.awardPoint(to: "away", playerID: UUID(), eventType: "attack")
                     }
@@ -278,22 +619,6 @@ struct LiveScoringView: View {
             .padding(10)
             .background(RoundedRectangle(cornerRadius: 12).fill(Color.black.opacity(0.55)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.blue.opacity(0.4), lineWidth: 1)))
 
-            HStack(spacing: 10) {
-                ScoreActionButton(title: "Timeout", icon: "timer", color: .orange) {
-                    engine.callTimeout(for: "home")
-                }
-                ScoreActionButton(title: "Sub", icon: "arrow.triangle.swap", color: .green) {
-                    subSide = "home"; showSubSheet = true
-                }
-                ScoreActionButton(title: "Undo", icon: "arrow.uturn.backward", color: .gray) {
-                    engine.undoLastPoint()
-                }
-                ScoreActionButton(title: "Rotate", icon: "arrow.clockwise", color: .cyan) {
-                    engine.advanceRotation(for: engine.isServing)
-                }
-            }
-
-            // Quick serve side toggle
             HStack {
                 Button { engine.isServing = "home" } label: {
                     HStack { Image(systemName: "hand.raised.fill"); Text("Home Serve") }
@@ -311,144 +636,12 @@ struct LiveScoringView: View {
         }
     }
 
-    // MARK: - Court View Panel
-    private var courtViewPanel: some View {
-        VStack(spacing: 14) {
-            // Court visualization with players
-            VStack(spacing: 0) {
-                // Away lineup (top half)
-                VStack(spacing: 4) {
-                    Text("AWAY").font(.system(size: 10, weight: .bold, design: .rounded)).foregroundColor(.blue)
-                    courtGrid(side: "away")
-                }
-                .padding(8)
-                .background(Color.blue.opacity(0.08))
-                .overlay(Rectangle().frame(height: 1).foregroundColor(.white.opacity(0.3)), alignment: .bottom)
-
-                // Net divider
-                Rectangle().fill(NeonGlassStyle.neonGradient()).frame(height: 2)
-
-                // Home lineup (bottom half)
-                VStack(spacing: 4) {
-                    courtGrid(side: "home")
-                    Text("\(team.shortName)").font(.system(size: 10, weight: .bold, design: .rounded)).foregroundColor(.pink)
-                }
-                .padding(8)
-                .background(Color.pink.opacity(0.08))
-            }
-            .background(Color.black.opacity(0.6))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(NeonGlassStyle.neonGradient(), lineWidth: 1.5))
-
-            // Rotation control
-            HStack(spacing: 20) {
-                Button {
-                    engine.advanceRotation(for: "away")
-                } label: {
-                    Label("Rotate Away", systemImage: "arrow.trianglehead.clockwise.rotate.90")
-                        .font(.caption2).foregroundColor(.blue).padding(.horizontal, 12).padding(.vertical, 8)
-                        .background(RoundedRectangle(cornerRadius: 8).stroke(Color.blue.opacity(0.5), lineWidth: 1))
-                }
-                Text("Rotation: \(engine.currentRotation)").font(.system(size: 12, design: .monospaced)).foregroundColor(.white)
-                Button {
-                    engine.advanceRotation(for: "home")
-                } label: {
-                    Label("Rotate Home", systemImage: "arrow.trianglehead.clockwise.rotate.90")
-                        .font(.caption2).foregroundColor(.pink).padding(.horizontal, 12).padding(.vertical, 8)
-                        .background(RoundedRectangle(cornerRadius: 8).stroke(Color.pink.opacity(0.5), lineWidth: 1))
-                }
-            }
-
-            // Kill spot heatmap
-            VStack(spacing: 8) {
-                Text("Kill Spots").font(.system(size: 13, weight: .semibold, design: .rounded)).foregroundColor(.white)
-                killSpotGrid
-            }
-            .padding(10)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color.black.opacity(0.55)).overlay(RoundedRectangle(cornerRadius: 12).stroke(NeonGlassStyle.neonGradient(), lineWidth: 1)))
-        }
-    }
-
-    private func courtGrid(side: String) -> some View {
-        let positions = side == "home" ? engine.homeCourtPositions : engine.awayCourtPositions
-        let order: [[String]] = [
-            ["P4", "P3", "P2"],
-            ["P5", "P6", "P1"]
-        ]
-        return VStack(spacing: 6) {
-            ForEach(order, id: \.self) { row in
-                HStack(spacing: 6) {
-                    ForEach(row, id: \.self) { posID in
-                        let player = positions[posID] ?? CourtPlayer(positionID: posID, side: side)
-                        CourtPlayerCell(
-                            player: player,
-                            side: side,
-                            posID: posID,
-                            isServing: engine.servingPlayerID == player.playerID,
-                            onTap: {
-                                assignSide = side
-                                assignPosition = posID
-                                showPlayerAssignSheet = true
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    private var killSpotGrid: some View {
-        VStack(spacing: 3) {
-            ForEach(0..<3, id: \.self) { row in
-                HStack(spacing: 3) {
-                    ForEach(0..<5, id: \.self) { col in
-                        let idx = row * 5 + col + 1
-                        let key = "Z\(idx)"
-                        let zone = engine.heatmapZones[key]
-                        Button {
-                            selectedZone = key
-                            // Add kill at zone
-                            let side = engine.isServing
-                            engine.awardPoint(to: side, playerID: engine.servingPlayerID ?? UUID(), eventType: "attack", zoneID: key)
-                        } label: {
-                            Rectangle()
-                                .fill(zoneHitColor(zone))
-                                .frame(height: 38)
-                                .overlay(
-                                    VStack(spacing: 1) {
-                                        Text("\(zone?.hitCount ?? 0)")
-                                            .font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundColor(.white)
-                                        Text("\(zone?.killCount ?? 0)K")
-                                            .font(.system(size: 7)).foregroundColor(.green.opacity(0.8))
-                                    }
-                                )
-                                .border(Color.white.opacity(0.2), width: 0.5)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.3), lineWidth: 1))
-    }
-
-    private func zoneHitColor(_ zone: HeatmapZone?) -> Color {
-        guard let zone = zone, zone.hitCount > 0 else { return Color.black.opacity(0.5) }
-        if zone.efficiency > 0.35 { return Color.red.opacity(0.6) }
-        if zone.hitCount > 3 { return Color.orange.opacity(0.4) }
-        return Color.blue.opacity(0.3)
-    }
-
     // MARK: - Stats Panel
     private var statsPanel: some View {
         VStack(spacing: 14) {
             HStack {
                 Text("\(team.shortName) Stats").font(.system(size: 14, weight: .semibold, design: .rounded)).foregroundColor(.pink)
                 Spacer()
-                Button { statSide = "home"; showPlayerStatPicker = true } label: {
-                    Image(systemName: "plus.circle").foregroundColor(.pink)
-                }
             }
             if engine.homePlayerStats.isEmpty {
                 Text("No home stats yet").font(.caption).foregroundColor(.gray)
@@ -464,9 +657,6 @@ struct LiveScoringView: View {
             HStack {
                 Text("Away Stats").font(.system(size: 14, weight: .semibold, design: .rounded)).foregroundColor(.blue)
                 Spacer()
-                Button { statSide = "away"; showPlayerStatPicker = true } label: {
-                    Image(systemName: "plus.circle").foregroundColor(.blue)
-                }
             }
             if engine.awayPlayerStats.isEmpty {
                 Text("No away stats yet").font(.caption).foregroundColor(.gray)
@@ -478,27 +668,23 @@ struct LiveScoringView: View {
                     }
                 }
             }
-
-            // Team stats summary
             VStack(spacing: 8) {
                 Text("Set Summary").font(.system(size: 13, weight: .semibold, design: .rounded)).foregroundColor(.white)
                 HStack {
                     StatCard(title: "Home Kills", value: "\(totalKills(side: "home"))", icon: "flame.fill", color: .pink)
                     StatCard(title: "Away Kills", value: "\(totalKills(side: "away"))", icon: "flame.fill", color: .blue)
-                    StatCard(title: "Home Errors", value: "\(totalErrors(side: "home"))", icon: "xmark", color: .red)
-                    StatCard(title: "Away Errors", value: "\(totalErrors(side: "away"))", icon: "xmark", color: .red)
+                    StatCard(title: "Home Err", value: "\(totalErrors(side: "home"))", icon: "xmark", color: .red)
+                    StatCard(title: "Away Err", value: "\(totalErrors(side: "away"))", icon: "xmark", color: .red)
                 }
             }
         }
     }
 
     private func totalKills(side: String) -> Int {
-        let all = side == "home" ? engine.homePlayerStats : engine.awayPlayerStats
-        return all.values.reduce(0) { $0 + $1.kills }
+        (side == "home" ? engine.homePlayerStats : engine.awayPlayerStats).values.reduce(0) { $0 + $1.kills }
     }
     private func totalErrors(side: String) -> Int {
-        let all = side == "home" ? engine.homePlayerStats : engine.awayPlayerStats
-        return all.values.reduce(0) { $0 + $1.attackErrors + $1.serveErrors + $1.receptionErrors }
+        (side == "home" ? engine.homePlayerStats : engine.awayPlayerStats).values.reduce(0) { $0 + $1.attackErrors + $1.serveErrors + $1.receptionErrors }
     }
 
     // MARK: - Play-by-Play Panel
@@ -516,7 +702,8 @@ struct LiveScoringView: View {
                                 Circle().fill(entry.scoringTeam == "home" ? Color.pink : Color.blue).frame(width: 6, height: 6)
                                 Text(entry.description).font(.system(size: 11, design: .rounded)).foregroundColor(.white).lineLimit(2)
                                 Spacer()
-                                Text("\(entry.homeScoreAfter)-\(entry.awayScoreAfter)").font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundColor(.gray)
+                                Text("\(entry.homeScoreAfter)-\(entry.awayScoreAfter)")
+                                    .font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundColor(.gray)
                             }
                             .padding(.vertical, 2)
                         }
@@ -527,6 +714,97 @@ struct LiveScoringView: View {
         }
         .padding(12)
         .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.55)).overlay(RoundedRectangle(cornerRadius: 14).stroke(NeonGlassStyle.neonGradient(), lineWidth: 1)))
+    }
+
+    // MARK: - Lineup Setup View
+    private var lineupSetupView: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text("SET LINEUP")
+                    .font(.system(size: 18, weight: .bold, design: .rounded)).foregroundColor(.white)
+                Spacer()
+                Button("Done") {
+                    showLineupSetup = false
+                }
+                .font(.system(size: 14, weight: .semibold)).foregroundColor(.green)
+            }
+            .padding(.horizontal).padding(.top, 54).padding(.bottom, 12)
+            .background(Color.black.opacity(0.9))
+
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Home lineup
+                    VStack(spacing: 8) {
+                        Text("\(team.shortName) Lineup").font(.system(size: 16, weight: .bold, design: .rounded)).foregroundColor(.pink)
+                        lineupGrid(side: "home")
+                    }
+                    .padding(14)
+                    .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.55)).overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.pink.opacity(0.4), lineWidth: 1)))
+
+                    // Away lineup
+                    VStack(spacing: 8) {
+                        Text("Away Lineup").font(.system(size: 16, weight: .bold, design: .rounded)).foregroundColor(.blue)
+                        lineupGrid(side: "away")
+                    }
+                    .padding(14)
+                    .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.55)).overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.blue.opacity(0.4), lineWidth: 1)))
+
+                    Button {
+                        engine.startMatch()
+                        showLineupSetup = false
+                    } label: {
+                        Text("Start Match").font(.system(size: 16, weight: .bold, design: .rounded)).foregroundColor(.white)
+                            .frame(maxWidth: .infinity).padding(.vertical, 16)
+                            .background(RoundedRectangle(cornerRadius: 14).fill(NeonGlassStyle.neonGradient()))
+                    }
+                    .padding(.top, 8)
+                }
+                .padding()
+            }
+        }
+        .background(Color.black.ignoresSafeArea())
+    }
+
+    private func lineupGrid(side: String) -> some View {
+        let positions = side == "home" ? engine.homeCourtPositions : engine.awayCourtPositions
+        return VStack(spacing: 6) {
+            ForEach(["P4", "P3", "P2"], id: \.self) { posID in
+                lineupPositionRow(posID: posID, player: positions[posID] ?? CourtPlayer(positionID: posID, side: side), side: side)
+            }
+            Rectangle().fill(Color.white.opacity(0.3)).frame(height: 1).padding(.vertical, 2)
+            ForEach(["P5", "P6", "P1"], id: \.self) { posID in
+                lineupPositionRow(posID: posID, player: positions[posID] ?? CourtPlayer(positionID: posID, side: side), side: side)
+            }
+        }
+    }
+
+    private func lineupPositionRow(posID: String, player: CourtPlayer, side: String) -> some View {
+        let sideColor = side == "home" ? Color.pink : Color.blue
+        return Button {
+            assignSide = side
+            assignPosition = posID
+            showPlayerAssignSheet = true
+        } label: {
+            HStack {
+                Text(posID)
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundColor(sideColor)
+                    .frame(width: 28, alignment: .leading)
+                if player.isEmpty {
+                    Text("Tap to assign player")
+                        .font(.caption).foregroundColor(.gray)
+                } else {
+                    Text(player.displayName).font(.system(size: 13, design: .rounded)).foregroundColor(.white)
+                }
+                Spacer()
+                Image(systemName: player.isEmpty ? "plus.circle" : "arrow.triangle.swap")
+                    .font(.caption).foregroundColor(sideColor)
+            }
+            .padding(10)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.05)))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Player Assign Sheet
@@ -568,99 +846,93 @@ struct LiveScoringView: View {
         }
     }
 
-    // MARK: - Substitution Sheet
-    private var substitutionSheet: some View {
+    // MARK: - Live Feed Preview
+    private var liveFeedPreviewSheet: some View {
         NavigationStack {
             ZStack {
                 Color.black.ignoresSafeArea()
-                Image("background").resizable().scaledToFill().ignoresSafeArea().overlay(Color.black.opacity(0.7))
-                VStack(spacing: 16) {
-                    Text("Substitution - \(subSide.uppercased())").font(.system(size: 18, weight: .bold, design: .rounded)).foregroundColor(.white)
-                    let t = viewModel.selectedTeam ?? team
-                    ForEach(t.players) { player in
+                VStack(spacing: 24) {
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                        .font(.system(size: 50))
+                        .foregroundStyle(LinearGradient(colors: [.green, .blue], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    Text("Live Match Feed")
+                        .font(.system(size: 22, weight: .bold, design: .rounded)).foregroundColor(.white)
+
+                    VStack(spacing: 12) {
+                        feedInfoRow(title: "Match", value: "\(team.shortName) vs AWAY")
+                        feedInfoRow(title: "Score", value: "\(engine.homeSetsWon)-\(engine.awaySetsWon) (Set \(engine.currentSet): \(engine.homeScore)-\(engine.awayScore))")
+                        feedInfoRow(title: "Status", value: engine.isMatchOver ? "Final" : "LIVE")
+                        feedInfoRow(title: "Feed URL", value: liveFeedURL.isEmpty ? "Generating..." : liveFeedURL)
+                    }
+                    .padding()
+                    .background(RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.55)).overlay(RoundedRectangle(cornerRadius: 14).stroke(NeonGlassStyle.neonGradient(), lineWidth: 1)))
+
+                    VStack(spacing: 12) {
                         Button {
-                            engine.recordSubstitution(team: subSide, playerIn: player.id, playerInName: player.fullName, playerOut: UUID(), playerOutName: "Player Out")
-                            showSubSheet = false
+                            generateLiveFeedURL()
                         } label: {
-                            HStack {
-                                Text("#\(player.jerseyNumber)").foregroundColor(.pink)
-                                Text(player.fullName).foregroundColor(.white)
-                                Spacer()
-                                Text("Sub In").font(.caption).foregroundColor(.green)
-                            }
-                            .padding(12)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(NeonGlassStyle.glassBackground).overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.2), lineWidth: 1)))
+                            Label("Generate Feed Link", systemImage: "link")
+                                .font(.system(size: 14, weight: .semibold)).foregroundColor(.white)
+                                .frame(maxWidth: .infinity).padding(.vertical, 14)
+                                .background(RoundedRectangle(cornerRadius: 12).fill(Color.blue.opacity(0.3)))
                         }
-                    }
-                }
-                .padding()
-            }
-            .navigationTitle("Substitution")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showSubSheet = false } } }
-        }
-    }
 
-    // MARK: - Player Stat Picker Sheet
-    private var playerStatSheet: some View {
-        NavigationStack {
-            ZStack {
-                Color.black.ignoresSafeArea()
-                Image("background").resizable().scaledToFill().ignoresSafeArea().overlay(Color.black.opacity(0.7))
-                VStack(spacing: 14) {
-                    Text("Record Stat - \(statSide.uppercased())").font(.system(size: 18, weight: .bold, design: .rounded)).foregroundColor(.white)
-                    let t = viewModel.selectedTeam ?? team
-                    ForEach(t.players) { player in
-                        Menu {
-                            Button { recordManualStat(side: statSide, player: player, type: "kill") } label: { Label("Kill", systemImage: "flame") }
-                            Button { recordManualStat(side: statSide, player: player, type: "ace") } label: { Label("Ace", systemImage: "bolt") }
-                            Button { recordManualStat(side: statSide, player: player, type: "block") } label: { Label("Block", systemImage: "hand.raised") }
-                            Button { recordManualStat(side: statSide, player: player, type: "dig") } label: { Label("Dig", systemImage: "arrow.down") }
-                            Button { recordManualStat(side: statSide, player: player, type: "assist") } label: { Label("Assist", systemImage: "hand.point.up") }
-                            Divider()
-                            Button { recordManualStat(side: statSide, player: player, type: "attack_error") } label: { Label("Attack Error", systemImage: "xmark") }
-                            Button { recordManualStat(side: statSide, player: player, type: "serve_error") } label: { Label("Serve Error", systemImage: "xmark") }
-                        } label: {
-                            HStack {
-                                Text("#\(player.jerseyNumber)").foregroundColor(.pink)
-                                Text(player.fullName).foregroundColor(.white)
-                                Spacer()
-                                let pid = player.id
-                                let ls = (statSide == "home" ? engine.homePlayerStats : engine.awayPlayerStats)[pid]
-                                if let ls = ls {
-                                    Text("K:\(ls.kills) A:\(ls.aces) B:\(ls.totalBlocks) D:\(ls.digs)")
-                                        .font(.system(size: 10, design: .monospaced)).foregroundColor(.gray)
+                        if !liveFeedURL.isEmpty {
+                            Button {
+                                UIPasteboard.general.string = liveFeedURL
+                            } label: {
+                                Label("Copy Link", systemImage: "doc.on.doc")
+                                    .font(.system(size: 14, weight: .semibold)).foregroundColor(.white)
+                                    .frame(maxWidth: .infinity).padding(.vertical, 14)
+                                    .background(RoundedRectangle(cornerRadius: 12).stroke(Color.green.opacity(0.5), lineWidth: 1))
+                            }
+
+                            Button {
+                                let text = generateMatchUpdateText()
+                                let av = UIActivityViewController(activityItems: [text], applicationActivities: nil)
+                                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                                   let rootVC = windowScene.windows.first?.rootViewController {
+                                    rootVC.present(av, animated: true)
                                 }
-                                Image(systemName: "chevron.right").font(.caption).foregroundColor(.gray)
+                            } label: {
+                                Label("Share Update", systemImage: "square.and.arrow.up")
+                                    .font(.system(size: 14, weight: .semibold)).foregroundColor(.white)
+                                    .frame(maxWidth: .infinity).padding(.vertical, 14)
+                                    .background(RoundedRectangle(cornerRadius: 12).stroke(Color.pink.opacity(0.5), lineWidth: 1))
                             }
-                            .padding(12)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(NeonGlassStyle.glassBackground).overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.2), lineWidth: 1)))
                         }
                     }
                 }
                 .padding()
             }
-            .navigationTitle("Player Stats")
+            .navigationTitle("Live Feed")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showPlayerStatPicker = false } } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { showLiveFeedPreview = false } } }
         }
     }
 
-    private func recordManualStat(side: String, player: TeamMember, type: String) {
-        // check if player ID is not nil
-        // guard let pid = player.id else { return } // id is non-optional in TeamMember
-        let pid = player.id
-        switch type {
-        case "kill": engine.awardPoint(to: side, playerID: pid, eventType: "attack")
-        case "ace": engine.awardAce(team: side, playerID: pid)
-        case "block": engine.awardPoint(to: side, playerID: pid, eventType: "block")
-        case "dig": engine.recordPlay(eventType: "dig", description: "\(player.fullName) dig", scoringTeam: side, playerID: pid, playerName: player.fullName)
-        case "assist": engine.recordPlay(eventType: "assist", description: "\(player.fullName) assist", scoringTeam: side, playerID: pid, playerName: player.fullName)
-        case "attack_error": engine.recordError(team: side, playerID: pid, errorType: "attack_error")
-        case "serve_error": engine.recordError(team: side, playerID: pid, errorType: "serve_error")
-        default: break
+    private func feedInfoRow(title: String, value: String) -> some View {
+        HStack {
+            Text(title).font(.caption).foregroundColor(.gray).frame(width: 70, alignment: .leading)
+            Text(value).font(.system(size: 13, design: .rounded)).foregroundColor(.white)
+            Spacer()
         }
-        showPlayerStatPicker = false
+    }
+
+    private func generateLiveFeedURL() {
+        let matchID = UUID().uuidString.prefix(8)
+        liveFeedURL = "volleytrainer://live/\(matchID)"
+    }
+
+    private func generateMatchUpdateText() -> String {
+        var text = "🏐 Match Update\n\(team.shortName) vs AWAY\n"
+        text += "Score: \(engine.homeSetsWon)-\(engine.awaySetsWon) sets\n"
+        text += "Set \(engine.currentSet): \(engine.homeScore)-\(engine.awayScore)\n"
+        if let lastPlay = engine.playByPlayLog.last {
+            text += "Last: \(lastPlay.description)\n"
+        }
+        text += "\nPowered by Volleyball Trainer Pro"
+        return text
     }
 
     // MARK: - Match Summary
@@ -682,11 +954,26 @@ struct LiveScoringView: View {
                 }
             }
 
-            Button { dismiss() } label: {
-                Text("Done").font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white).padding(.horizontal, 40).padding(.vertical, 14)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(NeonGlassStyle.glassBackground)
-                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(NeonGlassStyle.neonGradient(), lineWidth: 2)))
+            HStack(spacing: 20) {
+                Button { dismiss() } label: {
+                    Text("Done").font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white).padding(.horizontal, 40).padding(.vertical, 14)
+                        .background(RoundedRectangle(cornerRadius: 14).fill(NeonGlassStyle.glassBackground)
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(NeonGlassStyle.neonGradient(), lineWidth: 2)))
+                }
+                Button {
+                    let text = generateMatchUpdateText()
+                    let av = UIActivityViewController(activityItems: [text], applicationActivities: nil)
+                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                       let rootVC = windowScene.windows.first?.rootViewController {
+                        rootVC.present(av, animated: true)
+                    }
+                } label: {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                        .font(.system(size: 14, weight: .semibold)).foregroundColor(.green)
+                        .padding(.horizontal, 24).padding(.vertical, 14)
+                        .background(RoundedRectangle(cornerRadius: 14).stroke(Color.green.opacity(0.5), lineWidth: 1))
+                }
             }
             Spacer()
         }
@@ -753,61 +1040,53 @@ struct StatBadge: View {
     }
 }
 
+// MARK: - Court Action Button
+struct CourtActionButton: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: icon).font(.system(size: 14)).foregroundColor(color)
+                Text(title).font(.system(size: 9, weight: .medium, design: .rounded)).foregroundColor(.white)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(RoundedRectangle(cornerRadius: 10).fill(color.opacity(0.12)).overlay(RoundedRectangle(cornerRadius: 10).stroke(color.opacity(0.3), lineWidth: 1)))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Quick Stat Button
+struct QuickStatButton: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: icon).foregroundColor(color).font(.system(size: 16))
+                Text(title).font(.system(size: 14, weight: .semibold, design: .rounded)).foregroundColor(.white)
+                Spacer()
+                Image(systemName: "chevron.right").font(.caption).foregroundColor(.gray)
+            }
+            .padding(12)
+            .background(RoundedRectangle(cornerRadius: 10).fill(color.opacity(0.12)).overlay(RoundedRectangle(cornerRadius: 10).stroke(color.opacity(0.3), lineWidth: 1)))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 // MARK: - Safe array subscript
 extension Array {
     subscript(safe index: Int) -> Element? {
         indices.contains(index) ? self[index] : nil
-    }
-}
-
-// MARK: - Court Player Cell
-struct CourtPlayerCell: View {
-    let player: CourtPlayer
-    let side: String
-    let posID: String
-    let isServing: Bool
-    let onTap: () -> Void
-
-    private var sideColor: Color { side == "home" ? .pink : .blue }
-    private var bgColor: Color {
-        player.isEmpty ? Color.white.opacity(0.03) : sideColor.opacity(0.2)
-    }
-    private var borderColor: Color {
-        player.isEmpty ? Color.white.opacity(0.1) : sideColor.opacity(0.4)
-    }
-    private var iconColor: Color {
-        player.isEmpty ? .gray.opacity(0.5) : sideColor
-    }
-
-    var body: some View {
-        Button(action: onTap) {
-            VStack(spacing: 2) {
-                Image(systemName: "person.circle.fill")
-                    .font(.system(size: 18))
-                    .foregroundColor(iconColor)
-                Text(player.isEmpty ? posID : player.displayName)
-                    .font(.system(size: 9, design: .rounded))
-                    .foregroundColor(player.isEmpty ? .gray : .white)
-                    .lineLimit(1)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .background(bgColor)
-            .cornerRadius(8)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(borderColor, lineWidth: 1)
-            )
-            .overlay(Group {
-                if isServing {
-                    Circle()
-                        .fill(Color.green)
-                        .frame(width: 8, height: 8)
-                        .offset(x: 18, y: -20)
-                }
-            })
-        }
-        .buttonStyle(.plain)
     }
 }
 
